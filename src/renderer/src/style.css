@@ -1,0 +1,185 @@
+:root {
+  color-scheme: dark;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+html, body, #app {
+  margin: 0;
+  height: 100vh;
+  background: #1e1e1e;
+  color: #ddd;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #252526;
+  border-bottom: 1px solid #333;
+}
+
+.toolbar button {
+  background: #0e639c;
+  color: white;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.toolbar button:hover {
+  background: #1177bb;
+}
+
+.toolbar button:disabled {
+  background: #3a3a3a;
+  color: #888;
+  cursor: not-allowed;
+}
+
+.toolbar .status {
+  margin-left: auto;
+  font-size: 12px;
+  color: #999;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+#editor {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar {
+  width: 380px;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid #333;
+  overflow-y: auto;
+}
+
+.panel {
+  border-bottom: 1px solid #333;
+  padding: 8px 12px;
+}
+
+.panel h3 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  text-transform: uppercase;
+  color: #9cdcfe;
+  letter-spacing: 0.05em;
+}
+
+.registers {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px 12px;
+  font-family: 'Consolas', monospace;
+  font-size: 12.5px;
+}
+
+.registers .reg {
+  display: flex;
+  justify-content: space-between;
+}
+
+.registers .reg .name {
+  color: #888;
+}
+
+.registers .reg.changed .value {
+  color: #ffcc66;
+  font-weight: bold;
+}
+
+.flags {
+  display: flex;
+  gap: 10px;
+  font-family: 'Consolas', monospace;
+  font-size: 13px;
+  margin-top: 6px;
+}
+
+.flags .flag {
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: #2d2d2d;
+  color: #666;
+}
+
+.flags .flag.set {
+  background: #0e639c;
+  color: white;
+}
+
+.memory {
+  font-family: 'Consolas', monospace;
+  font-size: 11.5px;
+  white-space: pre;
+  max-height: 220px;
+  overflow-y: auto;
+  line-height: 1.5;
+}
+
+.memory .byte.written {
+  background: #5a3d00;
+  color: #ffcc66;
+}
+
+.memory-controls {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+
+.memory-controls input {
+  width: 80px;
+  background: #2d2d2d;
+  border: 1px solid #444;
+  color: #ddd;
+  font-family: monospace;
+}
+
+.console-output {
+  font-family: 'Consolas', monospace;
+  font-size: 12.5px;
+  white-space: pre-wrap;
+  min-height: 60px;
+  max-height: 140px;
+  overflow-y: auto;
+  background: #111;
+  padding: 6px;
+  border-radius: 3px;
+}
+
+.errors {
+  padding: 8px 12px;
+  background: #3a1d1d;
+  color: #ffb4b4;
+  font-family: 'Consolas', monospace;
+  font-size: 12.5px;
+  max-height: 120px;
+  overflow-y: auto;
+  border-top: 1px solid #5a2a2a;
+}
+
+.errors:empty {
+  display: none;
+}
+
+.current-line-highlight {
+  background: rgba(14, 99, 156, 0.35);
+}
