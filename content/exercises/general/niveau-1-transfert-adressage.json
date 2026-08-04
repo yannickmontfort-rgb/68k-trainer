@@ -3,7 +3,7 @@
   "title": "Transfert et adressage",
   "exercises": [
     {
-      "id": "l1-e1",
+      "id": "general-l1-e1",
       "title": "Premier transfert",
       "statement": "Place la valeur `$2A` dans l'octet de poids faible du registre D0, à l'aide d'un adressage immédiat.",
       "hints": [
@@ -19,7 +19,7 @@
       }
     },
     {
-      "id": "l1-e2",
+      "id": "general-l1-e2",
       "title": "Copie entre registres",
       "statement": "Place `$1234` dans D1 (mot / .W), puis copie ce mot dans D2 par un transfert direct entre registres.",
       "hints": [
@@ -35,7 +35,7 @@
       }
     },
     {
-      "id": "l1-e3",
+      "id": "general-l1-e3",
       "title": "MOVEQ et extension de signe",
       "statement": "Utilise MOVEQ pour placer la valeur décimale **-5** dans D3. Observe le résultat sur 32 bits : le nombre négatif doit être étendu en signe sur tout le registre.",
       "hints": [
@@ -51,7 +51,7 @@
       }
     },
     {
-      "id": "l1-e4",
+      "id": "general-l1-e4",
       "title": "Écriture et lecture en mémoire (adressage absolu)",
       "statement": "Écris la valeur `$1234` (mot) à l'adresse `$2000`, puis relis cette valeur en mémoire pour la placer dans D4.",
       "hints": [
@@ -67,7 +67,7 @@
       }
     },
     {
-      "id": "l1-e5",
+      "id": "general-l1-e5",
       "title": "Adressage indirect via un registre d'adresse",
       "statement": "Charge l'adresse `$3000` dans A0 (avec LEA), écris-y la valeur `$ABCD` (mot) via l'adressage indirect `(A0)`, puis relis cette valeur dans D5 de la même façon.",
       "hints": [
@@ -83,7 +83,7 @@
       }
     },
     {
-      "id": "l1-e6",
+      "id": "general-l1-e6",
       "title": "Parcours mémoire post-incrémenté",
       "statement": "En partant de l'adresse `$4000`, écris successivement les mots `$000A` puis `$0014` en utilisant l'adressage indirect post-incrémenté `(A0)+`. Puis, en repartant du début de cette zone, relis ces deux mots (toujours avec `(A0)+`) et places-en la somme dans D6.",
       "hints": [

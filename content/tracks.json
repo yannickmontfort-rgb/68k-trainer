@@ -1,0 +1,22 @@
+{
+  "tracks": [
+    {
+      "id": "general",
+      "title": "Assembleur 68000 (général)",
+      "description": "Le microprocesseur 68000 lui-même : registres, adressage, pile, branchements — valable sur n'importe quelle machine à base de 68000.",
+      "status": "active"
+    },
+    {
+      "id": "atari-st",
+      "title": "Atari ST",
+      "description": "Spécificités Atari ST : TOS/GEMDOS, TRAP, Ligne A, GEM (AES/VDI), adresses matérielles ($FF8xxx).",
+      "status": "active"
+    },
+    {
+      "id": "amiga",
+      "title": "Amiga",
+      "description": "Spécificités Amiga : AmigaOS/Exec, chips custom (Agnus/Denise/Paula), bibliothèques système.",
+      "status": "pending-source"
+    }
+  ]
+}
