@@ -1,0 +1,87 @@
+{
+  "level": 2,
+  "title": "Arithmétique et logique",
+  "exercises": [
+    {
+      "id": "general-l2-e1",
+      "title": "Addition en mémoire",
+      "statement": "Le code de départ écrit deux mots non signés en mémoire, à `$2000` (`$1234`) et `$2002` (`$0111`). Additionne-les et place le résultat dans D0 (et à l'adresse `$2004`).",
+      "hints": [
+        "Relis d'abord les deux valeurs en mémoire avec MOVE.W avant de les additionner.",
+        "ADD.W <ea>,D0 ajoute la source au registre destination."
+      ],
+      "courseRef": "bonnes-pratiques.md",
+      "starterCode": "    ORG $1000\nSTART:\n    MOVE.W  #$1234,$2000\n    MOVE.W  #$0111,$2002\n\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 8,
+        "expected": { "D0": "$00001345" }
+      }
+    },
+    {
+      "id": "general-l2-e2",
+      "title": "Multiplication non signée",
+      "statement": "Calcule le produit non signé de 9 et 6 à l'aide de MULU, résultat dans D2.",
+      "hints": [
+        "MULU.W <ea>,Dn place le produit complet sur les 32 bits de Dn — pas besoin de gérer de dépassement séparément.",
+        "Place d'abord une des deux valeurs dans D2, puis multiplie par l'autre (immédiat)."
+      ],
+      "courseRef": "reference-meyne-hoppenot.md",
+      "starterCode": "    ORG $1000\nSTART:\n\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 4,
+        "expected": { "D2": "$00000036" }
+      }
+    },
+    {
+      "id": "general-l2-e3",
+      "title": "Enchaînement d'opérations logiques",
+      "statement": "Place `$F0F0` dans D0, puis applique dans l'ordre : un ET logique avec `$0FF0`, un OU logique avec `$000F`, puis un OU EXCLUSIF avec `$FFFF` — chaque opération modifiant D0.",
+      "hints": [
+        "AND.W, OR.W et EOR.W fonctionnent comme MOVE.W : <source>,<destination>.",
+        "Fais le calcul bit à bit sur papier pour vérifier chaque étape : $F0F0 puis $00F0 puis $00FF puis $FF00."
+      ],
+      "courseRef": "reference-meyne-hoppenot.md",
+      "starterCode": "    ORG $1000\nSTART:\n    MOVE.W  #$F0F0,D0\n\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 6,
+        "expected": { "D0": "$0000FF00" }
+      }
+    },
+    {
+      "id": "general-l2-e4",
+      "title": "Décalages ASL et LSR",
+      "statement": "Place `3` dans D0 (word), décale-le de 4 bits vers la gauche avec ASL, puis de 1 bit vers la droite avec LSR.",
+      "hints": [
+        "ASL.W #n,Dn décale vers la gauche en préservant le signe ; LSR.W #n,Dn décale vers la droite en insérant des zéros.",
+        "3 décalé de 4 vers la gauche donne 48 ($30) ; 48 décalé de 1 vers la droite donne 24 ($18)."
+      ],
+      "courseRef": "reference-meyne-hoppenot.md",
+      "starterCode": "    ORG $1000\nSTART:\n    MOVE.W  #3,D0\n\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 5,
+        "expected": { "D0": "$00000018" }
+      }
+    },
+    {
+      "id": "general-l2-e5",
+      "title": "NEG et NOT",
+      "statement": "Place `5` (long) dans D0, applique NEG.L (complément à deux) puis NOT.L (complément à un) sur D0.",
+      "hints": [
+        "NEG.L Dn calcule 0 - Dn → Dn.",
+        "NOT.L Dn inverse chaque bit de Dn.",
+        "NEG de 5 donne -5 ($FFFFFFFB) ; NOT de $FFFFFFFB donne $00000004."
+      ],
+      "courseRef": "reference-meyne-hoppenot.md",
+      "starterCode": "    ORG $1000\nSTART:\n    MOVE.L  #5,D0\n\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 5,
+        "expected": { "D0": "$00000004" }
+      }
+    }
+  ]
+}
