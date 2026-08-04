@@ -1,0 +1,56 @@
+{
+  "level": 5,
+  "title": "Sous-programmes et pile",
+  "exercises": [
+    {
+      "id": "general-l5-e1",
+      "title": "Premier sous-programme",
+      "statement": "D0 vaut 7 (déjà chargé). Écris un sous-programme DOUBLE qui double la valeur de D0, puis appelle-le une fois avec BSR.",
+      "hints": [
+        "BSR étiquette saute au sous-programme en sauvegardant l'adresse de retour sur la pile.",
+        "RTS dépile cette adresse et y retourne — sans lui, l'exécution continuerait dans le vide après la fin du sous-programme.",
+        "Doubler une valeur, c'est l'additionner à elle-même."
+      ],
+      "courseRef": "pile-et-sous-programmes.md",
+      "starterCode": "    ORG $1000\nSTART:\n    MOVEQ   #7,D0\n    BSR     DOUBLE\n    BRA     FIN\nDOUBLE:\n\nFIN:\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 8,
+        "expected": { "D0": "$0000000E" }
+      }
+    },
+    {
+      "id": "general-l5-e2",
+      "title": "Sauvegarder un registre sur la pile",
+      "statement": "D1 vaut `$12345678` avant l'appel. Le sous-programme MODIFIE a besoin d'utiliser D1 comme registre de travail — écris-le pour qu'il sauvegarde D1 sur la pile en entrée et le restaure en sortie, afin que D1 retrouve sa valeur d'origine une fois l'appel terminé.",
+      "hints": [
+        "MOVE.L D1,-(SP) empile D1 ; MOVE.L (SP)+,D1 le restaure — à faire en tout premier et tout dernier dans le sous-programme.",
+        "Entre les deux, D1 peut être utilisé librement pour n'importe quel calcul interne : ça n'affectera pas sa valeur après restauration."
+      ],
+      "courseRef": "pile-et-sous-programmes.md",
+      "starterCode": "    ORG $1000\nSTART:\n    MOVE.L  #$12345678,D1\n    BSR     MODIFIE\n    BRA     FIN\nMODIFIE:\n\nFIN:\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 10,
+        "expected": { "D1": "$12345678" }
+      }
+    },
+    {
+      "id": "general-l5-e3",
+      "title": "Passer des paramètres par la pile",
+      "statement": "Le code de départ empile deux mots (10 puis 20) avant d'appeler ADDITIONNE. Écris ce sous-programme pour qu'il lise les deux valeurs directement sur la pile (sans les dépiler) et place leur somme dans D0. Le nettoyage de la pile après l'appel est déjà fourni.",
+      "hints": [
+        "Juste après le BSR, le sommet de la pile (A7) contient l'adresse de retour (4 octets) — les paramètres empilés par l'appelant se trouvent juste au-dessus.",
+        "MOVE.W 4(A7),D0 lit le dernier mot empilé (20, le plus proche de l'adresse de retour) ; 6(A7) lit le mot empilé juste avant (10).",
+        "Pas besoin de copier A7 dans un autre registre ici : lire avec un déplacement ne modifie pas A7."
+      ],
+      "courseRef": "pile-et-sous-programmes.md",
+      "starterCode": "    ORG $1000\nSTART:\n    MOVE.W  #10,-(SP)\n    MOVE.W  #20,-(SP)\n    BSR     ADDITIONNE\n    ADDA.L  #4,SP\n    BRA     FIN\nADDITIONNE:\n\nFIN:\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 10,
+        "expected": { "D0": "$0000001E" }
+      }
+    }
+  ]
+}
