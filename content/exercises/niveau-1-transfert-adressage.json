@@ -1,0 +1,103 @@
+{
+  "level": 1,
+  "title": "Transfert et adressage",
+  "exercises": [
+    {
+      "id": "l1-e1",
+      "title": "Premier transfert",
+      "statement": "Place la valeur `$2A` dans l'octet de poids faible du registre D0, à l'aide d'un adressage immédiat.",
+      "hints": [
+        "Le mnémonique de transfert est MOVE, suivi d'un point et d'une taille (.B, .W ou .L).",
+        "Le signe # devant une valeur indique un adressage immédiat : la donnée est dans l'instruction elle-même."
+      ],
+      "courseRef": "reference-meyne-hoppenot.md",
+      "starterCode": "    ORG $1000\nSTART:\n\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 5,
+        "expected": { "D0": "$0000002A" }
+      }
+    },
+    {
+      "id": "l1-e2",
+      "title": "Copie entre registres",
+      "statement": "Place `$1234` dans D1 (mot / .W), puis copie ce mot dans D2 par un transfert direct entre registres.",
+      "hints": [
+        "Un MOVE.W ne modifie que les 16 bits de poids faible du registre destination.",
+        "Le mot de poids fort de D2 doit rester à 0 puisqu'il n'a jamais été initialisé."
+      ],
+      "courseRef": "registres-et-memoire.md",
+      "starterCode": "    ORG $1000\nSTART:\n\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 5,
+        "expected": { "D1": "$00001234", "D2": "$00001234" }
+      }
+    },
+    {
+      "id": "l1-e3",
+      "title": "MOVEQ et extension de signe",
+      "statement": "Utilise MOVEQ pour placer la valeur décimale **-5** dans D3. Observe le résultat sur 32 bits : le nombre négatif doit être étendu en signe sur tout le registre.",
+      "hints": [
+        "MOVEQ #<valeur>,Dn charge un octet immédiat dans Dn, étendu en signe sur les 32 bits.",
+        "-5 en complément à deux sur un octet, c'est $FB."
+      ],
+      "courseRef": "registres-et-memoire.md",
+      "starterCode": "    ORG $1000\nSTART:\n\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 5,
+        "expected": { "D3": "$FFFFFFFB" }
+      }
+    },
+    {
+      "id": "l1-e4",
+      "title": "Écriture et lecture en mémoire (adressage absolu)",
+      "statement": "Écris la valeur `$1234` (mot) à l'adresse `$2000`, puis relis cette valeur en mémoire pour la placer dans D4.",
+      "hints": [
+        "MOVE.W #valeur,$adresse écrit en mémoire (adressage absolu en destination).",
+        "MOVE.W $adresse,Dn relit ensuite cette même case mémoire."
+      ],
+      "courseRef": "reference-meyne-hoppenot.md",
+      "starterCode": "    ORG $1000\nSTART:\n\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 6,
+        "expected": { "D4": "$00001234" }
+      }
+    },
+    {
+      "id": "l1-e5",
+      "title": "Adressage indirect via un registre d'adresse",
+      "statement": "Charge l'adresse `$3000` dans A0 (avec LEA), écris-y la valeur `$ABCD` (mot) via l'adressage indirect `(A0)`, puis relis cette valeur dans D5 de la même façon.",
+      "hints": [
+        "LEA calcule une adresse effective et la place dans un registre d'adresse, sans toucher à la mémoire.",
+        "(A0) désigne le contenu de la mémoire à l'adresse pointée par A0 — pas A0 lui-même."
+      ],
+      "courseRef": "reference-meyne-hoppenot.md",
+      "starterCode": "    ORG $1000\nSTART:\n\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 8,
+        "expected": { "A0": "$00003000", "D5": "$0000ABCD" }
+      }
+    },
+    {
+      "id": "l1-e6",
+      "title": "Parcours mémoire post-incrémenté",
+      "statement": "En partant de l'adresse `$4000`, écris successivement les mots `$000A` puis `$0014` en utilisant l'adressage indirect post-incrémenté `(A0)+`. Puis, en repartant du début de cette zone, relis ces deux mots (toujours avec `(A0)+`) et places-en la somme dans D6.",
+      "hints": [
+        "MOVE.W valeur,(A0)+ écrit à l'adresse pointée par A0 PUIS avance A0 de 2 (taille d'un mot).",
+        "Il faut recharger A0 à $4000 avec LEA avant de relire, puisqu'il a été avancé pendant l'écriture.",
+        "Résultat attendu : $000A + $0014 = $001E."
+      ],
+      "courseRef": "reference-meyne-hoppenot.md",
+      "starterCode": "    ORG $1000\nSTART:\n\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 12,
+        "expected": { "D6": "$0000001E" }
+      }
+    }
+  ]
+}
