@@ -15,8 +15,8 @@
     {
       "id": "amiga",
       "title": "Amiga",
-      "description": "Spécificités Amiga : AmigaOS/Exec, chips custom (Agnus/Denise/Paula), bibliothèques système.",
-      "status": "pending-source"
+      "description": "Spécificités Amiga : AmigaOS/Exec, chips custom (Denise/Copper/Blitter/CIA), bibliothèques système.",
+      "status": "active"
     }
   ]
 }
