@@ -4,15 +4,17 @@ import { registerM68kLanguage } from './monaco/m68kLanguage'
 import { renderTrainer } from './views/trainer'
 import { renderCours } from './views/cours'
 import { renderExercices } from './views/exercices'
+import { renderApropos } from './views/apropos'
 
 registerM68kLanguage()
 
-type ViewId = 'trainer' | 'cours' | 'exercices'
+type ViewId = 'trainer' | 'cours' | 'exercices' | 'apropos'
 
 const VIEWS: { id: ViewId; label: string; render: (el: HTMLElement) => () => void }[] = [
   { id: 'trainer', label: 'Bac à sable', render: renderTrainer },
   { id: 'cours', label: 'Cours', render: renderCours },
-  { id: 'exercices', label: 'Exercices', render: renderExercices }
+  { id: 'exercices', label: 'Exercices', render: renderExercices },
+  { id: 'apropos', label: 'À propos', render: renderApropos }
 ]
 
 const app = document.getElementById('app')!

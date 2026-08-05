@@ -5,3 +5,4 @@ dist/
 *.log
 build/
 *.tsbuildinfo
+build-meta.json

@@ -5,6 +5,7 @@ import { IPC, type AssembleRequest, type ProgressState } from '../shared/ipc'
 import { assembleWithVasm } from './vasm'
 import { loadProgress, saveProgress } from './progress'
 import { loadContent } from './content'
+import { getBuildInfo } from './buildInfo'
 
 function createWindow(): void {
   const window = new BrowserWindow({
@@ -38,6 +39,7 @@ app.whenReady().then(() => {
   ipcMain.handle(IPC.loadProgress, () => loadProgress())
   ipcMain.handle(IPC.saveProgress, (_event, state: ProgressState) => saveProgress(state))
   ipcMain.handle(IPC.loadContent, () => loadContent())
+  ipcMain.handle(IPC.getBuildInfo, () => getBuildInfo())
 
   createWindow()
 

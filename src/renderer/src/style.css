@@ -484,3 +484,42 @@ html, body, #app {
   white-space: pre-line;
   font-size: 12.5px;
 }
+
+/* --- À propos --- */
+
+.apropos-view {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.apropos-card {
+  text-align: center;
+  padding: 32px 48px;
+  border: 1px solid #333;
+  border-radius: 6px;
+  background: #202020;
+}
+
+.apropos-card h2 {
+  margin: 0 0 12px;
+  color: #9cdcfe;
+}
+
+.apropos-version {
+  font-family: 'Consolas', monospace;
+  font-size: 14px;
+  margin: 4px 0;
+}
+
+.apropos-authors {
+  color: #ccc;
+  margin: 4px 0;
+}
+
+.apropos-built {
+  color: #888;
+  font-size: 12px;
+  margin: 10px 0 0;
+}

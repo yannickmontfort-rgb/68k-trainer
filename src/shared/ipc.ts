@@ -64,9 +64,17 @@ export interface ContentBundle {
   exercises: Record<string, ExerciseLevel[]>
 }
 
+export interface BuildInfo {
+  version: string
+  year: number
+  /** null en mode développement (pas encore buildé via dist:win) */
+  builtAt: string | null
+}
+
 export const IPC = {
   assemble: '68k:assemble',
   loadProgress: '68k:loadProgress',
   saveProgress: '68k:saveProgress',
-  loadContent: '68k:loadContent'
+  loadContent: '68k:loadContent',
+  getBuildInfo: '68k:getBuildInfo'
 } as const
