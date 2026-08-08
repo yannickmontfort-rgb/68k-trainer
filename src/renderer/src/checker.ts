@@ -1,22 +1,12 @@
 import { Cpu } from '../../cpu/cpu'
-import type { CpuSnapshot } from '../../cpu/types'
 import type { Exercise } from '../../shared/ipc'
+import { evaluateCheck, type CheckResult } from '../../shared/checkResult'
+import { getPlatformForTrack } from './platformForTrack'
 
-export interface CheckResult {
-  success: boolean
-  message: string
-}
+export type { CheckResult }
 
-function readRegister(snap: CpuSnapshot, key: string): number {
-  if (key === 'PC') return snap.pc
-  const index = parseInt(key.slice(1), 10)
-  if (key[0] === 'D') return snap.d[index]
-  if (key[0] === 'A') return snap.a[index]
-  throw new Error(`Registre inconnu dans le corrigé : ${key}`)
-}
-
-/** Assemble le programme de l'utilisateur, l'exécute jusqu'à maxSteps ou HALT, puis compare les registres attendus. */
-export async function checkExercise(source: string, exercise: Exercise): Promise<CheckResult> {
+/** Assemble le programme de l'utilisateur, l'exécute jusqu'à maxSteps ou HALT, puis vérifie le résultat attendu. */
+export async function checkExercise(source: string, exercise: Exercise, trackId: string): Promise<CheckResult> {
   const asm = await window.api.assemble(source)
   if (!asm.success) {
     return {
@@ -25,25 +15,13 @@ export async function checkExercise(source: string, exercise: Exercise): Promise
     }
   }
 
-  const cpu = new Cpu()
+  const cpu = new Cpu(getPlatformForTrack(trackId))
   cpu.reset(asm.baseAddress ?? 0)
   cpu.loadProgram(asm.baseAddress ?? 0, asm.binary!)
   for (let i = 0; i < exercise.check.maxSteps; i++) {
     const effects = cpu.step()
     if (effects.halted) break
   }
-  const snap = cpu.getSnapshot()
 
-  const mismatches: string[] = []
-  for (const [key, expectedHex] of Object.entries(exercise.check.expected)) {
-    const expected = parseInt(expectedHex.replace('$', ''), 16) >>> 0
-    const actual = readRegister(snap, key)
-    if (actual !== expected) {
-      mismatches.push(`${key} attendu ${expectedHex}, obtenu $${actual.toString(16).padStart(8, '0').toUpperCase()}`)
-    }
-  }
-  if (mismatches.length > 0) {
-    return { success: false, message: mismatches.join('\n') }
-  }
-  return { success: true, message: 'Bravo, tous les registres correspondent !' }
+  return evaluateCheck(cpu, exercise.check)
 }

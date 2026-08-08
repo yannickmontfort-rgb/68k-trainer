@@ -1,8 +1,13 @@
 import { Memory } from './memory'
 import { maskToSize, setFlagsAdd, setFlagsLogic, setFlagsSub, signExtend, testCondition } from './flags'
 import type { CpuSnapshot, Flags, MemoryWrite, Size, StepEffects } from './types'
+import type { Platform } from './platform'
 
-export const MEMORY_SIZE = 0x100000 // 1 Mo, doit rester une puissance de 2 (cf. maskAddr)
+// 16 Mo = tout l'espace adressable réel d'un 68000 (bus d'adresse 24 bits). Doit rester une
+// puissance de 2 (cf. maskAddr). Augmenté depuis 1 Mo car les adresses matérielles réelles
+// (ex. palette Atari ST $FF8240, registres Amiga $DFFxxx) seraient sinon repliées (wrap) dans le
+// premier Mo par maskAddr, pointant silencieusement sur la mauvaise case mémoire.
+export const MEMORY_SIZE = 0x1000000
 const STACK_TOP = MEMORY_SIZE - 4
 
 interface EA {
@@ -24,6 +29,8 @@ export class Cpu {
 
   readonly memory = new Memory(MEMORY_SIZE)
   private stepWrites: MemoryWrite[] = []
+
+  constructor(private readonly platform?: Platform) {}
 
   reset(baseAddress: number): void {
     this.memory.reset()
@@ -86,6 +93,7 @@ export class Cpu {
     this.a[7] = this.maskAddr(this.a[7] - 4)
     this.memory.writeU32(this.a[7], value >>> 0)
     this.stepWrites.push({ address: this.a[7], size: 4 })
+    this.platform?.onMemoryWrite?.(this, this.a[7], 4, value >>> 0)
   }
 
   private popLong(): number {
@@ -197,6 +205,7 @@ export class Cpu {
         const address = this.eaAddress(ea)
         this.memory.write(address, size, value)
         this.stepWrites.push({ address, size })
+        this.platform?.onMemoryWrite?.(this, address, size, value)
       }
     }
   }
@@ -216,6 +225,7 @@ export class Cpu {
     if ((opcode & 0xffc0) === 0x4e80) {
       const ea = this.decodeEA((opcode >> 3) & 0x7, opcode & 0x7, 4)
       const target = this.eaAddress(ea)
+      if (this.platform?.onJsr?.(this, target)) return
       this.pushLong(this.pc)
       this.pc = target
       return
@@ -276,6 +286,11 @@ export class Cpu {
     if ((opcode & 0xf000) === 0xb000) return this.execCmpEor(opcode)
     if ((opcode & 0xf000) === 0xc000) return this.execAndMulExg(opcode)
     if ((opcode & 0xf000) === 0xd000) return this.execAddSubFamily(opcode, 'add')
+
+    if ((opcode & 0xf000) === 0xa000) {
+      if (this.platform?.onLineA?.(this, opcode)) return
+      throw new Error(`Opcode Ligne A non supporté: 0x${opcode.toString(16).padStart(4, '0')}`)
+    }
 
     throw new Error(`Opcode non supporté: 0x${opcode.toString(16).padStart(4, '0')}`)
   }
@@ -676,6 +691,7 @@ export class Cpu {
         const value = regIndex < 8 ? this.d[regIndex] : this.a[regIndex - 8]
         this.memory.write(addr, size, value)
         this.stepWrites.push({ address: addr, size })
+        this.platform?.onMemoryWrite?.(this, addr, size, value)
       } else {
         const raw = this.memory.read(addr, size)
         const value = size === 2 ? signExtend(raw, 2) >>> 0 : raw >>> 0
@@ -711,6 +727,7 @@ export class Cpu {
   // --- TRAP (E/S simulée façon EASy68K, uniquement TRAP #15) --------------
 
   private execTrap(number: number): void {
+    if (this.platform?.onTrap?.(this, number)) return
     if (number !== 15) throw new Error('Seul TRAP #15 est simulé par cet environnement')
     const task = this.d[0] & 0xff
     if (task === 9) {

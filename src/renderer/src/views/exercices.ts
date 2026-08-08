@@ -141,7 +141,7 @@ export function renderExercices(container: HTMLElement): () => void {
           resultEl.textContent = 'Vérification…'
           resultEl.className = ''
           try {
-            const result = await checkExercise(editor!.getValue(), exercise)
+            const result = await checkExercise(editor!.getValue(), exercise, currentTrack)
             resultEl.textContent = result.message
             resultEl.className = result.success ? 'verify-ok' : 'verify-fail'
             if (result.success && !completed.has(exercise.id)) {

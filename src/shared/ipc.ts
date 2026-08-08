@@ -36,9 +36,18 @@ export interface CourseFile {
   markdown: string
 }
 
+export type ExerciseCheckType = 'registers' | 'memory' | 'output'
+
 export interface ExerciseCheck {
-  type: string
+  type: ExerciseCheckType
   maxSteps: number
+  /**
+   * Forme de `expected` selon `type` :
+   * - "registers" : clé = "D0".."D7" | "A0".."A7" | "PC", valeur = mot de 32 bits en hexa ("$0000002A")
+   * - "memory"    : clé = adresse hexa avec suffixe de taille optionnel ("$FF8240", "$FF8240.B", "$FF8240.L"
+   *                 — défaut ".W" si omis), valeur = contenu attendu à cette adresse, en hexa
+   * - "output"    : une seule clé "output", valeur = chaîne exacte attendue dans cpu.output (pas de l'hexa)
+   */
   expected: Record<string, string>
 }
 

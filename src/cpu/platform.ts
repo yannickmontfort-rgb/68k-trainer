@@ -1,0 +1,38 @@
+import type { Cpu } from './cpu'
+import type { Size } from './types'
+
+/**
+ * Point d'extension optionnel du Cpu générique. Permet à un module spécifique à une machine
+ * (Atari ST, Amiga, ...) de brancher son propre comportement matériel/système sans que le coeur
+ * du 68000 (`cpu.ts`) ait à connaître quoi que ce soit de cette machine.
+ *
+ * Sans `Platform` fournie au constructeur du `Cpu`, le comportement est strictement identique à
+ * celui d'un 68000 nu (TRAP #15 façon EASy68K uniquement, opcodes Ligne A non supportés).
+ */
+export interface Platform {
+  /**
+   * Intercepte un `TRAP #n` avant le fallback EASy68K (`TRAP #15`) du Cpu.
+   * Renvoyer `true` si géré (le Cpu n'exécute alors rien d'autre pour ce TRAP).
+   */
+  onTrap?(cpu: Cpu, number: number): boolean
+
+  /**
+   * Intercepte un opcode Ligne A (`$Axxx`), normalement non reconnu par un 68000 nu.
+   * Renvoyer `true` si géré.
+   */
+  onLineA?(cpu: Cpu, opcode: number): boolean
+
+  /**
+   * Intercepte un `JSR` vers une adresse "magique" (appel de bibliothèque système plutôt que du
+   * vrai code assemblé en mémoire — ex. `JSR -offset(A6)` sur Amiga). Renvoyer `true` si géré :
+   * le Cpu n'empile alors pas d'adresse de retour et ne saute pas réellement à cette adresse.
+   */
+  onJsr?(cpu: Cpu, targetAddress: number): boolean
+
+  /**
+   * Notifié après toute écriture mémoire réussie, pour les registres mappés en mémoire
+   * (palette Atari `$FF8240+`, puces custom Amiga `$DFFxxx`, ...). Ne peut pas annuler l'écriture
+   * elle-même (déjà faite en mémoire) — sert uniquement à réagir à l'effet de bord.
+   */
+  onMemoryWrite?(cpu: Cpu, address: number, size: Size, value: number): void
+}
