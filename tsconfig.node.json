@@ -18,6 +18,7 @@
     "src/shared/**/*",
     "src/asm/**/*",
     "src/cpu/**/*",
+    "src/platforms/**/*",
     "tests/**/*"
   ]
 }

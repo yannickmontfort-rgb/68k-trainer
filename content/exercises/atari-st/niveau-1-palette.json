@@ -1,0 +1,55 @@
+{
+  "level": 1,
+  "title": "La palette de couleurs",
+  "exercises": [
+    {
+      "id": "atari-st-l1-e1",
+      "title": "Rouge pur",
+      "statement": "Écris `$0700` à l'adresse `$FF8240` pour mettre la couleur 0 de la palette en rouge pur.",
+      "hints": [
+        "Chaque couleur de la palette occupe un word (16 bits) en mémoire, à partir de $FF8240 pour la couleur 0.",
+        "MOVE.W #valeur,$adresse écrit directement dans ce registre."
+      ],
+      "courseRef": "trap-et-systeme.md",
+      "starterCode": "    ORG $1000\nSTART:\n\n",
+      "check": {
+        "type": "memory",
+        "maxSteps": 3,
+        "expected": { "$FF8240": "$0700" }
+      }
+    },
+    {
+      "id": "atari-st-l1-e2",
+      "title": "Le piège du matériel réel",
+      "statement": "Écris `$0FFF` (blanc, en théorie) à l'adresse `$FF8242` (couleur 1). Le Shifter — la puce vidéo du ST — n'utilise réellement que 3 bits par composante RVB : quelle valeur se retrouve donc effectivement mémorisée dans le registre ?",
+      "hints": [
+        "Le format réel d'un registre de couleur ST est `0RRR0GGG0BBB` : seuls les bits 0-2 (bleu), 4-6 (vert) et 8-10 (rouge) existent matériellement, le reste est ignoré.",
+        "$0FFF en binaire : 0000 1111 1111 1111. Ne garde que les bits aux positions 0-2, 4-6 et 8-10.",
+        "Le masque matériel correspondant est $0777."
+      ],
+      "courseRef": "trap-et-systeme.md",
+      "starterCode": "    ORG $1000\nSTART:\n\n",
+      "check": {
+        "type": "memory",
+        "maxSteps": 3,
+        "expected": { "$FF8242": "$0777" }
+      }
+    },
+    {
+      "id": "atari-st-l1-e3",
+      "title": "Deux couleurs indépendantes",
+      "statement": "Mets la couleur 0 en rouge pur (`$0700`) et la couleur 2 en bleu pur (`$0007`). Rappel : la couleur *n* est à l'adresse `$FF8240 + n × 2`.",
+      "hints": [
+        "La couleur 2 est donc à l'adresse $FF8244.",
+        "Deux MOVE.W indépendants, un par couleur — l'ordre n'a pas d'importance."
+      ],
+      "courseRef": "trap-et-systeme.md",
+      "starterCode": "    ORG $1000\nSTART:\n\n",
+      "check": {
+        "type": "memory",
+        "maxSteps": 5,
+        "expected": { "$FF8240": "$0700", "$FF8244": "$0007" }
+      }
+    }
+  ]
+}

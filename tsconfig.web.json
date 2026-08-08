@@ -17,5 +17,5 @@
     },
     "types": ["vite/client"]
   },
-  "include": ["src/renderer/src/**/*", "src/shared/**/*", "src/cpu/**/*", "src/asm/**/*"]
+  "include": ["src/renderer/src/**/*", "src/shared/**/*", "src/cpu/**/*", "src/asm/**/*", "src/platforms/**/*"]
 }
