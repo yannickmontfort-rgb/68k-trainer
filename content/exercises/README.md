@@ -61,11 +61,10 @@ L'émulateur CPU (`src/cpu/cpu.ts`) reste un 68000 générique — il ne connaî
 AmigaOS ou des puces custom. Il expose en revanche un point d'extension optionnel,
 `src/cpu/platform.ts` (interface `Platform`, hooks `onTrap`/`onLineA`/`onJsr`/`onMemoryWrite`),
 que chaque machine peut implémenter par petits blocs indépendants (voir le plan
-`~/.claude/plans/vast-brewing-platypus.md` — palette Atari ST, GEMDOS texte, ExecBase Amiga, etc.).
+[docs/PLAN-emulateurs.md](../../docs/PLAN-emulateurs.md) — palette Atari ST, GEMDOS texte, ExecBase Amiga, etc.).
 
-`src/renderer/src/platformForTrack.ts` fait le lien entre un `track` et sa `Platform` — **vide pour
-l'instant** (renvoie toujours `undefined`, donc `atari-st`/`amiga` se comportent aujourd'hui comme
-`general` : aucun exercice utilisant du matériel spécifique n'est encore vérifiable). Chaque bloc de
-plateforme implémenté viendra le compléter, sans changer le reste du schéma ci-dessus — le check
+`src/renderer/src/platformForTrack.ts` fait le lien entre un `track` et sa `Platform` — aujourd'hui
+la palette d'AST-1 pour `atari-st`, rien encore pour `amiga` (qui se comporte donc comme `general`).
+Chaque bloc de plateforme implémenté viendra le compléter, sans changer le reste du schéma ci-dessus — le check
 type `"memory"` en particulier existe déjà précisément pour ce cas (ex. vérifier qu'écrire dans un
 registre de palette produit la bonne valeur), avant même que la plateforme correspondante existe.
