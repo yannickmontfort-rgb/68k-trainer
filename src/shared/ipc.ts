@@ -3,8 +3,12 @@ export interface AssembleRequest {
 }
 
 export interface AssembleError {
+  /** 0 si vasm n'a pas pu situer l'erreur */
   line: number
+  /** Message reformulé pour débutant */
   message: string
+  /** Message d'origine de vasm */
+  original?: string
 }
 
 export interface AssembleResult {

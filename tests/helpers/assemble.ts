@@ -2,7 +2,7 @@ import { spawnSync } from 'child_process'
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
-import { parseErrors, parseListing } from '../../src/main/vasmParse'
+import { VASM_ARGS, parseErrors, parseListing } from '../../src/main/vasmParse'
 
 const VASM_PATH = join(__dirname, '../../tools/vasmm68k_mot.exe')
 
@@ -11,7 +11,7 @@ export interface TestAssembleResult {
   binary: Uint8Array
   baseAddress: number
   addressToLine: Record<number, number>
-  errors: { line: number; message: string }[]
+  errors: { line: number; message: string; original?: string }[]
 }
 
 export function assemble(source: string): TestAssembleResult {
@@ -21,9 +21,9 @@ export function assemble(source: string): TestAssembleResult {
   const lstPath = join(dir, 'program.lst')
   try {
     writeFileSync(srcPath, source, 'utf-8')
-    const result = spawnSync(VASM_PATH, ['-Fbin', '-o', binPath, '-L', lstPath, srcPath])
+    const result = spawnSync(VASM_PATH, [...VASM_ARGS, '-o', binPath, '-L', lstPath, srcPath])
     const stderr = result.stderr?.toString() ?? ''
-    const errors = parseErrors(stderr)
+    const errors = parseErrors(stderr, source)
     if (errors.length > 0) {
       return { success: false, binary: new Uint8Array(), baseAddress: 0, addressToLine: {}, errors }
     }
