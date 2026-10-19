@@ -1,6 +1,6 @@
-# Dossier de candidature SignPath Foundation (mis de côté)
+# Dossier de candidature SignPath Foundation
 
-Préparé le 19/10/2026. **Pas encore envoyé.** Objectif : faire signer gratuitement les
+Préparé le 19/10/2026, mis à jour pour la version 1.0.0. **Pas encore envoyé.** Objectif : faire signer gratuitement les
 exécutables Windows de 68k Trainer, pour que SmartScreen affiche « Yannick Montfort » au lieu de
 « Éditeur inconnu ».
 
@@ -15,8 +15,8 @@ peuvent avoir changé.
 | Condition SignPath | État pour 68k Trainer | À faire |
 |---|---|---|
 | Pas de logiciel malveillant | ✅ | — |
-| **Licence OSI pour tous les composants**, sans double licence commerciale | ❌ **Bloquant** : vasm (`tools/vasmm68k_mot.exe`) est « gratuit pour usage non commercial », ce qui n'est **pas** une licence OSI. Electron, Monaco, marked : MIT ✅. Notre code : GPL v3 ✅ | Remplacer vasm, voir § 2 |
-| Pas de code propriétaire dans le paquet signé | ❌ même cause (vasm) | idem |
+| **Licence OSI pour tous les composants**, sans double licence commerciale | ✅ depuis la 1.0.0 : l'assembleur est le nôtre (`src/asm/`, GPL v3). vasm ne sert plus qu'aux tests de comparaison, il n'est ni dans le dépôt ni dans les paquets. Electron, Monaco, marked : MIT | — |
+| Pas de code propriétaire dans le paquet signé | ✅ | — |
 | Projet maintenu | ✅ (commits réguliers) | — |
 | Déjà publié sous la forme à signer | ✅ release v0.2.1 sur GitHub (installeur NSIS + portable) | — |
 | Fonctions décrites sur la page de téléchargement | ✅ README + notes de release | — |
@@ -28,34 +28,22 @@ peuvent avoir changé.
 | Rôles définis (auteurs, relecteurs, approbateurs) | ⬜ | Rempli dans `CODE_SIGNING_POLICY.md` (Yannick dans les trois rôles ; ajouter des copains comme relecteurs s'ils contribuent) |
 | **Page « Code signing policy »** sur l'accueil et la page de téléchargement | ⬜ prête : `docs/signpath/CODE_SIGNING_POLICY.md` | La publier à la racine du dépôt et la lier depuis le README et les notes de release **une fois acceptés** |
 | Nom et version du produit identiques dans les métadonnées | ✅ electron-builder écrit « 68k Trainer » et la version de `package.json` | — |
-| **Builds vérifiables** (construits par une CI depuis les sources) | ⬜ les binaires sont aujourd'hui construits à la main sur DARTHVADER | Activer la construction par GitHub Actions : brouillon prêt dans `docs/signpath/release.yml.brouillon` |
+| **Builds vérifiables** (construits par une CI depuis les sources) | ✅ prêt : `.github/workflows/release.yml` construit les paquets des trois systèmes à chaque tag | Donner au jeton GitHub le droit `workflow` pour pousser les workflows, puis vérifier un premier tag |
 | Approbation manuelle de chaque signature | ⬜ | Se fait dans l'interface SignPath ; Yannick approuve |
 | Coopérer en cas de plainte | ✅ engagement | — |
 
-## 2. Le point bloquant : remplacer vasm
+## 2. Le point bloquant : remplacer vasm — **fait**
 
-Trois pistes, de la plus propre à la plus rapide :
-
-1. **Écrire notre propre assembleur 68000 en TypeScript** (syntaxe Devpac, sous-ensemble
-   pédagogique). C'est la piste la plus propre : plus d'exécutable externe, l'application devient
-   multi-plateforme (Linux, macOS), et tout est sous GPL. Le simulateur décode déjà toutes les
-   instructions : l'assembleur en est l'inverse. Les 300 tests existants, qui assemblent tout le
-   contenu, serviraient de banc d'essai en comparant avec vasm. **Effort : quelques sessions.**
-2. **Un assembleur libre existant**, s'il en existe un compatible Devpac sous licence OSI, à
-   vérifier (GNU as avec son mode de compatibilité Motorola « MRI » : licence GPL, mais syntaxe
-   et messages différents de Devpac).
-3. **Demander aux auteurs de vasm** (Volker Barthelmann, Frank Wille) une autorisation ou une
-   double licence pour un projet libre non commercial. Cela ne suffira probablement pas : SignPath
-   veut une licence OSI, pas une autorisation.
-
-Recommandation : piste 1.
+L'assembleur maison (`src/asm/`, piste 1 de la première version de ce dossier) remplace vasm dans
+l'application depuis la 1.0.0. Il est vérifié octet par octet contre vasm en mode Devpac par les
+tests (`tests/asm/differentiel.test.ts`), qui sautent la comparaison quand vasm n'est pas installé.
 
 ## 3. Ordre des étapes, le jour venu
 
-1. Remplacer vasm (§ 2) et retirer `tools/vasm*` des binaires.
+1. ~~Remplacer vasm~~ (fait).
 2. Activer la double authentification sur GitHub.
-3. Mettre en service la construction par GitHub Actions (brouillon fourni) et vérifier qu'elle
-   produit les mêmes exécutables qu'à la main.
+3. Pousser les workflows (`gh auth refresh -s workflow`), puis vérifier qu'un tag `vX.Y.Z` produit
+   bien les paquets dans une release en brouillon.
 4. Publier `CODE_SIGNING_POLICY.md` et le lier depuis le README et la page de releases.
 5. Remplir le formulaire <https://signpath.org/apply> avec les réponses du § 4.
 6. Une fois accepté : créer le compte SignPath, la politique de signature et la configuration

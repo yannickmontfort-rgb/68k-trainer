@@ -1,6 +1,6 @@
 {
   "name": "trainer-68k",
-  "version": "0.2.1",
+  "version": "1.0.0",
   "description": "Application d'apprentissage de l'assembleur 68000",
   "main": "./out/main/index.js",
   "author": "Yannick Montfort",
@@ -14,7 +14,7 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "version:bump": "node scripts/bump-version.mjs",
-    "dist:win": "npm run version:bump && electron-vite build && electron-builder --win",
+    "dist:win": "npm run build:meta && electron-vite build && electron-builder --win",
     "asm": "vite-node src/asm/cli/asm.ts --",
     "desasm": "vite-node src/asm/cli/desasm.ts --",
     "build:meta": "node scripts/build-meta.mjs",

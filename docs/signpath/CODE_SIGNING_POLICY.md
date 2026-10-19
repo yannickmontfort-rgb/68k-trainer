@@ -33,4 +33,4 @@ This program will not transfer any information to other networked systems unless
 requested by the user or the person installing or operating it.
 
 68k Trainer works entirely offline. Learner profiles, progress and code drafts are stored only on
-the local computer, in the application's data folder (`%APPDATA%\trainer-68k`).
+the local computer, in the application's data folder (`%APPDATA%\trainer-68k` on Windows).
