@@ -32,3 +32,22 @@ describe('messages de vasm pour débutants', () => {
     expect(asm.binary.length).toBe(3)
   })
 })
+
+describe('sources façon Devpac', () => {
+  it('sans ORG : programme placé en $1000, numéros de ligne inchangés', () => {
+    const asm = assemble('START:\n    MOVEQ #1,D0\n    RTS\n')
+    expect(asm.success).toBe(true)
+    expect(asm.baseAddress).toBe(0x1000)
+    expect(asm.addressToLine[0x1000]).toBe(2)
+  })
+
+  it('TEXT / DATA / BSS mis bout à bout', () => {
+    const asm = assemble('    SECTION TEXT\n    MOVE.W VAL,D0\n    RTS\n    SECTION DATA\nVAL: DC.W 5\n    SECTION BSS\nBUF: DS.L 1\n')
+    expect(asm.success).toBe(true)
+  })
+
+  it('erreur sans ORG : bonne ligne', () => {
+    const asm = assemble('START:\n    MOVX D0,D1\n')
+    expect(asm.errors[0].line).toBe(2)
+  })
+})

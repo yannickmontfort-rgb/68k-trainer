@@ -4,7 +4,7 @@ import { mkdtemp, readFile, rm, writeFile } from 'fs/promises'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import type { AssembleResult } from '../shared/ipc'
-import { VASM_ARGS, parseErrors, parseListing } from './vasmParse'
+import { VASM_ARGS, parseErrors, parseListing, prepareSource } from './vasmParse'
 
 function getVasmPath(): string {
   const base = app.isPackaged ? process.resourcesPath : app.getAppPath()
@@ -18,7 +18,8 @@ export async function assembleWithVasm(source: string): Promise<AssembleResult> 
   const lstPath = join(dir, 'program.lst')
 
   try {
-    await writeFile(srcPath, source, 'utf-8')
+    const prepared = prepareSource(source)
+    await writeFile(srcPath, prepared.source, 'utf-8')
 
     const stderr = await new Promise<string>((resolve, reject) => {
       const proc = spawn(getVasmPath(), [...VASM_ARGS, '-o', binPath, '-L', lstPath, srcPath])
@@ -28,7 +29,7 @@ export async function assembleWithVasm(source: string): Promise<AssembleResult> 
       proc.on('close', () => resolve(stderrData))
     })
 
-    const errors = parseErrors(stderr, source)
+    const errors = parseErrors(stderr, source, prepared.lineOffset)
     if (errors.length > 0) {
       return { success: false, errors }
     }
@@ -41,7 +42,7 @@ export async function assembleWithVasm(source: string): Promise<AssembleResult> 
       const detail = stderr.trim().split(/\r?\n/).pop() ?? ''
       return { success: false, errors: [{ line: 0, message: "L'assemblage a échoué.", original: detail }] }
     }
-    const { baseAddress, addressToLine } = parseListing(listing)
+    const { baseAddress, addressToLine } = parseListing(listing, prepared.lineOffset)
 
     return {
       success: true,

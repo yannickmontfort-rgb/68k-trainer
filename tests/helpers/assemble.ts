@@ -2,7 +2,7 @@ import { spawnSync } from 'child_process'
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
-import { VASM_ARGS, parseErrors, parseListing } from '../../src/main/vasmParse'
+import { VASM_ARGS, parseErrors, parseListing, prepareSource } from '../../src/main/vasmParse'
 
 const VASM_PATH = join(__dirname, '../../tools/vasmm68k_mot.exe')
 
@@ -20,16 +20,17 @@ export function assemble(source: string): TestAssembleResult {
   const binPath = join(dir, 'program.bin')
   const lstPath = join(dir, 'program.lst')
   try {
-    writeFileSync(srcPath, source, 'utf-8')
+    const prepared = prepareSource(source)
+    writeFileSync(srcPath, prepared.source, 'utf-8')
     const result = spawnSync(VASM_PATH, [...VASM_ARGS, '-o', binPath, '-L', lstPath, srcPath])
     const stderr = result.stderr?.toString() ?? ''
-    const errors = parseErrors(stderr, source)
+    const errors = parseErrors(stderr, source, prepared.lineOffset)
     if (errors.length > 0) {
       return { success: false, binary: new Uint8Array(), baseAddress: 0, addressToLine: {}, errors }
     }
     const binary = new Uint8Array(readFileSync(binPath))
     const listing = readFileSync(lstPath, 'utf-8')
-    const { baseAddress, addressToLine } = parseListing(listing)
+    const { baseAddress, addressToLine } = parseListing(listing, prepared.lineOffset)
     return { success: true, binary, baseAddress: baseAddress ?? 0, addressToLine, errors: [] }
   } finally {
     rmSync(dir, { recursive: true, force: true })

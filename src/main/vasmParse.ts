@@ -9,6 +9,24 @@ const LISTING_LINE_RE = /^(?:[0-9A-Fa-f]{2}:([0-9A-Fa-f]{8})\s+[0-9A-Fa-f]+)?\s*
 /** Arguments de vasm communs à l'application et aux tests. */
 export const VASM_ARGS = ['-Fbin', '-m68000', '-noialign']
 
+/** Adresse de chargement quand le programme ne contient pas d'ORG (comme un programme Devpac). */
+export const DEFAULT_ORG = 0x1000
+
+const SECTION_RE = /^\s*(?:SECTION\s+)?(TEXT|DATA|BSS)\s*(?:[;*].*)?$/i
+const ORG_RE = /^(?:\S+:?)?\s+ORG\b/i
+
+/**
+ * Prépare un source « façon Devpac » pour vasm en sortie binaire :
+ * - les directives TEXT / DATA / BSS (ou SECTION TEXT...) sont neutralisées : les sections sont
+ *   simplement mises bout à bout dans l'ordre du source (le format binaire n'accepte qu'une zone) ;
+ * - sans ORG, le programme est placé en $1000 (une ligne ORG est ajoutée en tête, d'où `lineOffset`).
+ */
+export function prepareSource(source: string): { source: string; lineOffset: number } {
+  const lines = source.split(/\r?\n/).map((l) => (SECTION_RE.test(l) ? '; ' + l : l))
+  if (lines.some((l) => ORG_RE.test(l))) return { source: lines.join('\n'), lineOffset: 0 }
+  return { source: `    ORG $${DEFAULT_ORG.toString(16)}\n` + lines.join('\n'), lineOffset: 1 }
+}
+
 /**
  * Cherche la ligne d'un symbole non défini dans le source (vasm ne la donne pas) : première ligne
  * où le nom apparaît comme mot entier en dehors d'un commentaire.
@@ -25,13 +43,14 @@ function findSymbolLine(source: string, symbol: string): number {
   return 0
 }
 
-export function parseErrors(stderr: string, source = ''): AssembleError[] {
+/** `source` = source tel qu'écrit par l'utilisateur ; `lineOffset` = lignes ajoutées par prepareSource. */
+export function parseErrors(stderr: string, source = '', lineOffset = 0): AssembleError[] {
   const errors: AssembleError[] = []
   for (const raw of stderr.split('\n')) {
     let match = ERROR_LINE_RE.exec(raw)
     if (match) {
       const original = match[2].trim()
-      errors.push({ line: parseInt(match[1], 10), message: explainVasmError(original), original })
+      errors.push({ line: Math.max(0, parseInt(match[1], 10) - lineOffset), message: explainVasmError(original), original })
       continue
     }
     match = ERROR_NO_LINE_RE.exec(raw)
@@ -45,7 +64,7 @@ export function parseErrors(stderr: string, source = ''): AssembleError[] {
   return errors
 }
 
-export function parseListing(listing: string): {
+export function parseListing(listing: string, lineOffset = 0): {
   baseAddress?: number
   addressToLine: Record<number, number>
 } {
@@ -58,7 +77,7 @@ export function parseListing(listing: string): {
     if (addrHex !== undefined) {
       const address = parseInt(addrHex, 16)
       if (baseAddress === undefined) baseAddress = address
-      addressToLine[address] = parseInt(lineStr, 10)
+      addressToLine[address] = parseInt(lineStr, 10) - lineOffset
     }
   }
   return { baseAddress, addressToLine }

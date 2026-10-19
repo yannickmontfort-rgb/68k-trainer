@@ -81,12 +81,33 @@ function resolveRef(ex: ContenuExercice, legacy: Map<string, Exercise>): Contenu
   }
 }
 
+const CHAMPS_CODE = ['code', 'solution', 'codeDepart', 'entete', 'pied'] as const
+
+/**
+ * Un champ de code peut désigner un fichier du dossier du chapitre : "@code/premier.s".
+ * Le code 68000 reste ainsi lisible (et assemblable tel quel) hors du JSON.
+ */
+async function resoudreFichiers(dir: string, objet: Record<string, unknown>): Promise<void> {
+  for (const champ of CHAMPS_CODE) {
+    const v = objet[champ]
+    if (typeof v === 'string' && v.startsWith('@')) {
+      objet[champ] = (await readFile(join(dir, v.slice(1)), 'utf-8')).replace(/\r\n/g, '\n').replace(/\n+$/, '')
+    }
+  }
+  if (Array.isArray(objet.questions)) {
+    for (const q of objet.questions) await resoudreFichiers(dir, q as Record<string, unknown>)
+  }
+}
+
 async function loadChapitre(dir: string, legacy: Map<string, Exercise>): Promise<Chapitre> {
   const chapitre = JSON.parse(await readFile(join(dir, 'chapitre.json'), 'utf-8')) as Chapitre
   chapitre.plateforme ??= 'atari'
+  for (const b of chapitre.bonus ?? []) await resoudreFichiers(dir, b as unknown as Record<string, unknown>)
+  if (chapitre.qcm) await resoudreFichiers(dir, chapitre.qcm as unknown as Record<string, unknown>)
   for (const notion of chapitre.notions) {
     for (let i = 0; i < notion.contenus.length; i++) {
       const c = notion.contenus[i]
+      await resoudreFichiers(dir, c as unknown as Record<string, unknown>)
       if (c.type === 'cours' && c.fichier && !c.markdown) {
         const raw = await readFile(join(dir, c.fichier), 'utf-8')
         c.markdown = parseFrontmatter(raw).body.trim()
