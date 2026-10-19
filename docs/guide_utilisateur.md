@@ -73,7 +73,7 @@ Ton code est gardé automatiquement : si tu quittes un exercice, tu le retrouves
   Super…), du BIOS (Bconout, Setexec…) et du XBIOS (Physbase, Setcolor, Setpalette, Supexec…).
 - L'assembleur est **vasm**, en syntaxe Motorola compatible Devpac. Un programme sans `ORG` est
   chargé en `$1000` ; les directives `TEXT`, `DATA` et `BSS` sont acceptées (les sections sont mises
-  bout à bout). L'alignement n'est **pas** automatique, comme sous Devpac : pense à `EVEN`.
+  bout à bout). Comme Devpac, l'assembleur assemble exactement ce que tu écris (aucune instruction remplacée par une autre) et aligne automatiquement les instructions et les données `.W`/`.L` sur une adresse paire, avec un avertissement. Une étiquette seule sur sa ligne n'est pas déplacée : pense à `EVEN`.
 
 ## Les profils
 

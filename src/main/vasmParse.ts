@@ -7,7 +7,7 @@ const ERROR_NO_LINE_RE = /^\s*(?:fatal )?error \d+:\s*(.+)/
 const LISTING_LINE_RE = /^(?:[0-9A-Fa-f]{2}:([0-9A-Fa-f]{8})\s+[0-9A-Fa-f]+)?\s*\t\s*(\d+):/
 
 /** Arguments de vasm communs à l'application et aux tests. */
-export const VASM_ARGS = ['-Fbin', '-m68000', '-noialign']
+export const VASM_ARGS = ['-Fbin', '-m68000', '-devpac']
 
 /** Adresse de chargement quand le programme ne contient pas d'ORG (comme un programme Devpac). */
 export const DEFAULT_ORG = 0x1000

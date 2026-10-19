@@ -75,9 +75,9 @@
             { "id": "q2", "enonce": "Que vaut D2 ?", "choix": ["$04030201", "$01020304", "$00000004"], "bonne": 1, "explication": "Big endian : le premier octet en mémoire est le poids fort.", "verification": { "D2": "$01020304" } }
           ]
         },
-        { "type": "exercice", "id": "atari-ch02-exo-even", "titre": "Les trois bombes du DC.B", "variante": "corriger", "niveau": 1,
-          "enonce": "Ce programme doit mettre **1040** dans D0, mais il plante avec une **erreur d'adresse**. Lance le pas à pas pour voir où, puis corrige en **ajoutant une seule ligne**.",
-          "indices": ["Compte les octets de `'ST',0` : NOMBRE tombe-t-il à une adresse paire ?", "Ajoute `EVEN` juste avant `NOMBRE:`."],
+        { "type": "exercice", "id": "atari-ch02-exo-even", "titre": "Les trois bombes de l'étiquette seule", "variante": "corriger", "niveau": 1,
+          "enonce": "Ce programme doit mettre **1040** dans D0, mais il plante avec une **erreur d'adresse**. L'assembleur a pourtant aligné le `DC.W` (regarde son avertissement)… mais pas l'étiquette `NOMBRE`, seule sur sa ligne. Lance le pas à pas pour voir à quelle adresse `MOVE.W` lit, puis corrige en **ajoutant une seule ligne**.",
+          "indices": ["Compte les octets de `'ST',0` : à quelle adresse tombe l'étiquette `NOMBRE` ?", "Ajoute `EVEN` juste avant `NOMBRE:` : l'étiquette et la donnée seront toutes les deux à une adresse paire."],
           "codeDepart": "@code.s#memoire-even-depart", "solution": "@code.s#memoire-even-solution",
           "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "D0": "$00000410" } } },
         { "type": "exercice", "id": "atari-ch02-exo-poids-fort", "titre": "L'octet de poids fort", "variante": "ecrire", "niveau": 2,

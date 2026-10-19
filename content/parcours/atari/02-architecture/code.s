@@ -78,7 +78,8 @@ START:
     MOVE.W  NOMBRE,D0
     RTS
 TEXTE:  DC.B    'ST',0
-NOMBRE: DC.W    1040
+NOMBRE:
+        DC.W    1040
 
 ;=== memoire-even-solution
 START:
@@ -86,7 +87,8 @@ START:
     RTS
 TEXTE:  DC.B    'ST',0
         EVEN
-NOMBRE: DC.W    1040
+NOMBRE:
+        DC.W    1040
 
 ;=== memoire-ecrire-depart
 ; Range le mot $ABCD à l'adresse $3000,

@@ -34,9 +34,24 @@ l'assembleur.
 | `EVEN` | avance à la prochaine adresse **paire** | après un texte en `DC.B` |
 
 Une chaîne de caractères s'écrit entre apostrophes : `DC.B 'ATARI',0` (le 0 final marque la fin
-du texte). Comme elle peut faire un nombre impair d'octets, on place **`EVEN`** avant toute
-donnée en `.W` ou en `.L` qui la suit. L'assembleur de Devpac ne le fait pas à ta place, et
-68k Trainer non plus.
+du texte). Elle peut faire un nombre impair d'octets. Que se passe-t-il pour ce qui suit ?
+
+- **Devpac aligne automatiquement** les instructions et les données en `.W` ou `.L` qui suivent :
+  il ajoute un octet nul et affiche un **avertissement**. 68k Trainer fait de même.
+- **Mais une étiquette seule sur sa ligne n'est pas déplacée !** Dans l'exemple ci-dessous,
+  `VALEUR` vaut une adresse **impaire**, alors que le `DC.W` a été aligné juste après :
+
+  ```asm
+  TEXTE:  DC.B    'ST',0      ; 3 octets
+  VALEUR:                     ; étiquette seule : adresse impaire !
+          DC.W    1040        ; aligné, lui, sur l'adresse paire suivante
+  ```
+
+  Un `MOVE.W VALEUR,D0` lit alors à une adresse impaire : erreur d'adresse, trois bombes.
+
+La parade : placer **`EVEN`** après chaque texte en `DC.B`. C'est clair à la lecture, ça évite le
+piège de l'étiquette seule, et ça marche avec tous les assembleurs (certains, sur ST ou sur Amiga,
+n'alignent rien du tout).
 
 ## La carte mémoire de l'Atari ST
 

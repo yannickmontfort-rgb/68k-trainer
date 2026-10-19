@@ -26,10 +26,10 @@ describe('messages de vasm pour débutants', () => {
     expect(asm.errors[0].message).toContain('registre d')
   })
 
-  it('pas d’alignement automatique : une instruction après DC.B impair reste impaire', () => {
+  it('comme Devpac : une instruction après un DC.B impair est alignée', () => {
     const asm = assemble('    ORG $1000\n    DC.B 1\n    NOP\n')
     expect(asm.success).toBe(true)
-    expect(asm.binary.length).toBe(3)
+    expect(asm.binary.length).toBe(4)
   })
 })
 

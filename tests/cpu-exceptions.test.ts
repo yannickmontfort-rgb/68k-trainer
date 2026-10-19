@@ -83,7 +83,7 @@ HANDLER:
     TRAP #15`)
     runUntilHalt(cpu)
     expect(cpu.d[2]).toBe(0x3001)
-    expect(cpu.d[3]).toBe(0x2238) // code de MOVE.L abs.W,D1 (vasm choisit l'adresse courte) = registre d'instruction empilé
+    expect(cpu.d[3]).toBe(0x2239) // code de MOVE.L abs.L,D1 (mode Devpac : adresse longue) = registre d'instruction empilé
     expect(cpu.memory.readU16(cpu.a[7]) & 0x10).toBe(0x10) // bit R/W = lecture
   })
 })
