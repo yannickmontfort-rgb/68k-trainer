@@ -132,7 +132,7 @@ Le module 7 est réparti dans les chapitres :
 
 ## 4. Contenu à relire `[À RELIRE]`
 
-**Tout le contenu des chapitres 1 à 5 a été rédigé par Claude** : 103 éléments marqués `aRelire`, affichés dans l'appli avec un petit badge orange « à relire ». Une fois relu, retire `"aRelire": true` du `chapitre.json` correspondant.
+**Tout le contenu des chapitres 1 à 5 a été rédigé par Claude** : 109 éléments marqués `aRelire` (contenus et défis bonus), affichés dans l'appli avec un petit badge orange « à relire ». Une fois relu, retire `"aRelire": true` du `chapitre.json` correspondant.
 
 Ce qui mérite le plus ton œil d'enseignant :
 - le ton (tutoiement), la longueur des cours et le niveau des exercices ;
