@@ -172,3 +172,16 @@ Ce qui mérite le plus ton œil d'enseignant :
 - Licence : **libre** → **GNU GPL v3 ou ultérieure** (fichier `LICENSE`, `package.json`, README,
   page À propos). vasm garde sa licence propre (non commerciale, redistribution sans
   modification autorisée) : voir `THIRD_PARTY.md`.
+
+## 8. Amélioration future validée (19/10/2026) : profils d'utilisateurs
+
+- **Plusieurs profils** sur un même poste : écran « Qui es-tu ? » au lancement, un fichier de
+  progression par profil (cours, exercices, QCM, dernière position, brouillons), nom affiché en
+  haut avec « Changer de profil », renommer / supprimer / remettre à zéro.
+- **Mot de passe facultatif** par profil, stocké haché (jamais en clair). Protection « anti-curieux »
+  dans l'appli, pas une sécurité forte : les fichiers restent sur le disque.
+- **Export / import d'un profil** dans un fichier (passer d'une machine à l'autre, maison ↔ lycée).
+- **Mode enseignant** : tableau de progression de tous les profils du poste.
+- **Exclu, volontairement** : synchronisation par serveur ou comptes en ligne. L'application doit
+  rester légère et 100 % locale.
+- Estimation : environ une journée, tests compris.
