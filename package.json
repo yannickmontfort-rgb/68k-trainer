@@ -14,7 +14,9 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "version:bump": "node scripts/bump-version.mjs",
-    "dist:win": "npm run version:bump && electron-vite build && electron-builder --win"
+    "dist:win": "npm run version:bump && electron-vite build && electron-builder --win",
+    "asm": "vite-node src/asm/cli/asm.ts --",
+    "desasm": "vite-node src/asm/cli/desasm.ts --"
   },
   "dependencies": {
     "marked": "^18.0.9",

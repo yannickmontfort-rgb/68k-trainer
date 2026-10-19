@@ -96,3 +96,65 @@ function tableSymboles(symboles: Symbole[], base: number): Uint8Array {
   })
   return table
 }
+
+export interface PrgLu {
+  text: Uint8Array
+  data: Uint8Array
+  bss: number
+  /** Positions (depuis le début de TEXT) des mots longs à reloger. */
+  relocs: number[]
+  /** Symboles DRI : valeur relative au début de TEXT pour les étiquettes. */
+  symboles: { nom: string; valeur: number; section?: 'TEXT' | 'DATA' | 'BSS' }[]
+  drapeaux: number
+}
+
+/** Lit un exécutable TOS (.PRG, .TOS, .TTP, .APP). Lève une erreur si le fichier n'en est pas un. */
+export function lirePrg(octets: Uint8Array): PrgLu {
+  if (octets.length < ENTETE) throw new Error('Fichier trop court pour être un programme TOS.')
+  const vue = new DataView(octets.buffer, octets.byteOffset, octets.byteLength)
+  if (vue.getUint16(0) !== 0x601a) throw new Error("Ce n'est pas un programme TOS (l'en-tête doit commencer par $601A).")
+  const tText = vue.getUint32(2)
+  const tData = vue.getUint32(6)
+  const bss = vue.getUint32(10)
+  const tSym = vue.getUint32(14)
+  const drapeaux = vue.getUint32(22)
+  const debutSym = ENTETE + tText + tData
+  if (debutSym + tSym > octets.length) throw new Error('Programme TOS tronqué : les tailles de l’en-tête dépassent le fichier.')
+  const text = octets.slice(ENTETE, ENTETE + tText)
+  const data = octets.slice(ENTETE + tText, debutSym)
+
+  const symboles: PrgLu['symboles'] = []
+  for (let o = debutSym; o + 14 <= debutSym + tSym; o += 14) {
+    let nom = ''
+    for (let k = 0; k < 8 && octets[o + k]; k++) nom += String.fromCharCode(octets[o + k])
+    const type = vue.getUint16(o + 8)
+    const valeur = vue.getUint32(o + 10)
+    // Nom long façon HiSoft : l'entrée suivante contient 14 caractères de plus
+    if ((type & 0x0048) === 0x0048 && o + 28 <= debutSym + tSym) {
+      o += 14
+      for (let k = 0; k < 14 && octets[o + k]; k++) nom += String.fromCharCode(octets[o + k])
+    }
+    const section = type & 0x0200 ? 'TEXT' : type & 0x0400 ? 'DATA' : type & 0x0100 ? 'BSS' : undefined
+    symboles.push({ nom, valeur, section })
+  }
+
+  const relocs: number[] = []
+  let p = debutSym + tSym
+  if (p + 4 <= octets.length && !(vue.getUint16(26) !== 0)) {
+    let position = vue.getUint32(p)
+    p += 4
+    if (position !== 0) {
+      relocs.push(position)
+      while (p < octets.length) {
+        const ecart = octets[p++]
+        if (ecart === 0) break
+        if (ecart === 1) position += 254
+        else {
+          position += ecart
+          relocs.push(position)
+        }
+      }
+    }
+  }
+  return { text, data, bss, relocs, symboles, drapeaux }
+}
