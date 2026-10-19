@@ -506,7 +506,12 @@ export function ecranPrediction(el: HTMLElement, pred: ContenuPrediction, ctx: C
       dbgEl.appendChild(dbg.element)
       const exec = new Execution(editor, dbg, () => platformFor(ctx.plateforme, pred.machine))
       const res = await exec.assembler(pred.code)
-      if (res.success) exec.toutExecuter(100000)
+      if (!res.success) return
+      const effects = exec.toutExecuter(100000)
+      const bilan = document.createElement('p')
+      bilan.className = effects?.error ? 'verdict verdict-ko' : 'verdict verdict-ok'
+      bilan.textContent = effects?.error ?? 'Programme exécuté jusqu’au bout : compare l’état ci-dessous à tes prédictions.'
+      dbgEl.prepend(bilan)
     })()
   })
   el.querySelector('#btn-suivant')!.addEventListener('click', () => ctx.suivant())

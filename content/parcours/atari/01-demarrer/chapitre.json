@@ -1,0 +1,244 @@
+{
+  "id": "atari-ch01",
+  "titre": "Démarrer : l'atelier et ton premier programme",
+  "plateforme": "commun",
+  "resume": "Avant d'écrire du code, il faut savoir **l'assembler, l'exécuter et l'observer**. Ce chapitre te présente l'atelier (l'équivalent de Devpac et MONST), la forme d'une ligne d'assembleur, ton premier programme… et la méthode pour trouver tes erreurs. Sur l'Atari ST, ces outils n'arrivaient qu'à la fin du manuel : ici, on commence par eux.",
+  "notions": [
+    {
+      "id": "atari-ch01-n1",
+      "titre": "L'atelier et le premier programme",
+      "contenus": [
+        {
+          "type": "cours",
+          "id": "atari-ch01-cours-atelier",
+          "titre": "Assembleur, langage machine et atelier",
+          "fichier": "01-atelier.md",
+          "aRelire": true,
+          "source": "Rédigé pour 68k Trainer d'après le manuel Atari ST v2 (module 6) et le cours du Féroce Lapin (cours 1)"
+        },
+        {
+          "type": "cours",
+          "id": "atari-ch01-cours-ligne",
+          "titre": "Anatomie d'une ligne d'assembleur",
+          "fichier": "02-ligne.md",
+          "aRelire": true,
+          "source": "Reformulé d'après le cours EPITA de David Bouchet (structure d'un code source) et le manuel Atari ST v2 (§ 1.1)"
+        },
+        {
+          "type": "exemple",
+          "id": "atari-ch01-ex-premier",
+          "titre": "Ton premier programme, pas à pas",
+          "aRelire": true,
+          "introduction": "Voici un programme de quatre instructions. Clique sur **Pas suivant** pour exécuter une instruction à la fois : à droite, le registre qui vient de changer s'allume en jaune, et sous le code une explication te dit ce qui s'est passé.",
+          "code": "@code.s#premier",
+          "explications": [
+            { "ligne": 3, "texte": "`MOVE.W #5,D0` copie la valeur immédiate 5 dans le registre D0. Regarde D0 : il vaut maintenant `$00000005`. Le PC (compteur de programme) a avancé jusqu'à l'instruction suivante." },
+            { "ligne": 4, "texte": "Même chose avec D1, qui reçoit 3. D0 n'a pas bougé : une instruction ne modifie que sa **destination**." },
+            { "ligne": 5, "texte": "`ADD.W D1,D0` additionne la source (D1) à la destination (D0) : D0 = 5 + 3 = 8. D1, la source, garde sa valeur." },
+            { "ligne": 6, "texte": "`RTS` dépile l'adresse de retour (regarde la pile : le sommet contenait l'adresse du TOS) et rend la main au système. Le programme est terminé." }
+          ],
+          "conclusion": "Tu as vu les trois éléments que tu retrouveras partout : des **registres** qui contiennent les valeurs, des **instructions** qui les transforment une par une, et le **PC** qui avance d'instruction en instruction."
+        },
+        {
+          "type": "prediction",
+          "id": "atari-ch01-pred-sub",
+          "titre": "Lis, puis devine",
+          "aRelire": true,
+          "introduction": "Sans exécuter le programme, réponds aux questions. Ensuite seulement, vérifie en l'exécutant. `SUB.W D1,D0` signifie « D0 ← D0 − D1 ».",
+          "code": "@code.s#predire-sub",
+          "questions": [
+            {
+              "id": "q1",
+              "enonce": "Que vaut D0 à la fin ?",
+              "choix": ["$0000000E (14)", "$00000006 (6)", "$FFFFFFFA (−6)"],
+              "bonne": 1,
+              "explication": "SUB.W D1,D0 calcule D0 − D1 = 10 − 4 = 6. L'ordre compte : c'est la **destination** (D0) moins la **source** (D1).",
+              "verification": { "D0": "$00000006" }
+            },
+            {
+              "id": "q2",
+              "enonce": "Et D1 ?",
+              "choix": ["$00000004", "$00000000", "$00000006"],
+              "bonne": 0,
+              "explication": "D1 est la source de la soustraction : il n'est pas modifié.",
+              "verification": { "D1": "$00000004" }
+            }
+          ]
+        },
+        {
+          "type": "exercice",
+          "id": "atari-ch01-exo-completer",
+          "titre": "Trouve la bonne valeur",
+          "variante": "completer",
+          "niveau": 1,
+          "aRelire": true,
+          "enonce": "Le programme ajoute 2 à D0. Remplace le `0` de la première instruction pour que **D0 vaille 9** à la fin.",
+          "indices": ["Quel nombre, plus 2, donne 9 ?", "`MOVE.W #7,D0`"],
+          "codeDepart": "@code.s#completer-depart",
+          "solution": "@code.s#completer-solution",
+          "check": { "type": "registers", "maxSteps": 50, "expected": { "D0": "$00000009" } }
+        },
+        {
+          "type": "exercice",
+          "id": "atari-ch01-exo-ordonner",
+          "titre": "Remets le programme dans l'ordre",
+          "variante": "ordonner",
+          "niveau": 1,
+          "aRelire": true,
+          "enonce": "Les instructions ont été mélangées. Avec les flèches, remets-les dans l'ordre pour que **D2 = (6 + 2) × 5 = 40**. `ADDQ` est un `ADD` rapide pour les petites valeurs (1 à 8), `MULU` une multiplication.",
+          "indices": ["Il faut d'abord une valeur dans D2, et RTS doit être la dernière instruction.", "Addition avant multiplication : (6 + 2), puis × 5."],
+          "codeDepart": "",
+          "entete": "@code.s#ordonner-entete",
+          "lignes": ["    MOVE.W  #6,D2", "    ADDQ.W  #2,D2", "    MULU.W  #5,D2", "    RTS"],
+          "pied": "",
+          "solution": "",
+          "check": { "type": "registers", "maxSteps": 50, "expected": { "D2": "$00000028" } }
+        },
+        {
+          "type": "exercice",
+          "id": "atari-ch01-exo-ecrire",
+          "titre": "Ton propre calcul",
+          "variante": "ecrire",
+          "niveau": 2,
+          "aRelire": true,
+          "enonce": "Écris le programme : place **100** dans D1, **25** dans D2, puis soustrais D2 de D1 pour que **D1 = 75** à la fin.",
+          "indices": ["Deux `MOVE.W` pour charger les valeurs.", "La soustraction s'écrit `SUB.W source,destination` : la destination reçoit destination − source."],
+          "codeDepart": "@code.s#ecrire-depart",
+          "solution": "@code.s#ecrire-solution",
+          "check": { "type": "registers", "maxSteps": 50, "expected": { "D1": "$0000004B" } }
+        },
+        {
+          "type": "exercice",
+          "id": "atari-ch01-exo-autonome",
+          "titre": "Multiplier sans multiplication",
+          "variante": "ecrire",
+          "niveau": 3,
+          "aRelire": true,
+          "enonce": "Calcule **D0 = 3 × (4 + 5)** en n'utilisant que `MOVE` et `ADD` (pas de `MULU`).",
+          "indices": ["Calcule d'abord 4 + 5 dans D0.", "Multiplier par 3, c'est ajouter trois fois la même valeur : garde une copie dans un autre registre."],
+          "codeDepart": "@code.s#autonome-depart",
+          "solution": "@code.s#autonome-solution",
+          "check": { "type": "registers", "maxSteps": 50, "expected": { "D0": "$0000001B" } }
+        }
+      ]
+    },
+    {
+      "id": "atari-ch01-n2",
+      "titre": "Trouver ses erreurs",
+      "contenus": [
+        {
+          "type": "cours",
+          "id": "atari-ch01-cours-deboguer",
+          "titre": "Deux sortes d'erreurs et une méthode",
+          "fichier": "03-deboguer.md",
+          "aRelire": true,
+          "source": "Rédigé pour 68k Trainer ; méthode issue de la revue de littérature (enseignement explicite du débogage)"
+        },
+        {
+          "type": "exemple",
+          "id": "atari-ch01-ex-bug",
+          "titre": "Une erreur de logique, traquée pas à pas",
+          "aRelire": true,
+          "introduction": "Ce programme devrait calculer **D0 = 2 × (3 + 4) = 14**. Il s'assemble sans erreur… mais à la fin, D0 vaut 7. Suis la méthode : **hypothèse**, **inspection** pas à pas, **vérification**.",
+          "code": "@code.s#bug-logique",
+          "explications": [
+            { "ligne": 3, "texte": "D0 = 3. Conforme à ce qu'on attend." },
+            { "ligne": 4, "texte": "D0 = 7. Toujours conforme : 3 + 4." },
+            { "ligne": 5, "texte": "On copie 7 dans D1. Pas d'écart pour l'instant." },
+            { "ligne": 6, "texte": "**Voilà l'écart** : D1 passe à 14, mais D0 reste à 7. On a doublé D1 au lieu d'ajouter D1 à D0. Correction : `ADD.W D1,D0`." },
+            { "ligne": 7, "texte": "Fin du programme : D0 = 7 au lieu de 14. L'inspection a montré **la première ligne** où la réalité s'écarte de l'attendu : c'est elle qu'on corrige." }
+          ],
+          "conclusion": "Ne corrige jamais « au hasard ». Avance pas à pas en prédisant chaque ligne : la première surprise désigne l'erreur."
+        },
+        {
+          "type": "prediction",
+          "id": "atari-ch01-pred-crash",
+          "titre": "Que va-t-il se passer ?",
+          "aRelire": true,
+          "introduction": "Ce programme s'assemble sans erreur. Lis-le attentivement, en particulier l'adresse de destination.",
+          "code": "@code.s#predire-crash",
+          "questions": [
+            {
+              "id": "q1",
+              "enonce": "Quand on l'exécute…",
+              "choix": ["il écrit $1234 à l'adresse $3001 et se termine normalement", "il s'arrête sur une erreur d'adresse (3 bombes sur un ST)", "l'assembleur refuse le programme"],
+              "bonne": 1,
+              "explication": "Un mot (`.W`) doit toujours être lu ou écrit à une adresse **paire**. $3001 est impaire : le 68000 déclenche une erreur d'adresse (exception n° 3, donc 3 bombes). L'assembleur ne peut pas le voir : c'est une erreur d'**exécution**."
+            }
+          ]
+        },
+        {
+          "type": "exercice",
+          "id": "atari-ch01-exo-syntaxe",
+          "titre": "Corrige l'erreur de syntaxe",
+          "variante": "corriger",
+          "niveau": 1,
+          "aRelire": true,
+          "enonce": "Ce programme doit mettre **5 + 7 = 12** dans D2, mais il ne s'assemble pas. Clique sur **Vérifier**, lis le message, et corrige la ligne fautive.",
+          "indices": ["Le message parle d'une instruction inconnue.", "L'addition s'écrit `ADD`, avec un seul D."],
+          "codeDepart": "@code.s#corriger-syntaxe-depart",
+          "solution": "@code.s#corriger-syntaxe-solution",
+          "check": { "type": "registers", "maxSteps": 50, "expected": { "D2": "$0000000C" } }
+        },
+        {
+          "type": "exercice",
+          "id": "atari-ch01-exo-logique",
+          "titre": "Corrige l'erreur de logique",
+          "variante": "corriger",
+          "niveau": 2,
+          "aRelire": true,
+          "enonce": "Ce programme s'assemble, mais **D3** devrait valoir **30** à la fin, et ce n'est pas le cas. Utilise le pas à pas pour trouver la ligne fautive.",
+          "indices": ["Regarde quel registre change sur la ligne de l'addition.", "Dans `ADD.W source,destination`, c'est la destination qui reçoit le résultat."],
+          "codeDepart": "@code.s#corriger-logique-depart",
+          "solution": "@code.s#corriger-logique-solution",
+          "check": { "type": "registers", "maxSteps": 50, "expected": { "D3": "$0000001E" } }
+        },
+        {
+          "type": "exercice",
+          "id": "atari-ch01-exo-diese",
+          "titre": "Le dièse oublié",
+          "variante": "corriger",
+          "niveau": 3,
+          "aRelire": true,
+          "enonce": "On voulait **D5 = $1001**. Le programme s'assemble et s'exécute sans planter, mais D5 contient une valeur étrange. Explique-toi pourquoi avant de corriger (indice : que trouve-t-on à l'adresse `$1000` ?).",
+          "indices": ["Sans `#`, `$1000` est une adresse, pas une valeur.", "À l'adresse $1000, il y a… le code de ta propre première instruction !"],
+          "codeDepart": "@code.s#corriger-diese-depart",
+          "solution": "@code.s#corriger-diese-solution",
+          "check": { "type": "registers", "maxSteps": 50, "expected": { "D5": "$00001001" } }
+        }
+      ]
+    }
+  ],
+  "qcm": {
+    "id": "atari-ch01-qcm",
+    "seuil": 0.7,
+    "questions": [
+      { "id": "q1", "enonce": "Quel programme transforme ton texte assembleur en codes machine ?", "choix": ["Le débogueur", "L'assembleur", "Le TOS"], "bonne": 1, "explication": "L'assembleur (GENST sous Devpac, vasm ici) traduit chaque instruction en code machine. Le débogueur sert à observer l'exécution." },
+      { "id": "q2", "enonce": "Dans `MOVE.W #5,D0`, que signifie le `#` ?", "choix": ["5 est une adresse mémoire", "5 est la valeur elle-même (immédiate)", "le reste de la ligne est un commentaire"], "bonne": 1, "explication": "`#` désigne une valeur immédiate. Sans `#`, 5 serait l'adresse mémoire 5." },
+      { "id": "q3", "enonce": "`$1F` est un nombre écrit en…", "choix": ["binaire", "décimal", "hexadécimal"], "bonne": 2, "explication": "Le préfixe `$` indique l'hexadécimal ; `%` le binaire ; sans préfixe, c'est du décimal." },
+      { "id": "q4", "enonce": "Combien vaut `%101` en décimal ?", "choix": ["5", "101", "3"], "bonne": 0, "explication": "%101 = 1×4 + 0×2 + 1×1 = 5." },
+      { "id": "q5", "enonce": "Dans la ligne `BOUCLE: ADD.W D1,D0 ; total`, qu'est-ce que `BOUCLE` ?", "choix": ["Une étiquette", "Une instruction", "Un commentaire"], "bonne": 0, "explication": "Une étiquette commence en première colonne : c'est un nom donné à l'adresse de la ligne." },
+      { "id": "q6", "enonce": "Que vaut D0 après ces deux instructions ?", "code": "@code.s#qcm-addition", "choix": ["$00000010", "$00000016", "$00000088"], "bonne": 0, "explication": "8 + 8 = 16, soit $10 en hexadécimal. Attention à ne pas confondre $10 (seize) et 10 (dix)." },
+      { "id": "q7", "enonce": "À quoi sert le `RTS` final de nos programmes ?", "choix": ["À effacer les registres", "À rendre la main au TOS", "À recommencer le programme"], "bonne": 1, "explication": "Le TOS lance le programme comme un sous-programme ; RTS revient à l'appelant." },
+      { "id": "q8", "enonce": "Dans quel ordre se déroule la méthode de débogage ?", "choix": ["Corriger, puis tester, puis réfléchir", "Hypothèse, inspection, vérification", "Inspection, correction de toutes les lignes suspectes, vérification"], "bonne": 1, "explication": "On formule une hypothèse, on inspecte pas à pas pour trouver la première ligne fautive, puis on corrige cette ligne et on vérifie." },
+      { "id": "q9", "enonce": "Sur un Atari ST, un accès en `.W` à une adresse impaire provoque…", "choix": ["2 bombes (erreur de bus)", "3 bombes (erreur d'adresse)", "4 bombes (instruction illégale)"], "bonne": 1, "explication": "Le nombre de bombes est le numéro de l'exception : 3 = erreur d'adresse." },
+      { "id": "q10", "enonce": "Une erreur signalée par l'assembleur (ligne soulignée en rouge) est…", "choix": ["une erreur de syntaxe", "une erreur de logique", "une exception du 68000"], "bonne": 0, "explication": "L'assembleur ne voit que le texte : il signale les erreurs de syntaxe. Les erreurs de logique et les exceptions n'apparaissent qu'à l'exécution." }
+    ]
+  },
+  "bonus": [
+    {
+      "type": "exercice",
+      "id": "atari-ch01-bonus-fond",
+      "titre": "Peins l'écran en rouge",
+      "variante": "ecrire",
+      "niveau": 2,
+      "aRelire": true,
+      "enonce": "Sur l'Atari ST, la couleur du fond de l'écran est la **couleur n° 0** de la palette. Elle se règle en écrivant un mot à l'adresse matérielle **`$FF8240`**, au format `$0RVB` : chaque composante va de 0 à 7. Rouge vif = `$700`.\n\nÉcris un programme qui peint le fond en rouge. Lance ensuite le **pas à pas** pour voir l'écran changer.",
+      "indices": ["Une seule instruction suffit : un `MOVE.W` d'une valeur immédiate vers une adresse.", "`MOVE.W #$700,$FF8240`"],
+      "codeDepart": "@code.s#bonus-fond-depart",
+      "solution": "@code.s#bonus-fond-solution",
+      "check": { "type": "memory", "maxSteps": 50, "expected": { "$FF8240": "$0700" } },
+      "machine": { "ecran": true }
+    }
+  ]
+}

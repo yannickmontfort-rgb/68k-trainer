@@ -84,15 +84,29 @@ function resolveRef(ex: ContenuExercice, legacy: Map<string, Exercise>): Contenu
 const CHAMPS_CODE = ['code', 'solution', 'codeDepart', 'entete', 'pied'] as const
 
 /**
+ * "fichier.s" : tout le fichier ; "fichier.s#nom" : le bloc qui suit la ligne `;=== nom` dans ce
+ * fichier, jusqu'au marqueur suivant (un seul fichier regroupe ainsi tous les codes d'un chapitre).
+ */
+async function lireCode(dir: string, ref: string): Promise<string> {
+  const [fichier, nom] = ref.split('#')
+  const texte = (await readFile(join(dir, fichier), 'utf-8')).replace(/\r\n/g, '\n')
+  if (!nom) return texte.replace(/\n+$/, '')
+  const lignes = texte.split('\n')
+  const debut = lignes.findIndex((l) => l.trim() === `;=== ${nom}`)
+  if (debut < 0) throw new Error(`Bloc de code « ${nom} » introuvable dans ${fichier}`)
+  let fin = lignes.findIndex((l, i) => i > debut && l.startsWith(';=== '))
+  if (fin < 0) fin = lignes.length
+  return lignes.slice(debut + 1, fin).join('\n').replace(/\n+$/, '')
+}
+
+/**
  * Un champ de code peut désigner un fichier du dossier du chapitre : "@code/premier.s".
  * Le code 68000 reste ainsi lisible (et assemblable tel quel) hors du JSON.
  */
 async function resoudreFichiers(dir: string, objet: Record<string, unknown>): Promise<void> {
   for (const champ of CHAMPS_CODE) {
     const v = objet[champ]
-    if (typeof v === 'string' && v.startsWith('@')) {
-      objet[champ] = (await readFile(join(dir, v.slice(1)), 'utf-8')).replace(/\r\n/g, '\n').replace(/\n+$/, '')
-    }
+    if (typeof v === 'string' && v.startsWith('@')) objet[champ] = await lireCode(dir, v.slice(1))
   }
   if (Array.isArray(objet.questions)) {
     for (const q of objet.questions) await resoudreFichiers(dir, q as Record<string, unknown>)
