@@ -2,7 +2,7 @@ import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 import { Cpu } from '../../../cpu/cpu'
 import type { Platform } from '../../../cpu/platform'
 import type { StepEffects } from '../../../cpu/types'
-import type { AssembleResult } from '../../../shared/ipc'
+import type { AssembleError, AssembleResult } from '../../../shared/ipc'
 import type { Debogueur } from './debogueur'
 
 /**
@@ -28,18 +28,19 @@ export class Execution {
     this.assemblage = result
     const model = this.editor.getModel()
     if (model) {
-      monaco.editor.setModelMarkers(
-        model,
-        'vasm',
-        result.errors.map((e) => ({
-          severity: monaco.MarkerSeverity.Error,
-          message: e.original ? `${e.message}\n(vasm : ${e.original})` : e.message,
-          startLineNumber: Math.max(1, e.line),
-          endLineNumber: Math.max(1, e.line),
-          startColumn: 1,
-          endColumn: 1000
-        }))
-      )
+      // Erreurs en rouge, avertissements en jaune, soulignés précisément quand la colonne est connue
+      const marque = (e: AssembleError, severity: monaco.MarkerSeverity): monaco.editor.IMarkerData => ({
+        severity,
+        message: e.message,
+        startLineNumber: Math.max(1, e.line),
+        endLineNumber: Math.max(1, e.line),
+        startColumn: e.column ?? 1,
+        endColumn: e.column ? e.column + (e.length ?? 1) : 1000
+      })
+      monaco.editor.setModelMarkers(model, 'assembleur', [
+        ...result.errors.map((e) => marque(e, monaco.MarkerSeverity.Error)),
+        ...(result.warnings ?? []).map((e) => marque(e, monaco.MarkerSeverity.Warning))
+      ])
     }
     if (result.success) this.reinitialiser()
     else {

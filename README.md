@@ -10,7 +10,8 @@ Apprendre l'assembleur **Motorola 68000** en programmant un **Atari ST simulé**
   des **défis bonus** facultatifs.
 - Un **émulateur 68000** complet (exceptions, superviseur, interruptions) et un **Atari 1040 STF**
   simulé : écran en basse résolution, palette, TOS (GEMDOS, BIOS, XBIOS), bombes.
-- L'assembleur est **[vasm](http://sun.hasenbraten.de/vasm/)**, en syntaxe Devpac.
+- Son **propre assembleur 68000**, compatible Devpac (vérifié octet par octet contre vasm), un
+  **désassembleur**, et l'**export en .PRG** à lancer dans Hatari ou sur un vrai ST.
 
 Les choix pédagogiques s'appuient sur la recherche : exemples résolus puis retrait progressif de
 l'aide, une difficulté à la fois, lire et prédire avant d'écrire, enseignement explicite du
@@ -56,8 +57,18 @@ Chaque exemple, solution et prédiction est **assemblé et exécuté** par
 
 ## Licence
 
-Logiciel libre sous **GNU GPL v3 ou ultérieure** ([LICENSE](LICENSE)). L'assembleur vasm, fourni
-dans `tools/`, garde sa propre licence (usage non commercial) : voir [THIRD_PARTY.md](THIRD_PARTY.md).
+Logiciel libre sous **GNU GPL v3 ou ultérieure** ([LICENSE](LICENSE)). Composants tiers : voir
+[THIRD_PARTY.md](THIRD_PARTY.md).
+
+## Outils en ligne de commande
+
+L'assembleur et le désassembleur (`src/asm/`, sans dépendance) servent aussi hors de l'application :
+
+```bash
+npm run asm -- programme.s              # → programme.prg (exécutable TOS)
+npm run asm -- programme.s --bin        # → binaire à plat
+npm run desasm -- PROGRAMME.PRG -o p.s  # → source Devpac réassemblable à l'identique
+```
 
 ## Crédits
 

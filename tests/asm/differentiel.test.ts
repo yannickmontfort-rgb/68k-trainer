@@ -8,8 +8,8 @@ import { readdirSync, readFileSync, statSync } from 'fs'
 import { join } from 'path'
 import { describe, expect, it } from 'vitest'
 import { assembler } from '../../src/asm/assembleur'
-import { prepareSource } from '../../src/main/vasmParse'
-import { vasm, vasmDisponible } from '../helpers/vasm'
+
+import { prepareSource, vasm, vasmDisponible } from '../helpers/vasm'
 
 const hex = (b: Uint8Array): string => Buffer.from(b).toString('hex')
 

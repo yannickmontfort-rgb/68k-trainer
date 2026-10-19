@@ -3,7 +3,7 @@ import { is } from '@electron-toolkit/utils'
 import { readFile, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { IPC, type AssembleRequest, type ProgressState } from '../shared/ipc'
-import { assembleWithVasm } from './vasm'
+import { assemblerDansApplication } from './assemblage'
 import { GestionProfils } from './profils'
 import { loadContent } from './content'
 import { getBuildInfo } from './buildInfo'
@@ -36,7 +36,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
-  ipcMain.handle(IPC.assemble, (_event, request: AssembleRequest) => assembleWithVasm(request.source))
+  ipcMain.handle(IPC.assemble, (_event, request: AssembleRequest) => assemblerDansApplication(request.source))
   const profils = new GestionProfils(app.getPath('userData'))
   ipcMain.handle(IPC.loadProgress, () => profils.chargerProgression())
   ipcMain.handle(IPC.saveProgress, (_event, state: ProgressState) => profils.enregistrerProgression(state))

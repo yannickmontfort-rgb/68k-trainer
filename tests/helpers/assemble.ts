@@ -1,38 +1,26 @@
-import { spawnSync } from 'child_process'
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs'
-import { tmpdir } from 'os'
-import { join } from 'path'
-import { VASM_ARGS, parseErrors, parseListing, prepareSource } from '../../src/main/vasmParse'
-
-const VASM_PATH = join(__dirname, '../../tools/vasmm68k_mot.exe')
+/**
+ * Assemble un source pour les tests, avec l'assembleur maison (comme l'application).
+ * vasm ne sert plus qu'aux tests de comparaison (tests/helpers/vasm.ts).
+ */
+import { assemblerSource } from '../../src/shared/assemblage'
 
 export interface TestAssembleResult {
   success: boolean
   binary: Uint8Array
   baseAddress: number
   addressToLine: Record<number, number>
-  errors: { line: number; message: string; original?: string }[]
+  errors: { line: number; message: string; column?: number; length?: number }[]
+  warnings: { line: number; message: string }[]
 }
 
 export function assemble(source: string): TestAssembleResult {
-  const dir = mkdtempSync(join(tmpdir(), '68k-trainer-test-'))
-  const srcPath = join(dir, 'program.s')
-  const binPath = join(dir, 'program.bin')
-  const lstPath = join(dir, 'program.lst')
-  try {
-    const prepared = prepareSource(source)
-    writeFileSync(srcPath, prepared.source, 'utf-8')
-    const result = spawnSync(VASM_PATH, [...VASM_ARGS, '-o', binPath, '-L', lstPath, srcPath])
-    const stderr = result.stderr?.toString() ?? ''
-    const errors = parseErrors(stderr, source, prepared.lineOffset)
-    if (errors.length > 0) {
-      return { success: false, binary: new Uint8Array(), baseAddress: 0, addressToLine: {}, errors }
-    }
-    const binary = new Uint8Array(readFileSync(binPath))
-    const listing = readFileSync(lstPath, 'utf-8')
-    const { baseAddress, addressToLine } = parseListing(listing, prepared.lineOffset)
-    return { success: true, binary, baseAddress: baseAddress ?? 0, addressToLine, errors: [] }
-  } finally {
-    rmSync(dir, { recursive: true, force: true })
+  const r = assemblerSource(source)
+  return {
+    success: r.success,
+    binary: r.binary ?? new Uint8Array(),
+    baseAddress: r.baseAddress ?? 0,
+    addressToLine: r.addressToLine ?? {},
+    errors: r.errors,
+    warnings: r.warnings ?? []
   }
 }

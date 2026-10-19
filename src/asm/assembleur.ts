@@ -244,11 +244,16 @@ class Assembleur {
       const connus = [...this.defsPasse1.keys()].filter((k) => !k.includes('.') && !k.includes('$'))
       const proche = suggestion(nom, connus)
       if (/^[DA][89]$/i.test(nom)) throw new AsmErreur(`« ${nom} » n'existe pas : les registres vont de D0 à D7 et de A0 à A7.`, col, nom.length)
+      const memeLettres = connus.find((k) => k.toUpperCase() === nom.toUpperCase())
+      if (memeLettres) {
+        throw new AsmErreur(
+          `Le nom « ${nom} » n'est défini nulle part : l'étiquette s'écrit « ${memeLettres} » (les majuscules et minuscules comptent dans les étiquettes, comme sous Devpac).`,
+          col,
+          nom.length
+        )
+      }
       throw new AsmErreur(
-        `Le nom « ${nom} » n'est défini nulle part${proche ? ` : vouliez-vous dire « ${proche} » ?` : ' : étiquette mal orthographiée ou oubliée ?'}` +
-          (proche === undefined && [...this.defsPasse1.keys()].some((k) => k.toUpperCase() === nom.toUpperCase())
-            ? ' (attention : les majuscules et minuscules comptent dans les étiquettes)'
-            : ''),
+        `Le nom « ${nom} » n'est défini nulle part${proche ? ` : vouliez-vous dire « ${proche} » ?` : ' : étiquette mal orthographiée ou oubliée ?'}`,
         col,
         nom.length
       )

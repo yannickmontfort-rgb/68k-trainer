@@ -8,6 +8,19 @@ import { tmpdir } from 'os'
 import { join } from 'path'
 
 export const VASM = join(__dirname, '../../tools/vasmm68k_mot.exe')
+
+const SECTION_RE = /^\s*(?:SECTION\s+)?(TEXT|DATA|BSS)\s*(?:[;*].*)?$/i
+const ORG_RE = /^(?:\S+:?)?\s+ORG\b/i
+
+/**
+ * Comme le faisait l'application du temps de vasm : sans ORG, le programme est placé en $1000
+ * (vasm -Fbin l'exige) et les directives de section sont neutralisées.
+ */
+export function prepareSource(source: string): { source: string; lineOffset: number } {
+  const lines = source.split(/\r?\n/).map((l) => (SECTION_RE.test(l) ? '; ' + l : l))
+  if (lines.some((l) => ORG_RE.test(l))) return { source: lines.join('\n'), lineOffset: 0 }
+  return { source: '    ORG $1000\n' + lines.join('\n'), lineOffset: 1 }
+}
 export const vasmDisponible = existsSync(VASM)
 
 export interface ResultatVasm {

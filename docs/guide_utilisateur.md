@@ -71,9 +71,16 @@ Ton code est gardé automatiquement : si tu quittes un exercice, tu le retrouves
   protégées en mode utilisateur.
 - Un **TOS simulé** : les fonctions les plus utiles du GEMDOS (Cconws, Cconout, Cnecin, Pterm0,
   Super…), du BIOS (Bconout, Setexec…) et du XBIOS (Physbase, Setcolor, Setpalette, Supexec…).
-- L'assembleur est **vasm**, en syntaxe Motorola compatible Devpac. Un programme sans `ORG` est
-  chargé en `$1000` ; les directives `TEXT`, `DATA` et `BSS` sont acceptées (les sections sont mises
-  bout à bout). Comme Devpac, l'assembleur assemble exactement ce que tu écris (aucune instruction remplacée par une autre) et aligne automatiquement les instructions et les données `.W`/`.L` sur une adresse paire, avec un avertissement. Une étiquette seule sur sa ligne n'est pas déplacée : pense à `EVEN`.
+- L'assembleur, écrit pour 68k Trainer, est **compatible Devpac**. Un programme sans `ORG` est
+  chargé en `$1000`, avec de vraies sections `TEXT`, `DATA` et `BSS` (dans cet ordre en mémoire, comme
+  sous TOS). Macros, `REPT`, `IF…`, `RS`, `INCLUDE` et `INCBIN` sont pris en charge. Comme Devpac, l'assembleur assemble exactement ce que tu écris (aucune instruction remplacée par une autre) et aligne automatiquement les instructions et les données `.W`/`.L` sur une adresse paire, avec un avertissement. Une étiquette seule sur sa ligne n'est pas déplacée : pense à `EVEN`.
+
+## Exporter vers un vrai Atari (ou Hatari)
+
+Le bouton **Exporter .PRG** (bac à sable, et exercices réussis) fabrique un vrai programme TOS.
+Lance-le dans l'émulateur [Hatari](https://hatari-emu.org) ou copie-le sur la disquette ou le
+disque d'un vrai ST. Pense à terminer ton programme par `Pterm0` (`CLR.W -(SP)` puis `TRAP #1`)
+pour revenir proprement au bureau.
 
 ## Les profils
 

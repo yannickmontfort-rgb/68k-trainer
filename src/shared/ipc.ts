@@ -5,21 +5,24 @@ export interface AssembleRequest {
 }
 
 export interface AssembleError {
-  /** 0 si vasm n'a pas pu situer l'erreur */
+  /** Ligne du source (à partir de 1) ; 0 si inconnue */
   line: number
-  /** Message reformulé pour débutant */
+  /** Message en français, pensé pour un débutant */
   message: string
-  /** Message d'origine de vasm */
-  original?: string
+  /** Colonne (à partir de 1) et longueur du mot fautif, quand elles sont connues */
+  column?: number
+  length?: number
 }
 
 export interface AssembleResult {
   success: boolean
   binary?: Uint8Array
   baseAddress?: number
-  /** Adresse (relative à baseAddress) -> numéro de ligne source, pour le pas-à-pas */
+  /** Adresse (absolue) -> numéro de ligne source, pour le pas-à-pas */
   addressToLine?: Record<number, number>
   errors: AssembleError[]
+  /** Avertissements (alignement automatique, MOVEQ signé…) : le programme s'assemble quand même */
+  warnings?: AssembleError[]
 }
 
 /**

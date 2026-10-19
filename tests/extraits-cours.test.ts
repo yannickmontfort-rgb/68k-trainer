@@ -25,7 +25,7 @@ describe('extraits de code des cours', () => {
     blocs.forEach((bloc, i) => {
       it(`${fichier.slice(RACINE.length + 1)} — extrait ${i + 1}`, () => {
         const asm = assemble(bloc)
-        const vraies = asm.errors.filter((e) => !/undefined symbol/i.test(e.original ?? ''))
+        const vraies = asm.errors.filter((e) => !/n'est défini nulle part/.test(e.message))
         expect(vraies, JSON.stringify(vraies)).toEqual([])
       })
     })

@@ -23,7 +23,7 @@ export function renderApropos(container: HTMLElement): () => void {
         <p class="apropos-texte">Logiciel libre sous licence GNU GPL v3 ou ultérieure.</p>
         ${info.builtAt ? `<p class="apropos-built">Compilé le ${new Date(info.builtAt).toLocaleString('fr-FR')}</p>` : '<p class="apropos-built">Version de développement</p>'}
         <h3>Sous le capot</h3>
-        <p class="apropos-texte">Assembleur <strong>vasm</strong> (Volker Barthelmann, Frank Wille), syntaxe Motorola compatible Devpac, sous sa propre licence (usage non commercial).
+        <p class="apropos-texte">Assembleur et désassembleur 68000 écrits pour 68k Trainer, compatibles Devpac (vérifiés octet par octet contre vasm, de Volker Barthelmann et Frank Wille).
         Émulateur 68000 et TOS simulé écrits pour 68k Trainer.</p>
         <h3>Sources des cours</h3>
         <p class="apropos-texte">Cours reformulés à partir du cours d'assembleur 68000 sur Atari ST du Féroce Lapin, du cours
