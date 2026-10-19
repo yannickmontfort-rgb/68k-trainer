@@ -79,6 +79,7 @@ export const ROM_TIMER_C = ROM_START + 0x200 // timer C du MFP, 200 Hz (vecteur 
 export const ROM_ACIA = ROM_START + 0x240 // interruption clavier/MIDI (vecteur $118)
 export const ROM_IKBDSYS = ROM_START + 0x300 // traitement d'un octet du clavier (Kbdvbase+32)
 export const OP_IKBDSYS = 0xa0fb
+export const ROM_CLOCHE = ROM_START + 0x380 // liste Dosound de la cloche (Ctrl+G)
 export const OP_PROGRAM_EXIT = 0xa0fd
 export const OP_SUPEXEC_RETURN = 0xa0fe
 

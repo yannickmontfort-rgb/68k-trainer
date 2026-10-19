@@ -824,9 +824,14 @@
   box-shadow: 0 0 0 2px rgba(79, 163, 255, 0.35);
 }
 
+.ecran-barre {
+  display: flex;
+  gap: 16px;
+  margin-top: 4px;
+}
+
 .ecran-options {
   display: block;
-  margin-top: 4px;
   font-size: 12px;
   color: var(--texte-doux);
   cursor: pointer;

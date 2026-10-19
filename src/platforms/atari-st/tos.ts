@@ -19,6 +19,7 @@ import {
   ROM_RTS,
   ROM_START,
   ROM_SUPEXEC_RETURN,
+  ROM_CLOCHE,
   ROM_TIMER_C,
   SCREEN_BASE,
   SUPERVISOR_STACK,
@@ -32,6 +33,7 @@ import {
 import { screenAddress } from './screen'
 import { routinesRom } from './rom'
 import { CODE, traduire } from './clavier'
+import { materielAtari } from './materiel'
 
 export interface AtariKey {
   ascii: number
@@ -62,6 +64,9 @@ const SHIFT_GAUCHE = 0x02
 const CONTROL = 0x04
 const ALTERNATE = 0x08
 const CAPS = 0x10
+/** Son de la cloche (Ctrl+G), liste Dosound du TOS (EmuTOS, bios/sound.c). */
+const CLOCHE = new Uint8Array([0, 0x34, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0xfe, 8, 0x10, 13, 9, 11, 0, 12, 0x10, 0xff, 0])
+
 /** Taille du tampon clavier du TOS (en touches). */
 const TAMPON_CLAVIER = 64
 
@@ -185,6 +190,15 @@ export function createTos(options: TosOptions = {}): Platform {
     cpu.memory.writeU8(VIDEO_BASE_MID, (address >> 8) & 0xff)
   }
 
+  /** Caractère vers la console ; Ctrl+G (7) fait sonner la cloche si conterm le permet. */
+  function afficher(cpu: Cpu, car: number): void {
+    if (car === 7 && cpu.memory.readU8(SYSVAR.conterm) & 0x04) {
+      materielAtari(cpu)?.dosound(ROM_CLOCHE)
+      return
+    }
+    cpu.output += String.fromCharCode(car)
+  }
+
   function gemdos(cpu: Cpu): boolean {
     const fn = argW(cpu, 0)
     switch (fn) {
@@ -194,7 +208,7 @@ export function createTos(options: TosOptions = {}): Platform {
       case 0x01: // Cconin : lit une touche avec écho
         return nextKey(cpu, true)
       case 0x02: // Cconout(car)
-        cpu.output += String.fromCharCode(argW(cpu, 2) & 0xff)
+        afficher(cpu, argW(cpu, 2) & 0xff)
         return true
       case 0x07: // Crawcin
       case 0x08: // Cnecin
@@ -248,7 +262,8 @@ export function createTos(options: TosOptions = {}): Platform {
       case 3: {
         // Bconout(périph, car) : 2 = console, 5 = console brute
         const device = argW(cpu, 2)
-        if (device === 2 || device === 5) cpu.output += String.fromCharCode(argW(cpu, 4) & 0xff)
+        if (device === 2) afficher(cpu, argW(cpu, 4) & 0xff)
+        else if (device === 5) cpu.output += String.fromCharCode(argW(cpu, 4) & 0xff)
         return true
       }
       case 5: {
@@ -312,6 +327,20 @@ export function createTos(options: TosOptions = {}): Platform {
         randomSeed = (Math.imul(randomSeed, 0xbb40e62d) + 1) >>> 0
         cpu.d[0] = (randomSeed >>> 8) & 0xffffff
         return true
+      case 28: {
+        // Giaccess(donnée, registre) : registre + $80 = écrire ; sinon lire
+        const donnee = argW(cpu, 2) & 0xff
+        const reg = argW(cpu, 4)
+        const psg = materielAtari(cpu)?.psg
+        if (psg) {
+          if (reg & 0x80) psg.ecrire(donnee, cpu.cycles, reg & 0x0f)
+          cpu.d[0] = psg.etat.lire(reg & 0x0f)
+        }
+        return true
+      }
+      case 32: // Dosound(liste) ; liste négative : renvoie seulement la position courante
+        cpu.d[0] = materielAtari(cpu)?.dosound(argL(cpu, 2)) ?? 0
+        return true
       case 34: // Kbdvbase
         cpu.d[0] = KBDVBASE
         return true
@@ -338,6 +367,7 @@ export function createTos(options: TosOptions = {}): Platform {
       paquet = null
       const mem = cpu.memory
       for (const [adresse, octets] of routinesRom()) mem.loadBytes(adresse, octets)
+      mem.loadBytes(ROM_CLOCHE, CLOCHE)
       mem.writeU32(0x114, ROM_TIMER_C)
       mem.writeU32(0x118, ROM_ACIA)
       for (let i = 0; i < 16; i++) mem.writeU8(KBDBUF + i, 0)

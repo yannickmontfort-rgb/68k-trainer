@@ -2,9 +2,14 @@ import type { Cpu } from '../../cpu/cpu'
 import type { Platform } from '../../cpu/platform'
 import type { Size } from '../../cpu/types'
 import { ACIA_CLAVIER_CTRL, ACIA_MIDI_DATA, Ikbd } from './ikbd'
-import { CYCLES_PER_VBL, PALETTE_BASE, SCREEN_HEIGHT } from './machine'
+import { CPU_HZ, CYCLES_PER_VBL, PALETTE_BASE, SCREEN_HEIGHT } from './machine'
 import { MFP, MFP_BASE, MFP_END, Mfp } from './mfp'
 import { toucheSt } from './clavier'
+import { PsgSt } from './ym2149'
+
+/** Puce sonore : $FF8800 (choix du registre / lecture) et $FF8802 (écriture), répétés jusqu'à $FF88FF. */
+export const PSG_BASE = 0xff8800
+export const PSG_END = 0xff8900
 
 /**
  * Balayage d'une trame PAL : 313 lignes de 512 cycles ; les 200 lignes de la basse résolution
@@ -19,6 +24,12 @@ const FIN_AFFICHAGE = 376
 export interface MaterielAtari {
   mfp: Mfp
   ikbd: Ikbd
+  psg: PsgSt
+  /**
+   * Dosound (XBIOS 32) : joue la liste de commandes sonores en `adresse` (50 pas par seconde).
+   * Adresse négative : rien ne change. Renvoie la position courante (0 = rien en cours).
+   */
+  dosound(adresse: number): number
   /**
    * Palette lue par le Shifter pour chacune des 200 lignes de la dernière trame complète
    * (16 mots par ligne), ou `null` si elle n'a pas changé en cours de trame.
@@ -75,6 +86,65 @@ export function createMateriel(options: MaterielOptions = {}): Platform {
   }
   const mfp = new Mfp(() => cpu)
   const ikbd = new Ikbd((actif) => mfp.entree(4, !actif))
+  const psg = new PsgSt()
+
+  // Séquenceur de Dosound, comme le TOS : un pas toutes les 4 interruptions du timer C (50 Hz)
+  const CYCLES_PAR_PAS_SON = Math.round(CPU_HZ / 50)
+  let sonPosition = 0
+  let sonAttente = 0
+  let sonTemp = 0
+  let prochainPasSon = Infinity
+
+  function dosound(adresse: number): number {
+    const avant = sonPosition
+    // Adresse négative (bit 31) : simple lecture de la position
+    if ((adresse >>> 0) < 0x80000000) {
+      sonPosition = adresse & 0xffffff
+      sonAttente = 0
+      prochainPasSon = cpu.cycles
+    }
+    return avant
+  }
+
+  /** Un pas du séquenceur : exécute les commandes jusqu'à une attente ou la fin. */
+  function pasSon(): void {
+    const mem = cpu.memory
+    if (sonAttente > 0) {
+      sonAttente--
+      return
+    }
+    for (let garde = 0; garde < 256 && sonPosition; garde++) {
+      const cmd = mem.readU8(sonPosition)
+      if (cmd < 0x80) {
+        // registre, valeur
+        psg.ecrire(mem.readU8(sonPosition + 1), cpu.cycles, cmd & 0x0f)
+        sonPosition += 2
+      } else if (cmd === 0x80) {
+        // valeur dans le registre temporaire
+        sonTemp = mem.readU8(sonPosition + 1)
+        sonPosition += 2
+      } else if (cmd === 0x81) {
+        // registre, incrément (signé), valeur finale : un pas à chaque tour
+        const reg = mem.readU8(sonPosition + 1)
+        const inc = (mem.readU8(sonPosition + 2) << 24) >> 24
+        const fin = mem.readU8(sonPosition + 3)
+        psg.ecrire(sonTemp, cpu.cycles, reg & 0x0f)
+        sonTemp = (sonTemp + inc) & 0xff
+        if (sonTemp === fin) sonPosition += 4
+        return
+      } else {
+        // $82-$FF n : attendre n pas (0 = fin de la liste)
+        const n = mem.readU8(sonPosition + 1)
+        if (n === 0) {
+          sonPosition = 0
+          return
+        }
+        sonAttente = n - 1
+        sonPosition += 2
+        return
+      }
+    }
+  }
 
   // Événements de balayage : pour chaque ligne affichée, début (lecture palette) puis fin (timer B)
   let debutTrame = 0
@@ -109,6 +179,7 @@ export function createMateriel(options: MaterielOptions = {}): Platform {
 
   const estMfp = (a: number): boolean => a >= MFP_BASE && a < MFP_END
   const estAcia = (a: number): boolean => a >= ACIA_CLAVIER_CTRL && a <= ACIA_MIDI_DATA + 1
+  const estPsg = (a: number): boolean => a >= PSG_BASE && a < PSG_END
 
   return {
     onReset(c: Cpu): void {
@@ -119,7 +190,11 @@ export function createMateriel(options: MaterielOptions = {}): Platform {
       evenement = 0
       prochainEvenement = cycleEvenement()
       derniere = null
-      registre.set(cpu, { mfp, ikbd, palettesParLigne: () => derniere })
+      psg.reset(0)
+      sonPosition = 0
+      sonAttente = 0
+      prochainPasSon = Infinity
+      registre.set(cpu, { mfp, ikbd, psg, dosound, palettesParLigne: () => derniere })
       programmer()
       // État laissé par le TOS au lancement d'un programme : vecteurs MFP en $100-$13C (EOI
       // logiciel), timer C à 200 Hz, interruptions du clavier et du timer C autorisées.
@@ -135,27 +210,42 @@ export function createMateriel(options: MaterielOptions = {}): Platform {
       mfp.refleter(cpu)
     },
 
-    ioStart: MFP_BASE,
+    ioStart: PSG_BASE,
 
     readIo(c: Cpu, address: number, size: Size): number | undefined {
-      if (!estMfp(address) && !estAcia(address)) return undefined
+      if (!estMfp(address) && !estAcia(address) && !estPsg(address)) return undefined
       let v = 0
       for (let i = 0; i < size; i++) {
         const a = address + i
         // MFP sur les octets impairs, ACIA sur les octets pairs ; l'autre moitié du bus flotte
-        const octet = estMfp(a) ? (a & 1 ? mfp.lire(a, c.cycles) : 0xff) : estAcia(a) ? (a & 1 ? 0xff : ikbd.lire(a)) : 0xff
+        const octet = estPsg(a)
+          ? (a & 3) === 0
+            ? psg.lire()
+            : 0xff
+          : estMfp(a)
+            ? a & 1
+              ? mfp.lire(a, c.cycles)
+              : 0xff
+            : estAcia(a)
+              ? a & 1
+                ? 0xff
+                : ikbd.lire(a)
+              : 0xff
         v = (v << 8) | octet
       }
       return v >>> 0
     },
 
     onMemoryWrite(c: Cpu, address: number, size: Size, value: number): void {
-      if (!estMfp(address) && !estAcia(address)) return
+      if (!estMfp(address) && !estAcia(address) && !estPsg(address)) return
       for (const [a, o] of octets(address, size, value)) {
-        if (estMfp(a) && a & 1) mfp.ecrire(a, o, c.cycles)
+        if (estPsg(a)) {
+          if ((a & 3) === 0) psg.choisir(o)
+          else if ((a & 3) === 2) psg.ecrire(o, c.cycles)
+        } else if (estMfp(a) && a & 1) mfp.ecrire(a, o, c.cycles)
         else if (estAcia(a) && !(a & 1)) ikbd.ecrire(a, o)
       }
-      mfp.refleter(c)
+      if (!estPsg(address)) mfp.refleter(c)
     },
 
     acknowledgeInterrupt(_c: Cpu, level: number): number | undefined {
@@ -168,6 +258,10 @@ export function createMateriel(options: MaterielOptions = {}): Platform {
         prochaineAction = actions[0]?.cycle ?? Infinity
       }
       mfp.avancer(c.cycles)
+      if (c.cycles >= prochainPasSon) {
+        pasSon()
+        prochainPasSon = sonPosition ? prochainPasSon + CYCLES_PAR_PAS_SON : Infinity
+      }
       if (ikbd.enAttente) ikbd.avancer(c.cycles)
       if (c.cycles >= prochainEvenement) balayage()
     }

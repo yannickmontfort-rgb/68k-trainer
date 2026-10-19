@@ -5,6 +5,7 @@ import type { StepEffects } from '../../../cpu/types'
 import type { AssembleError, AssembleResult } from '../../../shared/ipc'
 import { CPU_HZ, ROM_END, ROM_START } from '../../../platforms/atari-st/machine'
 import type { Debogueur } from './debogueur'
+import { SortieSon } from './son'
 
 /** Code système en ROM (routine VBL, retour de Supexec...) : le pas à pas le traverse d'un coup. */
 const enRom = (pc: number): boolean => pc >= ROM_START && pc < ROM_END
@@ -20,6 +21,7 @@ export class Execution {
   assemblage: AssembleResult | null = null
   private decorations: string[] = []
   private tempsReelActif = false
+  private readonly son = new SortieSon()
 
   constructor(
     private readonly editor: monaco.editor.IStandaloneCodeEditor,
@@ -119,12 +121,16 @@ export class Execution {
     if (!cpu || cpu.halted || this.tempsReelActif) return
     this.tempsReelActif = true
     this.surligner(undefined)
+    this.son.demarrer(cpu)
     let precedent = performance.now()
     // Cible cumulée : un Vsync qui fait sauter le temps jusqu'à la VBL est « rendu » ensuite
     let cible = cpu.cycles
     let last: StepEffects | null = null
     const image = (maintenant: number): void => {
-      if (!this.tempsReelActif) return fin('arret', last)
+      if (!this.tempsReelActif) {
+        this.son.arreter()
+        return fin('arret', last)
+      }
       // Au plus 3 trames de retard (onglet en arrière-plan, machine lente)
       const ecoule = Math.max(0, Math.min(maintenant - precedent, 60))
       precedent = maintenant
@@ -133,9 +139,11 @@ export class Execution {
         last = cpu.step()
         if (last.error) break
       }
+      this.son.alimenter(cpu)
       this.debogueur.rafraichir([])
       if (last?.error || cpu.halted) {
         this.tempsReelActif = false
+        // Laisser finir le son déjà prévu (quelques dizaines de ms)
         this.surligner(this.ligneCourante())
         return fin(last?.error ? 'erreur' : 'fin', last)
       }

@@ -299,6 +299,14 @@ export class Cpu {
 
   // --- Mémoire / registres bas niveau ---------------------------------
 
+  /**
+   * Adresse effective : le 68000 la calcule sur 32 bits (LEA -1.W,A0 donne $FFFFFFFF) ; seul le
+   * bus d'adresse, à l'accès mémoire, n'en garde que 24.
+   */
+  private ea32(address: number): number {
+    return address >>> 0
+  }
+
   private maskAddr(address: number): number {
     return (address >>> 0) & (MEMORY_SIZE - 1)
   }
@@ -393,21 +401,21 @@ export class Cpu {
       case 1:
         return { mode, reg }
       case 2:
-        return { mode, reg, address: this.maskAddr(this.a[reg]) }
+        return { mode, reg, address: this.ea32(this.a[reg]) }
       case 3: {
-        const address = this.maskAddr(this.a[reg])
+        const address = this.ea32(this.a[reg])
         const inc = reg === 7 && size === 1 ? 2 : size
-        this.a[reg] = this.maskAddr(this.a[reg] + inc)
+        this.a[reg] = this.ea32(this.a[reg] + inc)
         return { mode, reg, address }
       }
       case 4: {
         const dec = reg === 7 && size === 1 ? 2 : size
-        this.a[reg] = this.maskAddr(this.a[reg] - dec)
-        return { mode, reg, address: this.maskAddr(this.a[reg]) }
+        this.a[reg] = this.ea32(this.a[reg] - dec)
+        return { mode, reg, address: this.ea32(this.a[reg]) }
       }
       case 5: {
         const disp = signExtend(this.fetchWord(), 2)
-        return { mode, reg, address: this.maskAddr(this.a[reg] + disp) }
+        return { mode, reg, address: this.ea32(this.a[reg] + disp) }
       }
       case 6:
         return { mode, reg, address: this.decodeBriefExtension(this.a[reg]) }
@@ -415,14 +423,14 @@ export class Cpu {
         switch (reg) {
           case 0: {
             const disp = signExtend(this.fetchWord(), 2)
-            return { mode, reg, address: this.maskAddr(disp) }
+            return { mode, reg, address: this.ea32(disp) }
           }
           case 1:
-            return { mode, reg, address: this.maskAddr(this.fetchLong()) }
+            return { mode, reg, address: this.ea32(this.fetchLong()) }
           case 2: {
             const base = this.pc
             const disp = signExtend(this.fetchWord(), 2)
-            return { mode, reg, address: this.maskAddr(base + disp) }
+            return { mode, reg, address: this.ea32(base + disp) }
           }
           case 3:
             return { mode, reg, address: this.decodeBriefExtension(this.pc) }

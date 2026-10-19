@@ -4,6 +4,7 @@ import { decodeLowRes, readPalette, screenAddress, stColorToRgb } from '../../..
 import { materielAtari } from '../../../platforms/atari-st/materiel'
 import { CODE_PC, toucheSt } from '../../../platforms/atari-st/clavier'
 import { JOY } from '../../../platforms/atari-st/ikbd'
+import { activerSon, sonActif } from './son'
 
 /** Touches du PC qui pilotent le joystick 1 en mode joystick. */
 const JOY_PC: Record<string, number> = {
@@ -46,7 +47,17 @@ export class EcranAtari {
     options.title = 'Les flèches et Espace pilotent le joystick 1 au lieu du clavier (une manette branchée sur le PC marche toujours)'
     options.innerHTML = '<input type="checkbox" /> 🕹 Flèches + Espace = joystick'
     this.modeJoystick = options.querySelector('input')!
-    this.element.append(this.canvas, options)
+    const son = document.createElement('label')
+    son.className = 'ecran-options'
+    son.title = 'Le son de la puce YM2149, en mode Temps réel'
+    son.innerHTML = '<input type="checkbox" /> 🔊 Son'
+    const caseSon = son.querySelector('input')!
+    caseSon.checked = sonActif()
+    caseSon.addEventListener('change', () => activerSon(caseSon.checked))
+    const barre = document.createElement('div')
+    barre.className = 'ecran-barre'
+    barre.append(options, son)
+    this.element.append(this.canvas, barre)
     this.canvas.addEventListener('keydown', (e) => this.clavier(e, true))
     this.canvas.addEventListener('keyup', (e) => this.clavier(e, false))
     this.canvas.addEventListener('blur', () => {
