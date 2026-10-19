@@ -1,0 +1,82 @@
+# Construit les paquets des trois systèmes à chaque tag vX.Y.Z (builds vérifiables depuis les
+# sources) et les attache à une release GitHub en brouillon, à relire puis publier à la main.
+#   Windows : installeur NSIS + version portable (.exe)
+#   Linux   : AppImage + .deb
+#   macOS   : .dmg universel (Intel + Apple Silicon), non signé
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  paquets:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            cible: --win
+            fichiers: |
+              dist/*.exe
+          - os: ubuntu-latest
+            cible: --linux
+            fichiers: |
+              dist/*.AppImage
+              dist/*.deb
+          - os: macos-latest
+            cible: --mac
+            fichiers: |
+              dist/*.dmg
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      # La version vient de package.json (et du tag) : pas d'incrément automatique ici
+      - run: npm run build:meta
+      - run: npx electron-vite build
+      - run: npx electron-builder ${{ matrix.cible }} --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - uses: actions/upload-artifact@v4
+        id: non-signes
+        with:
+          name: paquets-${{ matrix.os }}
+          path: ${{ matrix.fichiers }}
+
+      # --- Signature SignPath des .exe (à décommenter une fois le projet accepté) ---
+      # Voir docs/signpath/DOSSIER_CANDIDATURE.md ; paramètres à revérifier dans la documentation.
+      # - name: Signature par SignPath
+      #   if: matrix.os == 'windows-latest'
+      #   uses: signpath/github-action-submit-signing-request@v1
+      #   with:
+      #     api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+      #     organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+      #     project-slug: 68k-trainer
+      #     signing-policy-slug: release-signing
+      #     artifact-configuration-slug: windows-exe
+      #     github-artifact-id: ${{ steps.non-signes.outputs.artifact-id }}
+      #     wait-for-completion: true
+      #     output-artifact-directory: dist
+
+  release:
+    needs: paquets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: paquets
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          files: paquets/*
