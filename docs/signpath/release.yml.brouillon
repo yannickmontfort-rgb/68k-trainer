@@ -1,0 +1,69 @@
+# BROUILLON, inactif : à copier dans .github/workflows/release.yml le jour où l'on candidate à
+# SignPath Foundation (voir DOSSIER_CANDIDATURE.md). Les versions des actions et les paramètres
+# SignPath sont à revérifier à ce moment-là dans leur documentation.
+#
+# Construit les binaires Windows sur GitHub Actions à chaque tag vX.Y.Z (build vérifiable depuis
+# les sources), les fait signer par SignPath, puis les attache à la release GitHub.
+
+name: Release Windows
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+      # Même chose que « npm run dist:win », sans l'incrément automatique de version :
+      # la version vient du tag et de package.json.
+      - name: Métadonnées de build
+        shell: bash
+        run: |
+          node -e "const p=require('./package.json');require('fs').writeFileSync('build-meta.json',JSON.stringify({version:p.version,year:new Date().getFullYear(),builtAt:new Date().toISOString()},null,2))"
+      - run: npx electron-vite build
+      - run: npx electron-builder --win --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+      - name: Binaires non signés
+        id: non-signes
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-non-signes
+          path: |
+            dist/*.exe
+            !dist/__uninstaller*
+
+      # --- Signature SignPath (à décommenter une fois le projet accepté) ---
+      # - name: Signature par SignPath
+      #   uses: signpath/github-action-submit-signing-request@v1
+      #   with:
+      #     api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+      #     organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+      #     project-slug: 68k-trainer
+      #     signing-policy-slug: release-signing
+      #     artifact-configuration-slug: windows-exe
+      #     github-artifact-id: ${{ steps.non-signes.outputs.artifact-id }}
+      #     wait-for-completion: true
+      #     output-artifact-directory: signes
+      #
+      # - name: Publication dans la release
+      #   uses: softprops/action-gh-release@v2
+      #   with:
+      #     files: signes/*.exe
+      #     prerelease: true
