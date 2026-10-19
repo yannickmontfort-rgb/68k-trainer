@@ -23,7 +23,11 @@ export function prepareSource(source: string): { source: string; lineOffset: num
   if (lines.some((l) => ORG_RE.test(l))) return { source: lines.join('\n'), lineOffset: 0 }
   return { source: '    ORG $1000\n' + lines.join('\n'), lineOffset: 1 }
 }
-export const vasmDisponible = existsSync(VASM)
+/**
+ * vasm n'est pas dans le dépôt (licence non libre) : chacun le place dans tools/ s'il veut lancer
+ * les comparaisons. C'est l'exécutable Windows : ailleurs, les comparaisons sont sautées.
+ */
+export const vasmDisponible = process.platform === 'win32' && existsSync(VASM)
 
 export interface ResultatVasm {
   ok: boolean
