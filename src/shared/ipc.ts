@@ -62,7 +62,8 @@ export interface ExerciseCheck {
   maxSteps: number
   /**
    * Forme de `expected` selon `type` :
-   * - "registers" : clé = "D0".."D7" | "A0".."A7" | "PC", valeur = mot de 32 bits en hexa ("$0000002A")
+   * - "registers" : clé = "D0".."D7" | "A0".."A7" | "PC" | "SR", valeur = mot de 32 bits en hexa ("$0000002A") ;
+   *                 ou clé = flag "X" | "N" | "Z" | "V" | "C", valeur "$1" ou "$0"
    * - "memory"    : clé = adresse hexa avec suffixe de taille optionnel ("$FF8240", "$FF8240.B", "$FF8240.L"
    *                 — défaut ".W" si omis), valeur = contenu attendu à cette adresse, en hexa
    * - "output"    : une seule clé "output", valeur = chaîne exacte attendue dans cpu.output (pas de l'hexa ;

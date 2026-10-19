@@ -96,13 +96,15 @@ function verifierParcours(parcours: Parcours): void {
               const { cpu, last } = executer(sourceExercice(c), parcours.plateforme, c.machine, c.check.maxSteps)
               const verdict = evaluateCheck(cpu, c.check)
               expect(verdict.success, `${verdict.message}\n${last.error ?? ''}`).toBe(true)
+              expect(last.error, 'la solution ne doit pas planter').toBeUndefined()
             })
             if (c.variante === 'completer' || c.variante === 'corriger') {
               it(`exercice « ${c.titre} » : le code de départ n'est pas déjà juste`, () => {
                 const asm = assemble(c.codeDepart)
                 if (!asm.success) return // erreur de syntaxe volontaire
-                const { cpu } = runBinary(asm.binary, asm.baseAddress, platformFor(parcours.plateforme, c.machine), c.check.maxSteps)
-                expect(evaluateCheck(cpu, c.check).success).toBe(false)
+                const { cpu, last } = runBinary(asm.binary, asm.baseAddress, platformFor(parcours.plateforme, c.machine), c.check.maxSteps)
+                // Juste = check réussi ET pas de plantage (comme dans verifierExercice)
+                expect(evaluateCheck(cpu, c.check).success && !last.error).toBe(false)
               })
             }
           }

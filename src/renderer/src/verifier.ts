@@ -47,7 +47,10 @@ export async function verifierExercice(source: string, ex: ContenuExercice, plat
   }
   const { cpu, last } = runBinary(asm.binary!, asm.baseAddress ?? 0, platformFor(plateforme, ex.machine), ex.check.maxSteps)
   const result = evaluateCheck(cpu, ex.check)
-  if (result.success) return { success: true, message: result.message, pistes: [] }
-  const message = last.error ? `${last.error}\n\n${result.message}` : result.message
+  // Un programme qui plante n'est jamais réussi, même si les registres sont justes
+  if (result.success && !last.error) return { success: true, message: result.message, pistes: [] }
+  const message = last.error
+    ? `Le programme ne s'est pas terminé proprement.\n${last.error}${result.success ? '' : '\n\n' + result.message}`
+    : result.message
   return { success: false, message, pistes: pistesPour(ex, message) }
 }

@@ -15,6 +15,8 @@ export interface MachineOptions {
   touches?: { ascii: number; scancode: number }[]
   /** Afficher l'aperçu de l'écran Atari (basse résolution). */
   ecran?: boolean
+  /** Adresse affichée au départ dans la vue mémoire du débogueur (sinon : début du programme). */
+  memoire?: number
 }
 
 interface ContenuBase {

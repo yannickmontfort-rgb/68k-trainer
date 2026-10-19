@@ -10,6 +10,8 @@ export interface CheckResult {
 
 function readRegister(snap: CpuSnapshot, key: string): number {
   if (key === 'PC') return snap.pc
+  if (key === 'SR') return snap.sr
+  if (/^[XNZVC]$/.test(key)) return snap.flags[key.toLowerCase() as keyof CpuSnapshot['flags']] ? 1 : 0
   const index = parseInt(key.slice(1), 10)
   if (key[0] === 'D') return snap.d[index]
   if (key[0] === 'A') return snap.a[index]
@@ -68,7 +70,8 @@ export function evaluateCheck(cpu: Cpu, check: ExerciseCheck): CheckResult {
     const expected = parseInt(expectedHex.replace('$', ''), 16) >>> 0
     const actual = check.type === 'memory' ? readMemory(cpu, key) : readRegister(snap, key)
     if (actual !== expected) {
-      mismatches.push(`${key} attendu ${expectedHex}, obtenu $${actual.toString(16).padStart(8, '0').toUpperCase()}`)
+      if (/^[XNZVC]$/.test(key)) mismatches.push(`Flag ${key} attendu à ${expected}, obtenu ${actual}`)
+      else mismatches.push(`${key} attendu ${expectedHex}, obtenu $${actual.toString(16).padStart(8, '0').toUpperCase()}`)
     }
   }
   if (mismatches.length > 0) return { success: false, message: mismatches.join('\n') }

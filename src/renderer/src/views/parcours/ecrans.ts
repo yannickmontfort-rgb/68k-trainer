@@ -134,7 +134,7 @@ export function ecranExemple(el: HTMLElement, ex: ContenuExemple, ctx: ContexteE
   const editor = creerEditeur(el.querySelector('#editeur')!, ex.code, true)
   const dbg = new Debogueur({ ecran: ex.machine?.ecran })
   el.querySelector('#dbg')!.appendChild(dbg.element)
-  const exec = new Execution(editor, dbg, () => platformFor(ctx.plateforme, ex.machine))
+  const exec = new Execution(editor, dbg, () => platformFor(ctx.plateforme, ex.machine), ex.machine?.memoire)
   const explicationEl = el.querySelector<HTMLDivElement>('#explication')!
   const statut = el.querySelector<HTMLSpanElement>('#statut')!
   const btnPas = el.querySelector<HTMLButtonElement>('#btn-pas')!
@@ -383,7 +383,7 @@ export function ecranExercice(el: HTMLElement, ex: ContenuExercice, ctx: Context
         editeurPasAPas.setValue(sourceActuel())
         cible = editeurPasAPas
       }
-      exec = new Execution(cible, dbg, () => platformFor(ctx.plateforme, ex.machine))
+      exec = new Execution(cible, dbg, () => platformFor(ctx.plateforme, ex.machine), ex.machine?.memoire)
       const res = await exec.assembler(sourceActuel())
       dbgStatut.textContent = res.success ? 'Prêt : avance pas à pas' : 'Erreur d’assemblage : voir les lignes soulignées'
     })()
@@ -504,7 +504,7 @@ export function ecranPrediction(el: HTMLElement, pred: ContenuPrediction, ctx: C
       dbgEl.innerHTML = ''
       const dbg = new Debogueur({ ecran: pred.machine?.ecran })
       dbgEl.appendChild(dbg.element)
-      const exec = new Execution(editor, dbg, () => platformFor(ctx.plateforme, pred.machine))
+      const exec = new Execution(editor, dbg, () => platformFor(ctx.plateforme, pred.machine), pred.machine?.memoire)
       const res = await exec.assembler(pred.code)
       if (!res.success) return
       const effects = exec.toutExecuter(100000)

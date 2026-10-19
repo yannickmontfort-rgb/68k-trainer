@@ -17,7 +17,9 @@ export class Execution {
   constructor(
     private readonly editor: monaco.editor.IStandaloneCodeEditor,
     private readonly debogueur: Debogueur,
-    private readonly creerPlateforme: () => Platform | undefined
+    private readonly creerPlateforme: () => Platform | undefined,
+    /** Adresse affichée dans la vue mémoire (sinon : début du programme). */
+    private readonly adresseMemoire?: number
   ) {}
 
   /** Assemble le source ; renvoie le résultat (erreurs reformulées comprises). */
@@ -54,7 +56,7 @@ export class Execution {
     cpu.reset(asm.baseAddress ?? 0)
     cpu.loadProgram(asm.baseAddress ?? 0, asm.binary!)
     this.cpu = cpu
-    this.debogueur.setAdresseMemoire(asm.baseAddress ?? 0)
+    this.debogueur.setAdresseMemoire(this.adresseMemoire ?? asm.baseAddress ?? 0)
     this.debogueur.attacher(cpu)
     this.surligner(this.ligneCourante())
   }
