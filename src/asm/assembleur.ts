@@ -124,6 +124,8 @@ class Assembleur {
   private adresseVersLigne: Record<number, number> = {}
   private relocs: { section: NomSection; position: number }[] = []
   private ligneCourante!: LigneSrc
+  /** Étiquette définie seule sur sa ligne, juste avant (pour l'avertissement d'alignement). */
+  private etiquetteSeule: { nom: string; adresse: number; ligne: number } | null = null
   private profondeurInclude = 0
   private debogage = false
 
@@ -219,6 +221,14 @@ class Assembleur {
   /** Aligne sur une adresse paire ; renvoie true si un octet a été ajouté. */
   private aligner(): boolean {
     if ((this.pc & 1) === 0) return false
+    // Le piège de Devpac : une étiquette seule sur sa ligne, juste avant, reste à l'adresse impaire
+    const seule = this.etiquetteSeule
+    if (seule && seule.adresse === this.pc) {
+      this.avertir(
+        `L'étiquette « ${seule.nom} » (ligne ${seule.ligne}) est restée à l'adresse impaire $${seule.adresse.toString(16).toUpperCase()}, ` +
+          "alors que ce qui suit a été aligné : un accès .W ou .L par cette étiquette provoquera une erreur d'adresse. Ajoute EVEN avant l'étiquette."
+      )
+    }
     this.courant.octets.push(0)
     return true
   }
@@ -464,9 +474,20 @@ class Assembleur {
   private traiterLigne(d: ReturnType<typeof decouperLigne>, l: LigneSrc): void {
     const mnemo = d.mnemo
     if (!mnemo) {
-      if (d.etiquette) this.definirEtiquetteIci(d.etiquette)
+      if (d.etiquette) {
+        this.definirEtiquetteIci(d.etiquette)
+        this.etiquetteSeule = { nom: d.etiquette.texte, adresse: this.pc, ligne: l.ligne }
+      }
       return
     }
+    try {
+      this.traiterInstructionOuDirective(d, l, mnemo)
+    } finally {
+      this.etiquetteSeule = null
+    }
+  }
+
+  private traiterInstructionOuDirective(d: ReturnType<typeof decouperLigne>, l: LigneSrc, mnemo: Champ): void {
     const nom = mnemo.texte
 
     // Macro définie par l'utilisateur

@@ -348,6 +348,21 @@ export function encoderInstruction(
     out.octets[debut + 1] = mot & 0xff
   }
 
+  // « # » probablement oublié : une petite valeur écrite en chiffres, sans #, est une ADRESSE
+  if (ops.length === 2 && ops[0].m === 'abs' && ['MOVE', 'ADD', 'SUB', 'CMP', 'AND', 'OR', 'MULU', 'MULS', 'DIVU', 'DIVS'].includes(nom)) {
+    const texte = ops[0].adr.texte.trim()
+    if (/^(\$[0-9A-Fa-f]+|%[01]+|\d+)$/.test(texte)) {
+      const v = e.val(ops[0].adr)
+      if (!v.inconnu && v.v >= 0 && v.v < 0x100) {
+        ctx.avertir(
+          `Sans « # », ${texte} est une adresse mémoire : ${nom} va lire ce qui se trouve à l'adresse ${texte}. Pour la valeur elle-même, écris #${texte}.`,
+          ops[0].adr.col,
+          texte.length
+        )
+      }
+    }
+  }
+
   switch (nom) {
     case 'MOVE': {
       exigerNombre(champs, 2, nom, mnemo)

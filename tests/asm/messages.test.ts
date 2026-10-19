@@ -54,3 +54,25 @@ describe('messages de l’assembleur pour débutants', () => {
     expect(r.success).toBe(true)
   })
 })
+
+describe('avertissements pédagogiques', () => {
+  it('étiquette seule restée à une adresse impaire', () => {
+    const r = assemble("START:\n    MOVE.W VALEUR,D0\n    RTS\nTEXTE: DC.B 'ST',0\nVALEUR:\n    DC.W 1040\n")
+    expect(r.success).toBe(true)
+    expect(r.warnings.some((w) => w.message.includes('« VALEUR »') && w.message.includes('EVEN'))).toBe(true)
+  })
+
+  it('pas d’avertissement quand EVEN est là', () => {
+    const r = assemble("START:\n    MOVE.W VALEUR,D0\n    RTS\nTEXTE: DC.B 'ST',0\n    EVEN\nVALEUR:\n    DC.W 1040\n")
+    expect(r.warnings).toEqual([])
+  })
+
+  it('# oublié devant une petite valeur', () => {
+    const r = assemble('START:\n    MOVE.W 5,D0\n    RTS\n')
+    expect(r.warnings[0].message).toContain('#5')
+  })
+
+  it('pas d’avertissement pour une étiquette ou une adresse matérielle', () => {
+    expect(assemble('START:\n    MOVE.W START,D0\n    MOVE.B $484,D1\n    RTS\n').warnings).toEqual([])
+  })
+})
