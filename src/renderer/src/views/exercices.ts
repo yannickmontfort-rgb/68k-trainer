@@ -2,7 +2,8 @@ import { marked } from 'marked'
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 import { getContent } from '../content'
 import { checkExercise } from '../checker'
-import type { Exercise, ExerciseLevel, ProgressState } from '../../../shared/ipc'
+import type { Exercise, ExerciseLevel } from '../../../shared/ipc'
+import { chargerProgression, marquerExerciceReussi } from '../progressionStore'
 
 export function renderExercices(container: HTMLElement): () => void {
   container.innerHTML = `<div class="exercices-view"><p class="loading">Chargement du contenu…</p></div>`
@@ -14,7 +15,7 @@ export function renderExercices(container: HTMLElement): () => void {
   let currentExerciseId: string | null = null
   let hintsShown = 0
 
-  Promise.all([getContent(), window.api.loadProgress()]).then(([content, progress]) => {
+  Promise.all([getContent(), chargerProgression()]).then(([content, progress]) => {
     if (disposed) return
     const completed = new Set(progress.completedExerciseIds)
 
@@ -146,8 +147,7 @@ export function renderExercices(container: HTMLElement): () => void {
             resultEl.className = result.success ? 'verify-ok' : 'verify-fail'
             if (result.success && !completed.has(exercise.id)) {
               completed.add(exercise.id)
-              const state: ProgressState = { completedExerciseIds: Array.from(completed) }
-              await window.api.saveProgress(state)
+              marquerExerciceReussi(exercise.id)
               renderLayout()
             }
           } finally {

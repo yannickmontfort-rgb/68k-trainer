@@ -1,9 +1,10 @@
 {
   "name": "trainer-68k",
-  "version": "0.1.1",
+  "version": "0.2.1",
   "description": "Application d'apprentissage de l'assembleur 68000",
   "main": "./out/main/index.js",
-  "author": "yannick",
+  "author": "Yannick Montfort",
+  "license": "GPL-3.0-or-later",
   "private": true,
   "scripts": {
     "dev": "electron-vite dev",

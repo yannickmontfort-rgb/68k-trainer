@@ -41,8 +41,10 @@ hook dans l'ordre et s'arrête au premier qui renvoie `true` (`onMemoryWrite` es
 |---|---|---|---|
 | Bloc 0 | Point d'extension `Platform` + check `memory`/`output` | — | ✅ 2026-08-08 |
 | AST-1 | Palette ST `$FF8240-$FF825E` (masque `$0777`) | `onMemoryWrite` | ✅ 2026-08-08, 3 exercices |
-| AST-2 | Texte via GEMDOS (`TRAP #1`) | `onTrap` | ⬜ |
-| AST-3 | BIOS (`TRAP #13`) | `onTrap` | ⬜ |
+| Exceptions | SR complet, superviseur/USP/SSP, vecteurs, erreurs de bus/d'adresse, interruptions, RTE/STOP | cœur `cpu.ts` + `onReset`/`isBusError` | ✅ 2026-10-19 |
+| AST-2 | Texte via GEMDOS (`TRAP #1`) : Cconws, Cconout, Cnecin/Crawcin/Cconin, Cconis, Super, Pterm0/Pterm | `onTrap` | ✅ 2026-10-19 (`src/platforms/atari-st/tos.ts`) |
+| AST-3 | BIOS (`TRAP #13`) : Bconout, Bconin, Bconstat, Setexec, Kbshift ; XBIOS (`TRAP #14`) : Physbase, Logbase, Getrez, Setscreen, Setpalette, Setcolor, Random, Kbdvbase, Vsync, Supexec | `onTrap` | ✅ 2026-10-19 |
+| Écran | Framebuffer basse résolution affiché (canvas), carte mémoire 1040 STF, protection du mode utilisateur | `isBusError` + `screen.ts` | ✅ 2026-10-19 |
 | AST-4 | Dessin en Ligne A (`$A000`…) | `onLineA` | ⬜ |
 | AMI-1 | ExecBase (`$4`) | initialisation mémoire | ⬜ |
 | AMI-2 | exec.library (`JSR -offset(A6)`) | `onJsr` | ⬜ |
@@ -145,6 +147,12 @@ Référence : `content/courses/amiga/systeme-et-hardware.md`, `demos-et-custom-c
 >
 > Les erreurs viennent probablement de l'extraction des sources. Les exercices AMI-3 ne doivent pas
 > s'appuyer sur ces adresses avant correction.
+
+> **Mise à jour du 2026-10-19** : `combinePlatforms` existe (`src/platforms/combine.ts`) et
+> `getPlatformForTrack('atari-st')` renvoie désormais TOS + palette. Le hook `onReset` prévu pour
+> AMI-1 existe aussi. Restent : AST-4 (Ligne A), AMI-1 à AMI-3, et pour les chapitres 6-7 du
+> parcours : rafraîchissement animé de l'écran à chaque Vsync, interruptions MFP/IKBD (clavier,
+> joystick), son AY-3-8912.
 
 ## Ordre suggéré
 

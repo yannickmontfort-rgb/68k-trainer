@@ -3,7 +3,7 @@ import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 const MNEMONICS = [
   'move', 'movea', 'moveq', 'movem', 'lea', 'pea', 'clr', 'exg', 'swap',
   'add', 'adda', 'addq', 'addi', 'addx', 'sub', 'suba', 'subq', 'subi', 'subx',
-  'neg', 'ext', 'muls', 'mulu', 'divs', 'divu',
+  'neg', 'negx', 'ext', 'muls', 'mulu', 'divs', 'divu', 'cmpm', 'movep', 'chk', 'tas', 'scc', 'seq', 'sne', 'smi', 'spl', 'svs', 'svc', 'scs', 'sgt', 'slt', 'sge', 'sle', 'shi', 'sls', 'st', 'sf', 'bhs', 'blo', 'moveq', 'movea',
   'and', 'or', 'eor', 'not', 'andi', 'ori', 'eori',
   'lsl', 'lsr', 'asl', 'asr', 'rol', 'ror', 'roxl', 'roxr',
   'cmp', 'cmpa', 'cmpi', 'tst', 'btst', 'bset', 'bclr', 'bchg',
@@ -35,6 +35,14 @@ export function registerM68kLanguage(): void {
         [/^[a-zA-Z_.][\w.]*(?=:|\s)/, 'type.identifier'],
         [/\bd[0-7]\b/i, 'variable.predefined'],
         [/\ba[0-7]\b/i, 'variable.predefined'],
+        // Mnémonique ou directive suivie d'un suffixe de taille (MOVE.W, DC.B, BRA.S...)
+        [
+          /([a-zA-Z]+)(\.[bwlsBWLS])\b/,
+          [
+            { cases: { '@mnemonics': 'keyword', '@directives': 'keyword.control', '@default': 'identifier' } },
+            { cases: { '$1@mnemonics': 'keyword', '$1@directives': 'keyword.control', '@default': 'identifier' } }
+          ]
+        ],
         [
           /[a-zA-Z_][\w.]*/,
           {

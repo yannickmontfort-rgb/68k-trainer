@@ -1,0 +1,7 @@
+{
+  "id": "atari-ch07",
+  "titre": "Clavier, joystick et son",
+  "plateforme": "atari",
+  "esquisse": true,
+  "resume": "**Plan prévu** (module 5 du manuel, exercice 7.1-3 et routine 7.4) :\n\n1. **Lire le clavier** avec Cnecin : code ASCII et code clavier (*scancode*), `SWAP D0`. L'exercice 3 du module 7 (Échap / flèche bas) est déjà réalisable : le simulateur sait « taper » des touches prévues par l'exercice.\n2. **Le processeur clavier IKBD** et la table `Kbdvbase` (XBIOS 34).\n3. **Intercepter le joystick** : routine installée à l'offset 24 de la table Kbdvbase (routine 7.4 du manuel, à vérifier : ordre des octets des deux joysticks).\n4. **Le son** : le circuit Yamaha AY-3-8912 (ou YM2149), registres en `$FF8800` / `$FF8802`, trois voies, bruit, mixeur ; jouer une note.\n5. **La VBL** : cadencer un rejoueur de musique à 50 Hz.\n\nRestent à ajouter au simulateur : les interruptions clavier (IKBD/ACIA via le MFP), le joystick, et un rendu sonore du AY."
+}

@@ -1,6 +1,7 @@
 import type { Cpu } from '../cpu/cpu'
 import type { CpuSnapshot } from '../cpu/types'
 import type { ExerciseCheck } from './ipc'
+import { readPixel, screenAddress } from '../platforms/atari-st/screen'
 
 export interface CheckResult {
   success: boolean
@@ -9,6 +10,8 @@ export interface CheckResult {
 
 function readRegister(snap: CpuSnapshot, key: string): number {
   if (key === 'PC') return snap.pc
+  if (key === 'SR') return snap.sr
+  if (/^[XNZVC]$/.test(key)) return snap.flags[key.toLowerCase() as keyof CpuSnapshot['flags']] ? 1 : 0
   const index = parseInt(key.slice(1), 10)
   if (key[0] === 'D') return snap.d[index]
   if (key[0] === 'A') return snap.a[index]
@@ -37,12 +40,36 @@ function readMemory(cpu: Cpu, key: string): number {
  * d'assembler et d'exécuter avant d'appeler cette fonction.
  */
 export function evaluateCheck(cpu: Cpu, check: ExerciseCheck): CheckResult {
+  if (check.terminer && !cpu.halted) {
+    return {
+      success: false,
+      message:
+        `Le programme ne s'est pas terminé : il tournait encore après ${check.maxSteps} instructions. ` +
+        'As-tu oublié la fin (Pterm0) ? La pile est-elle équilibrée avant RTS ?'
+    }
+  }
   if (check.type === 'output') {
-    const expectedOutput = check.expected.output ?? ''
-    if (cpu.output !== expectedOutput) {
-      return { success: false, message: `Sortie attendue : "${expectedOutput}"\nSortie obtenue : "${cpu.output}"` }
+    const sansCR = (s: string): string => s.replace(/\r/g, '')
+    const expectedOutput = sansCR(check.expected.output ?? '')
+    const actual = sansCR(cpu.output)
+    if (actual !== expectedOutput) {
+      return { success: false, message: `Sortie attendue : "${expectedOutput}"\nSortie obtenue : "${actual}"` }
     }
     return { success: true, message: 'Bravo, la sortie correspond !' }
+  }
+
+  if (check.type === 'pixels') {
+    const base = screenAddress(cpu.memory)
+    const mismatches: string[] = []
+    for (const [key, expectedColor] of Object.entries(check.expected)) {
+      const [x, y] = key.split(',').map((v) => parseInt(v, 10))
+      const actual = readPixel(cpu.memory, base, x, y)
+      if (actual !== parseInt(expectedColor, 10)) {
+        mismatches.push(`Pixel (${x}, ${y}) : couleur ${expectedColor} attendue, couleur ${actual} obtenue`)
+      }
+    }
+    if (mismatches.length > 0) return { success: false, message: mismatches.join('\n') }
+    return { success: true, message: 'Bravo, l’écran est exactement comme prévu !' }
   }
 
   const snap = cpu.getSnapshot()
@@ -51,7 +78,8 @@ export function evaluateCheck(cpu: Cpu, check: ExerciseCheck): CheckResult {
     const expected = parseInt(expectedHex.replace('$', ''), 16) >>> 0
     const actual = check.type === 'memory' ? readMemory(cpu, key) : readRegister(snap, key)
     if (actual !== expected) {
-      mismatches.push(`${key} attendu ${expectedHex}, obtenu $${actual.toString(16).padStart(8, '0').toUpperCase()}`)
+      if (/^[XNZVC]$/.test(key)) mismatches.push(`Flag ${key} attendu à ${expected}, obtenu ${actual}`)
+      else mismatches.push(`${key} attendu ${expectedHex}, obtenu $${actual.toString(16).padStart(8, '0').toUpperCase()}`)
     }
   }
   if (mismatches.length > 0) return { success: false, message: mismatches.join('\n') }

@@ -35,4 +35,18 @@ export interface Platform {
    * elle-même (déjà faite en mémoire) — sert uniquement à réagir à l'effet de bord.
    */
   onMemoryWrite?(cpu: Cpu, address: number, size: Size, value: number): void
+
+  /**
+   * Appelé à la fin de `Cpu.reset()`, avant le chargement du programme : sert à préparer la
+   * mémoire de la machine (variables système, ExecBase Amiga...) ou à démarrer en mode
+   * utilisateur comme le ferait le système d'exploitation.
+   */
+  onReset?(cpu: Cpu): void
+
+  /**
+   * Appelé avant chaque accès mémoire de données. Renvoyer `true` déclenche une erreur de bus
+   * (vecteur 2, « 2 bombes » sur ST) : zones protégées en mode utilisateur, adresses sans
+   * matériel...
+   */
+  isBusError?(cpu: Cpu, address: number, write: boolean): boolean
 }

@@ -1,0 +1,7 @@
+{
+  "id": "atari-ch08",
+  "titre": "Devpac en profondeur, débogage avancé et bonnes pratiques",
+  "plateforme": "atari",
+  "esquisse": true,
+  "resume": "**Plan prévu** (module 6 du manuel ; la version minimale des outils est déjà vue au chapitre 1) :\n\n1. **Devpac 2 sur un vrai ST ou sous Hatari** : GENST (éditeur, options d'assemblage, création d'un .PRG), MONST (pas à pas, points d'arrêt, vues registres, désassemblage, mémoire).\n2. **Les sections** `TEXT`, `DATA`, `BSS` d'un programme TOS, `INCBIN` (inclure une image Degas .PI1 de 32 034 octets), `EVEN`, `EQU`, macros et `INCLUDE`.\n3. **Débogage avancé** : lire un cadre de pile après des bombes, points d'arrêt, trace, erreurs classiques (registre « sale » dans son mot fort, pile déséquilibrée, `.B` sur un registre d'adresse, `#` oublié, BGT au lieu de BHI).\n4. **Bonnes pratiques** : conventions de registres (D0-D2/A0-A2 de travail), commenter entrées et sorties des sous-programmes, restaurer les vecteurs avant de quitter, ne passer en superviseur que le temps nécessaire.\n\nDans 68k Trainer, les directives `TEXT`/`DATA`/`BSS` sont déjà acceptées (les sections sont mises bout à bout). Piste pour plus tard : exporter un vrai fichier .PRG pour le lancer dans Hatari."
+}

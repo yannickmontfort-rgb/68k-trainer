@@ -2,9 +2,11 @@ import { app } from 'electron'
 import { readdir, readFile } from 'fs/promises'
 import { join } from 'path'
 import type { ContentBundle, CourseFile, Exercise, ExerciseLevel, Track } from '../shared/ipc'
+import type { Chapitre, ContenuExercice, Parcours, Plateforme } from '../shared/parcours'
 
 function getContentRoot(): string {
-  const base = app.isPackaged ? process.resourcesPath : app.getAppPath()
+  // En dehors d'Electron (tests), on lit le dossier content/ du dépôt
+  const base = app ? (app.isPackaged ? process.resourcesPath : app.getAppPath()) : process.cwd()
   return join(base, 'content')
 }
 
@@ -52,8 +54,107 @@ async function loadExerciseLevel(root: string, trackId: string, filename: string
   return parsed
 }
 
-export async function loadContent(): Promise<ContentBundle> {
-  const root = getContentRoot()
+interface ParcoursFile {
+  id: string
+  titre: string
+  plateforme?: Plateforme
+  description: string
+  statut?: 'actif' | 'bientot'
+  /** Dossiers de chapitres, dans l'ordre. */
+  chapitres: string[]
+}
+
+/** Remplace un exercice `ref` par l'exercice de l'ancienne version qu'il désigne. */
+function resolveRef(ex: ContenuExercice, legacy: Map<string, Exercise>): ContenuExercice {
+  if (!ex.ref) return ex
+  const old = legacy.get(ex.ref)
+  if (!old) throw new Error(`Exercice de référence introuvable : ${ex.ref}`)
+  return {
+    ...ex,
+    id: old.id,
+    titre: ex.titre || old.title,
+    enonce: ex.enonce ?? old.statement,
+    indices: ex.indices ?? old.hints,
+    codeDepart: ex.codeDepart ?? old.starterCode,
+    solution: ex.solution ?? '',
+    check: ex.check ?? old.check
+  }
+}
+
+const CHAMPS_CODE = ['code', 'solution', 'codeDepart', 'entete', 'pied'] as const
+
+/**
+ * "fichier.s" : tout le fichier ; "fichier.s#nom" : le bloc qui suit la ligne `;=== nom` dans ce
+ * fichier, jusqu'au marqueur suivant (un seul fichier regroupe ainsi tous les codes d'un chapitre).
+ */
+async function lireCode(dir: string, ref: string): Promise<string> {
+  const [fichier, nom] = ref.split('#')
+  const texte = (await readFile(join(dir, fichier), 'utf-8')).replace(/\r\n/g, '\n')
+  if (!nom) return texte.replace(/\n+$/, '')
+  const lignes = texte.split('\n')
+  const debut = lignes.findIndex((l) => l.trim() === `;=== ${nom}`)
+  if (debut < 0) throw new Error(`Bloc de code « ${nom} » introuvable dans ${fichier}`)
+  let fin = lignes.findIndex((l, i) => i > debut && l.startsWith(';=== '))
+  if (fin < 0) fin = lignes.length
+  return lignes.slice(debut + 1, fin).join('\n').replace(/\n+$/, '')
+}
+
+/**
+ * Un champ de code peut désigner un fichier du dossier du chapitre : "@code/premier.s".
+ * Le code 68000 reste ainsi lisible (et assemblable tel quel) hors du JSON.
+ */
+async function resoudreFichiers(dir: string, objet: Record<string, unknown>): Promise<void> {
+  for (const champ of CHAMPS_CODE) {
+    const v = objet[champ]
+    if (typeof v === 'string' && v.startsWith('@')) objet[champ] = await lireCode(dir, v.slice(1))
+  }
+  if (Array.isArray(objet.questions)) {
+    for (const q of objet.questions) await resoudreFichiers(dir, q as Record<string, unknown>)
+  }
+}
+
+async function loadChapitre(dir: string, legacy: Map<string, Exercise>): Promise<Chapitre> {
+  const chapitre = JSON.parse(await readFile(join(dir, 'chapitre.json'), 'utf-8')) as Chapitre
+  chapitre.plateforme ??= 'atari'
+  chapitre.notions ??= [] // chapitre esquissé : pas encore de contenu
+  for (const b of chapitre.bonus ?? []) await resoudreFichiers(dir, b as unknown as Record<string, unknown>)
+  if (chapitre.qcm) await resoudreFichiers(dir, chapitre.qcm as unknown as Record<string, unknown>)
+  for (const notion of chapitre.notions) {
+    for (let i = 0; i < notion.contenus.length; i++) {
+      const c = notion.contenus[i]
+      await resoudreFichiers(dir, c as unknown as Record<string, unknown>)
+      if (c.type === 'cours' && c.fichier && !c.markdown) {
+        const raw = await readFile(join(dir, c.fichier), 'utf-8')
+        c.markdown = parseFrontmatter(raw).body.trim()
+      }
+      if (c.type === 'exercice') notion.contenus[i] = resolveRef(c, legacy)
+    }
+  }
+  chapitre.bonus = (chapitre.bonus ?? []).map((b) => ({ ...resolveRef(b, legacy), bonus: true }))
+  return chapitre
+}
+
+async function loadAllParcours(root: string, legacy: Map<string, Exercise>): Promise<Parcours[]> {
+  const parcoursRoot = join(root, 'parcours')
+  const dirs = await readdir(parcoursRoot, { withFileTypes: true }).catch(() => [])
+  const result: Parcours[] = []
+  for (const d of dirs.filter((e) => e.isDirectory()).sort((a, b) => a.name.localeCompare(b.name))) {
+    const base = join(parcoursRoot, d.name)
+    const file = JSON.parse(await readFile(join(base, 'parcours.json'), 'utf-8')) as ParcoursFile
+    const chapitres = await Promise.all(file.chapitres.map((c) => loadChapitre(join(base, c), legacy)))
+    result.push({
+      id: file.id,
+      titre: file.titre,
+      plateforme: file.plateforme ?? 'atari',
+      description: file.description,
+      statut: file.statut ?? 'actif',
+      chapitres
+    })
+  }
+  return result
+}
+
+export async function loadContent(root = getContentRoot()): Promise<ContentBundle> {
   const tracksRaw = await readFile(join(root, 'tracks.json'), 'utf-8')
   const tracks: Track[] = JSON.parse(tracksRaw).tracks
 
@@ -69,5 +170,11 @@ export async function loadContent(): Promise<ContentBundle> {
     exercises[track.id] = levels.sort((a, b) => a.level - b.level)
   }
 
-  return { tracks, courses, exercises }
+  const legacy = new Map<string, Exercise>()
+  for (const levels of Object.values(exercises)) {
+    for (const level of levels) for (const ex of level.exercises) legacy.set(ex.id, ex)
+  }
+  const parcours = await loadAllParcours(root, legacy)
+
+  return { parcours, tracks, courses, exercises }
 }
