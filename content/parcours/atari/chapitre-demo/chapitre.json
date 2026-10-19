@@ -1,0 +1,93 @@
+{
+  "id": "atari-demo",
+  "titre": "Chapitre de démonstration",
+  "plateforme": "atari",
+  "resume": "Contenu de test (`chapitre-demo`) qui montre chaque type d'écran. Il sera retiré du parcours quand le vrai contenu sera en place.",
+  "notions": [
+    {
+      "id": "atari-demo-n1",
+      "titre": "Tous les écrans",
+      "contenus": [
+        { "type": "cours", "id": "atari-demo-cours", "titre": "Un cours", "fichier": "cours-demo.md" },
+        {
+          "type": "exemple",
+          "id": "atari-demo-exemple",
+          "titre": "Un exemple corrigé",
+          "introduction": "Avance pas à pas et regarde les registres changer.",
+          "code": "    ORG $1000\nSTART:\n    MOVE.W  #5,D0\n    ADD.W   #3,D0\n    RTS",
+          "explications": [
+            { "ligne": 3, "texte": "D0 reçoit 5 : seuls ses 16 bits de poids faible changent." },
+            { "ligne": 4, "texte": "On ajoute 3 : D0 vaut 8." },
+            { "ligne": 5, "texte": "RTS rend la main au TOS : le programme est fini." }
+          ],
+          "conclusion": "Fin de l'exemple."
+        },
+        {
+          "type": "prediction",
+          "id": "atari-demo-prediction",
+          "titre": "Une prédiction",
+          "introduction": "Lis le code sans l'exécuter.",
+          "code": "    ORG $1000\nSTART:\n    MOVEQ   #0,D0\n    RTS",
+          "questions": [
+            {
+              "id": "q1",
+              "enonce": "Quel flag est à 1 après MOVEQ #0,D0 ?",
+              "choix": ["N", "Z", "C"],
+              "bonne": 1,
+              "explication": "Le résultat vaut zéro.",
+              "verification": { "Z": "1" }
+            }
+          ]
+        },
+        {
+          "type": "exercice",
+          "id": "atari-demo-ex1",
+          "titre": "Un exercice à compléter",
+          "variante": "completer",
+          "niveau": 1,
+          "enonce": "Complète pour que D0 vaille 42.",
+          "indices": ["MOVE.L #42,D0"],
+          "codeDepart": "    ORG $1000\nSTART:\n    ; à compléter\n    RTS",
+          "solution": "    ORG $1000\nSTART:\n    MOVE.L  #42,D0\n    RTS",
+          "check": { "type": "registers", "maxSteps": 50, "expected": { "D0": "$0000002A" } }
+        },
+        {
+          "type": "exercice",
+          "id": "atari-demo-ex2",
+          "titre": "Un exercice à remettre dans l'ordre",
+          "variante": "ordonner",
+          "niveau": 1,
+          "enonce": "Remets les lignes dans l'ordre pour que D0 vaille 7.",
+          "indices": [],
+          "codeDepart": "",
+          "entete": "    ORG $1000\nSTART:",
+          "lignes": ["    MOVEQ   #5,D0", "    ADDQ.W  #2,D0", "    RTS"],
+          "pied": "",
+          "solution": "    ORG $1000\nSTART:\n    MOVEQ   #5,D0\n    ADDQ.W  #2,D0\n    RTS",
+          "check": { "type": "registers", "maxSteps": 50, "expected": { "D0": "$00000007" } }
+        }
+      ]
+    }
+  ],
+  "qcm": {
+    "id": "atari-demo-qcm",
+    "questions": [
+      { "id": "q1", "enonce": "Combien de registres de données ?", "choix": ["4", "8", "16"], "bonne": 1, "explication": "D0 à D7." }
+    ]
+  },
+  "bonus": [
+    {
+      "type": "exercice",
+      "id": "atari-demo-bonus",
+      "titre": "Un défi bonus",
+      "variante": "ecrire",
+      "niveau": 3,
+      "enonce": "Allume le pixel (10, 10) en couleur 1.",
+      "indices": [],
+      "codeDepart": "    ORG $1000\nSTART:\n\n    RTS",
+      "solution": "    ORG $1000\nSTART:\n    MOVE.L  #$F8000+10*160,A0\n    BSET    #5,1(A0)\n    RTS",
+      "check": { "type": "pixels", "maxSteps": 50, "expected": { "10,10": "1" } },
+      "machine": { "ecran": true }
+    }
+  ]
+}

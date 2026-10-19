@@ -1,3 +1,5 @@
+import type { Parcours } from './parcours'
+
 export interface AssembleRequest {
   source: string
 }
@@ -20,8 +22,21 @@ export interface AssembleResult {
   errors: AssembleError[]
 }
 
+/**
+ * Progression de l'apprenant, stockée en local (progress.json dans le dossier userData).
+ * Version 2 : ajoute les contenus vus, les QCM et la dernière position. Un fichier de la version 1
+ * (seulement `completedExerciseIds`) reste lisible tel quel.
+ */
 export interface ProgressState {
+  version?: 2
+  /** Exercices réussis (ancienne et nouvelle version, bonus compris). */
   completedExerciseIds: string[]
+  /** Cours lus, exemples parcourus jusqu'au bout, prédictions répondues. */
+  contenusVus?: string[]
+  /** Résultats des QCM de fin de chapitre, par id de QCM. */
+  qcm?: Record<string, { meilleurScore: number; total: number; reussi: boolean; date: string }>
+  /** Pour « Reprendre là où je me suis arrêté ». */
+  derniere?: { parcoursId: string; chapitreId: string; etapeId: string }
 }
 
 export interface Track {
@@ -40,7 +55,7 @@ export interface CourseFile {
   markdown: string
 }
 
-export type ExerciseCheckType = 'registers' | 'memory' | 'output'
+export type ExerciseCheckType = 'registers' | 'memory' | 'output' | 'pixels'
 
 export interface ExerciseCheck {
   type: ExerciseCheckType
@@ -50,7 +65,9 @@ export interface ExerciseCheck {
    * - "registers" : clé = "D0".."D7" | "A0".."A7" | "PC", valeur = mot de 32 bits en hexa ("$0000002A")
    * - "memory"    : clé = adresse hexa avec suffixe de taille optionnel ("$FF8240", "$FF8240.B", "$FF8240.L"
    *                 — défaut ".W" si omis), valeur = contenu attendu à cette adresse, en hexa
-   * - "output"    : une seule clé "output", valeur = chaîne exacte attendue dans cpu.output (pas de l'hexa)
+   * - "output"    : une seule clé "output", valeur = chaîne exacte attendue dans cpu.output (pas de l'hexa ;
+   *                 les retours chariot (CR, code 13) sont ignorés des deux côtés)
+   * - "pixels"    : clé = "x,y" sur l'écran Atari basse résolution, valeur = numéro de couleur 0-15 en décimal
    */
   expected: Record<string, string>
 }
@@ -72,6 +89,8 @@ export interface ExerciseLevel {
 }
 
 export interface ContentBundle {
+  /** Nouveau parcours guidé (chapitres, notions, progression). */
+  parcours: Parcours[]
   tracks: Track[]
   courses: Record<string, CourseFile[]>
   exercises: Record<string, ExerciseLevel[]>

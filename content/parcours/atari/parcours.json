@@ -1,0 +1,8 @@
+{
+  "id": "atari",
+  "titre": "Assembleur 68000 sur Atari ST",
+  "plateforme": "atari",
+  "description": "Du premier MOVE à l'écran du ST : le 68000 expliqué pas à pas, avec une machine simulée.",
+  "statut": "actif",
+  "chapitres": ["chapitre-demo"]
+}

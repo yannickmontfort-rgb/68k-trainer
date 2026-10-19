@@ -1,6 +1,7 @@
 import type { Cpu } from '../cpu/cpu'
 import type { CpuSnapshot } from '../cpu/types'
 import type { ExerciseCheck } from './ipc'
+import { readPixel, screenAddress } from '../platforms/atari-st/screen'
 
 export interface CheckResult {
   success: boolean
@@ -38,11 +39,27 @@ function readMemory(cpu: Cpu, key: string): number {
  */
 export function evaluateCheck(cpu: Cpu, check: ExerciseCheck): CheckResult {
   if (check.type === 'output') {
-    const expectedOutput = check.expected.output ?? ''
-    if (cpu.output !== expectedOutput) {
-      return { success: false, message: `Sortie attendue : "${expectedOutput}"\nSortie obtenue : "${cpu.output}"` }
+    const sansCR = (s: string): string => s.replace(/\r/g, '')
+    const expectedOutput = sansCR(check.expected.output ?? '')
+    const actual = sansCR(cpu.output)
+    if (actual !== expectedOutput) {
+      return { success: false, message: `Sortie attendue : "${expectedOutput}"\nSortie obtenue : "${actual}"` }
     }
     return { success: true, message: 'Bravo, la sortie correspond !' }
+  }
+
+  if (check.type === 'pixels') {
+    const base = screenAddress(cpu.memory)
+    const mismatches: string[] = []
+    for (const [key, expectedColor] of Object.entries(check.expected)) {
+      const [x, y] = key.split(',').map((v) => parseInt(v, 10))
+      const actual = readPixel(cpu.memory, base, x, y)
+      if (actual !== parseInt(expectedColor, 10)) {
+        mismatches.push(`Pixel (${x}, ${y}) : couleur ${expectedColor} attendue, couleur ${actual} obtenue`)
+      }
+    }
+    if (mismatches.length > 0) return { success: false, message: mismatches.join('\n') }
+    return { success: true, message: 'Bravo, l’écran est exactement comme prévu !' }
   }
 
   const snap = cpu.getSnapshot()

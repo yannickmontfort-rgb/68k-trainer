@@ -238,12 +238,16 @@ export function createTos(options: TosOptions = {}): Platform {
       DEFAULT_PALETTE.forEach((color, i) => mem.writeU16(PALETTE_BASE + i * 2, color))
       // Table Kbdvbase : 9 vecteurs (MIDI, erreurs, statut, souris, horloge, joystick...) → RTS
       for (let i = 0; i < 9; i++) mem.writeU32(KBDVBASE + i * 4, ROM_RTS)
-      // Pile superviseur en RAM, et pile utilisateur avec l'adresse de retour du programme
-      cpu.a[7] = SUPERVISOR_STACK
+      // Piles en RAM. Comme sous le TOS, la pile du programme contient l'adresse de retour (un RTS
+      // final termine proprement le programme) puis l'adresse de la page de base.
+      const stack = options.userMode ? USER_STACK : SUPERVISOR_STACK
+      mem.writeU32(stack - 8, ROM_PROGRAM_EXIT)
+      mem.writeU32(stack - 4, BASEPAGE)
       if (options.userMode) {
-        mem.writeU32(USER_STACK - 8, ROM_PROGRAM_EXIT)
-        mem.writeU32(USER_STACK - 4, BASEPAGE)
-        cpu.enterUserMode(USER_STACK - 8)
+        cpu.a[7] = SUPERVISOR_STACK
+        cpu.enterUserMode(stack - 8)
+      } else {
+        cpu.a[7] = stack - 8
       }
     },
 

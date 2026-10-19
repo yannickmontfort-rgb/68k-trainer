@@ -1,6 +1,8 @@
 import './style.css'
+import './parcours.css'
 import './monaco/workers'
 import { registerM68kLanguage } from './monaco/m68kLanguage'
+import { renderParcours } from './views/parcours'
 import { renderTrainer } from './views/trainer'
 import { renderCours } from './views/cours'
 import { renderExercices } from './views/exercices'
@@ -8,20 +10,22 @@ import { renderApropos } from './views/apropos'
 
 registerM68kLanguage()
 
-type ViewId = 'trainer' | 'cours' | 'exercices' | 'apropos'
+type ViewId = 'parcours' | 'trainer' | 'cours' | 'exercices' | 'apropos'
 
-const VIEWS: { id: ViewId; label: string; render: (el: HTMLElement) => () => void }[] = [
-  { id: 'trainer', label: 'Bac à sable', render: renderTrainer },
-  { id: 'cours', label: 'Cours', render: renderCours },
-  { id: 'exercices', label: 'Exercices', render: renderExercices },
-  { id: 'apropos', label: 'À propos', render: renderApropos }
+// « Fiches » et « Exercices libres » sont les écrans de la version 0.1, conservés tels quels.
+const VIEWS: { id: ViewId; label: string; title: string; render: (el: HTMLElement) => () => void }[] = [
+  { id: 'parcours', label: 'Parcours', title: 'Le parcours guidé, chapitre par chapitre', render: renderParcours },
+  { id: 'trainer', label: 'Bac à sable', title: 'Écris et exécute librement ton propre code', render: renderTrainer },
+  { id: 'cours', label: 'Fiches', title: 'Fiches de référence (version 0.1)', render: renderCours },
+  { id: 'exercices', label: 'Exercices libres', title: 'Exercices de la version 0.1', render: renderExercices },
+  { id: 'apropos', label: 'À propos', title: 'Version et crédits', render: renderApropos }
 ]
 
 const app = document.getElementById('app')!
 app.innerHTML = `
   <nav class="app-nav">
-    <span class="app-title">68k-trainer</span>
-    ${VIEWS.map((v) => `<button class="nav-tab" data-view="${v.id}">${v.label}</button>`).join('')}
+    <span class="app-title">68k Trainer</span>
+    ${VIEWS.map((v) => `<button class="nav-tab" data-view="${v.id}" title="${v.title}">${v.label}</button>`).join('')}
   </nav>
   <div class="view-container" id="view-container"></div>
 `
@@ -42,4 +46,4 @@ document.querySelectorAll<HTMLButtonElement>('.nav-tab').forEach((btn) => {
   btn.addEventListener('click', () => switchTo(btn.dataset.view as ViewId))
 })
 
-switchTo('trainer')
+switchTo('parcours')
