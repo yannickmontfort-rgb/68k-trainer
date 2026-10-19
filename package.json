@@ -3,7 +3,8 @@
   "version": "0.2.0",
   "description": "Application d'apprentissage de l'assembleur 68000",
   "main": "./out/main/index.js",
-  "author": "yannick",
+  "author": "Yannick Montfort",
+  "license": "GPL-3.0-or-later",
   "private": true,
   "scripts": {
     "dev": "electron-vite dev",

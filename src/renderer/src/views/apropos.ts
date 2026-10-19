@@ -12,9 +12,10 @@ export function renderApropos(container: HTMLElement): () => void {
         <h2>68k Trainer</h2>
         <p class="apropos-version">Version ${info.version} — ${info.year}</p>
         <p class="apropos-authors">Développé par Yannick Montfort avec Claude (Anthropic)</p>
+        <p class="apropos-texte">Logiciel libre sous licence GNU GPL v3 ou ultérieure.</p>
         ${info.builtAt ? `<p class="apropos-built">Compilé le ${new Date(info.builtAt).toLocaleString('fr-FR')}</p>` : '<p class="apropos-built">Version de développement</p>'}
         <h3>Sous le capot</h3>
-        <p class="apropos-texte">Assembleur <strong>vasm</strong> (Volker Barthelmann, Frank Wille), syntaxe Motorola compatible Devpac.
+        <p class="apropos-texte">Assembleur <strong>vasm</strong> (Volker Barthelmann, Frank Wille), syntaxe Motorola compatible Devpac, sous sa propre licence (usage non commercial).
         Émulateur 68000 et TOS simulé écrits pour 68k Trainer.</p>
         <h3>Sources des cours</h3>
         <p class="apropos-texte">Cours reformulés à partir du cours d'assembleur 68000 sur Atari ST du Féroce Lapin, du cours

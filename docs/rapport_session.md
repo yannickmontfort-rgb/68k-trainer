@@ -164,3 +164,11 @@ Ce qui mérite le plus ton œil d'enseignant :
 5. **Licence** pour le futur dépôt public : MIT, GPL, autre ?
 6. **Hatari** : l'export d'un .PRG à lancer dans Hatari serait-il prioritaire pour les copains ?
 7. **Sources « notebook KLM »** : je n'ai rien trouvé sous ce nom. J'en ai déduit que les manuels v1/v2 **sont** la sortie du notebook. Si d'autres fichiers existent, dis-moi où.
+
+## 7. Réponses de Yannick (19/10/2026)
+
+- Seuil des QCM : **70 %** confirmé.
+- Envoi aux copains : **après relecture** du contenu (retirer alors les `aRelire`).
+- Licence : **libre** → **GNU GPL v3 ou ultérieure** (fichier `LICENSE`, `package.json`, README,
+  page À propos). vasm garde sa licence propre (non commerciale, redistribution sans
+  modification autorisée) : voir `THIRD_PARTY.md`.

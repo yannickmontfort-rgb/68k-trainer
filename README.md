@@ -47,6 +47,11 @@ Le format du contenu est décrit dans [content/parcours/README.md](content/parco
 Chaque exemple, solution et prédiction est **assemblé et exécuté** par
 `tests/contenu-parcours.test.ts` : un contenu faux fait échouer les tests.
 
+## Licence
+
+Logiciel libre sous **GNU GPL v3 ou ultérieure** ([LICENSE](LICENSE)). L'assembleur vasm, fourni
+dans `tools/`, garde sa propre licence (usage non commercial) : voir [THIRD_PARTY.md](THIRD_PARTY.md).
+
 ## Crédits
 
 Développé par Yannick Montfort avec Claude (Anthropic). Cours reformulés à partir du cours
