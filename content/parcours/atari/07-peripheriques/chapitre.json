@@ -2,6 +2,181 @@
   "id": "atari-ch07",
   "titre": "Clavier, joystick et son",
   "plateforme": "atari",
-  "esquisse": true,
-  "resume": "**Plan prévu** (module 5 du manuel, exercice 7.1-3 et routine 7.4) :\n\n1. **Lire le clavier** avec Cnecin : code ASCII et code clavier (*scancode*), `SWAP D0`. L'exercice 3 du module 7 (Échap / flèche bas) est déjà réalisable : le simulateur sait « taper » des touches prévues par l'exercice.\n2. **Le processeur clavier IKBD** et la table `Kbdvbase` (XBIOS 34).\n3. **Intercepter le joystick** : routine installée à l'offset 24 de la table Kbdvbase (routine 7.4 du manuel, à vérifier : ordre des octets des deux joysticks).\n4. **Le son** : le circuit Yamaha AY-3-8912 (ou YM2149), registres en `$FF8800` / `$FF8802`, trois voies, bruit, mixeur ; jouer une note.\n5. **La VBL** : cadencer un rejoueur de musique à 50 Hz.\n\nRestent à ajouter au simulateur : les interruptions clavier (IKBD/ACIA via le MFP), le joystick, et un rendu sonore du AY."
+  "resume": "Rendre tes programmes interactifs et sonores : lire le clavier avec **Cnecin** (code ASCII et code clavier), intercepter le **joystick** en installant ta routine dans la table **Kbdvbase** (et corriger au passage la routine 7.4 du manuel), puis faire chanter la puce **YM2149** : une note, un accord, une mélodie jouée sous VBL. Dans le bac à sable, clique sur l'écran du ST pour taper au clavier ; coche « 🕹 Flèches + Espace = joystick » pour jouer. Correspond au module 5 du manuel, à son exercice 7.1-3 et à sa routine 7.4.",
+  "notions": [
+    {
+      "id": "atari-ch07-n1",
+      "titre": "Lire le clavier",
+      "contenus": [
+        { "type": "cours", "id": "atari-ch07-cours-clavier", "titre": "Cnecin, code ASCII et code clavier", "fichier": "01-clavier.md", "source": "Reformulé d'après le manuel Atari ST v2 (§ 5.1 et exercice 7.1-3), Atari Compendium pour la table des codes clavier" },
+        {
+          "type": "exemple", "id": "atari-ch07-ex-touches", "titre": "Échap ou flèche bas",
+          "introduction": "L'exercice 3 du module 7 du manuel : on attend une touche ; Échap quitte, la flèche bas affiche « bas », les autres touches sont ignorées. L'exercice « tape » pour toi trois touches : **a**, **flèche bas**, **Échap**. Surveille D0 après chaque Cnecin.",
+          "code": "@code.s#touches-exemple",
+          "machine": { "modeUtilisateur": true, "touches": [{ "ascii": 97, "scancode": 30 }, { "ascii": 0, "scancode": 80 }, { "ascii": 27, "scancode": 1 }] },
+          "explications": [
+            { "ligne": 4, "texte": "Cnecin a rendu la main avec une touche dans D0. La première fois : `$001E0061`, la touche **a** (code clavier $1E, code ASCII $61)." },
+            { "ligne": 6, "texte": "On compare l'octet faible, le code ASCII, à celui d'Échap ($1B)." },
+            { "ligne": 8, "texte": "SWAP échange les deux moitiés de D0 : le code clavier se retrouve dans l'octet faible." },
+            { "ligne": 9, "texte": "Flèche bas ? Pour une flèche, seul le code clavier ($50) compte : son code ASCII vaut 0." },
+            { "ligne": 11, "texte": "Ni l'un ni l'autre : on attend la touche suivante." },
+            { "ligne": 15, "texte": "« bas » s'affiche dans la sortie texte." },
+            { "ligne": 7, "texte": "Échap : on saute à QUITTER." }
+          ],
+          "conclusion": "Code ASCII dans l'octet faible, code clavier dans le mot fort : un SWAP pour passer de l'un à l'autre. Les flèches et les touches de fonction ne se reconnaissent que par leur code clavier."
+        },
+        {
+          "type": "prediction", "id": "atari-ch07-pred-cnecin", "titre": "Une flèche dans D0",
+          "introduction": "On tape la **flèche haut** (code clavier `$48`, pas de caractère).",
+          "code": "@code.s#cnecin-prediction",
+          "machine": { "modeUtilisateur": true, "touches": [{ "ascii": 0, "scancode": 72 }] },
+          "questions": [
+            { "id": "q1", "enonce": "Que contient D0 après Cnecin ?", "choix": ["$00480000", "$00000048", "$48000000"], "bonne": 0, "explication": "Code clavier dans les bits 23-16, code ASCII (0 pour une flèche) dans l'octet faible.", "verification": { "D0": "$00480000" } },
+            { "id": "q2", "enonce": "Et D1, après `SWAP D1` ?", "choix": ["$00000048", "$00480000", "$48000000"], "bonne": 0, "explication": "SWAP échange les mots : `$0048` passe dans le mot faible.", "verification": { "D1": "$00000048" } }
+          ]
+        },
+        { "type": "exercice", "id": "atari-ch07-exo-echap", "titre": "Échap pour finir", "variante": "completer", "niveau": 1,
+          "enonce": "Le programme compte dans D7 les touches tapées **avant** Échap. Ajoute le test qui saute à FIN quand la touche est Échap. (L'exercice tape **a**, **b**, **c** puis **Échap** : D7 doit valoir 3.)",
+          "indices": ["Le code ASCII d'Échap est `$1B`, dans l'octet faible de D0.", "`CMP.B #$1B,D0` puis `BEQ.S FIN`."],
+          "codeDepart": "@code.s#echap-depart", "solution": "@code.s#echap-solution",
+          "check": { "type": "registers", "maxSteps": 2000, "terminer": true, "expected": { "D7": "$00000003" } },
+          "machine": { "modeUtilisateur": true, "touches": [{ "ascii": 97, "scancode": 30 }, { "ascii": 98, "scancode": 48 }, { "ascii": 99, "scancode": 46 }, { "ascii": 27, "scancode": 1 }] } },
+        { "type": "exercice", "id": "atari-ch07-exo-hautbas", "titre": "Haut, bas, Échap", "variante": "ecrire", "niveau": 2,
+          "enonce": "Écris un programme qui affiche **H** pour chaque flèche haut, **B** pour chaque flèche bas, ignore les autres touches et s'arrête sur **Échap**. (L'exercice tape : bas, x, haut, bas, Échap : la sortie doit être `BHB`.)",
+          "indices": ["Testez Échap sur le code ASCII, avant le SWAP ; les flèches sur le code clavier, après.", "Flèche haut = $48, flèche bas = $50. Pour afficher un caractère : Cconout (GEMDOS 2), le caractère empilé en mot."],
+          "codeDepart": "@code.s#hautbas-depart", "solution": "@code.s#hautbas-solution",
+          "check": { "type": "output", "maxSteps": 5000, "terminer": true, "expected": { "output": "BHB" } },
+          "machine": { "modeUtilisateur": true, "touches": [{ "ascii": 0, "scancode": 80 }, { "ascii": 120, "scancode": 45 }, { "ascii": 0, "scancode": 72 }, { "ascii": 0, "scancode": 80 }, { "ascii": 27, "scancode": 1 }] } },
+        { "type": "exercice", "id": "atari-ch07-exo-swap", "titre": "La flèche invisible", "variante": "corriger", "niveau": 2,
+          "enonce": "Ce programme doit afficher **B** à chaque flèche bas et s'arrêter sur Échap. Il s'arrête bien sur Échap, mais n'affiche jamais rien. Trouve l'erreur. (L'exercice tape : bas, a, bas, Échap.)",
+          "indices": ["Regarde D0 juste avant `CMP.B #$50,D0` : où est le code clavier ?", "Il manque un `SWAP D0` avant la comparaison avec $50."],
+          "codeDepart": "@code.s#swap-depart", "solution": "@code.s#swap-solution",
+          "check": { "type": "output", "maxSteps": 5000, "terminer": true, "expected": { "output": "BB" } },
+          "machine": { "modeUtilisateur": true, "touches": [{ "ascii": 0, "scancode": 80 }, { "ascii": 97, "scancode": 30 }, { "ascii": 0, "scancode": 80 }, { "ascii": 27, "scancode": 1 }] } }
+      ]
+    },
+    {
+      "id": "atari-ch07-n2",
+      "titre": "Le processeur clavier et le joystick",
+      "contenus": [
+        { "type": "cours", "id": "atari-ch07-cours-ikbd", "titre": "IKBD, Kbdvbase et routine joystick", "fichier": "02-ikbd.md", "source": "Reformulé d'après le manuel Atari ST v2 (§ 5.2 et routine 7.4, corrigée), Intelligent Keyboard Protocol (Atari), EmuTOS (bios/aciavecs.S) pour la disposition du paquet joystick" },
+        {
+          "type": "exemple", "id": "atari-ch07-ex-joy", "titre": "Attendre le bouton de tir",
+          "introduction": "On installe une routine `JOY` dans la table Kbdvbase, puis on attend que le bouton de tir soit enfoncé. Pour l'exemple, le simulateur joue des mouvements de joystick prévus : **droite** à l'image 3, **droite + tir** à l'image 6. Avance pas à pas : quand le TOS appelle `JOY`, le pas à pas s'y arrête, au milieu de l'attente du programme principal !",
+          "code": "@code.s#joy-exemple",
+          "machine": { "modeUtilisateur": true, "evenements": [{ "image": 3, "joystick": 8 }, { "image": 6, "joystick": 136 }] },
+          "explications": [
+            { "ligne": 5, "texte": "A0 = adresse de la table des vecteurs du clavier." },
+            { "ligne": 6, "texte": "On garde l'ancien vecteur joystick pour pouvoir le remettre en partant." },
+            { "ligne": 7, "texte": "Désormais, chaque paquet du joystick appellera notre routine JOY." },
+            { "ligne": 10, "texte": "Vsync : on attend la prochaine image. Pendant ce temps, l'IKBD peut envoyer un paquet…" },
+            { "ligne": 24, "texte": "… et voilà le TOS qui appelle JOY, avec A0 = le paquet. On range l'état du joystick 1 : `$08` (droite), puis `$88` (droite + tir). Regarde la pile : on est au milieu d'une interruption." },
+            { "ligne": 25, "texte": "RTS : retour au TOS, qui termine l'interruption (RTE) et rend la main au programme principal." },
+            { "ligne": 12, "texte": "Le bit 7 d'ETAT est le bouton de tir." },
+            { "ligne": 18, "texte": "Avant de quitter, on rend au TOS son vecteur." }
+          ],
+          "conclusion": "Le programme principal ne lit jamais le joystick lui-même : il consulte une variable que la routine d'interruption tient à jour. C'est la façon de faire de presque tous les jeux du ST."
+        },
+        {
+          "type": "prediction", "id": "atari-ch07-pred-joyetat", "titre": "Décoder un état de joystick",
+          "introduction": "L'octet reçu du joystick vaut `$89`.",
+          "code": "@code.s#joyetat-prediction",
+          "machine": { "modeUtilisateur": true },
+          "questions": [
+            { "id": "q1", "enonce": "Que vaut D1 à la fin (1 = bouton de tir enfoncé) ?", "choix": ["1", "0"], "bonne": 0, "explication": "$89 = %10001001 : le bit 7 est à 1.", "verification": { "D1": "$00000001" } },
+            { "id": "q2", "enonce": "Quelles directions indique D0 à la fin ?", "choix": ["Haut et droite", "Bas et gauche", "Droite seulement"], "bonne": 0, "explication": "D0 = $09 = %1001 : bit 0 (haut) et bit 3 (droite) : une diagonale.", "verification": { "D0": "$00000009" } }
+          ]
+        },
+        { "type": "exercice", "id": "atari-ch07-exo-brancher", "titre": "Brancher sa routine", "variante": "completer", "niveau": 2,
+          "enonce": "Le programme doit attendre le bouton de tir, puis afficher « Feu ! ». La routine JOY est écrite, l'ancien vecteur est sauvegardé et remis… mais le programme attend pour toujours. Ajoute la ligne qui manque. (Le simulateur appuie sur le tir à l'image 6.)",
+          "indices": ["Qui appelle JOY ? Personne, tant que son adresse n'est pas dans la table.", "`MOVE.L #JOY,24(A0)` : le vecteur joystick est à l'offset 24."],
+          "codeDepart": "@code.s#brancher-depart", "solution": "@code.s#brancher-solution",
+          "check": { "type": "output", "maxSteps": 20000, "terminer": true, "expected": { "output": "Feu !" } },
+          "machine": { "modeUtilisateur": true, "evenements": [{ "image": 3, "joystick": 8 }, { "image": 6, "joystick": 136 }] } },
+        { "type": "exercice", "id": "atari-ch07-exo-routine74", "titre": "Réparer la routine 7.4", "variante": "corriger", "niveau": 3,
+          "enonce": "Voici la routine 7.4 du manuel : on attend le tir du **joystick 1** (la prise « joystick »). Le programme ne s'arrête jamais. Il a aussi un second défaut : en partant, il laisse le TOS appeler une routine qui n'existera plus. Corrige les deux : lis le bon octet du paquet, et **remets l'ancien vecteur** avant de quitter.",
+          "indices": ["Dans le paquet, `1(A0)` est le joystick 0 (prise souris) et `2(A0)` le joystick 1.", "Avant Pterm0 : Kbdvbase, puis `MOVE.L OLD_JOY,24(A0)`."],
+          "codeDepart": "@code.s#routine74-depart", "solution": "@code.s#routine74-solution",
+          "check": { "type": "memory", "maxSteps": 20000, "terminer": true, "expected": { "$C18.L": "$00FC0000" } },
+          "machine": { "modeUtilisateur": true, "evenements": [{ "image": 3, "joystick": 1 }, { "image": 6, "joystick": 128 }] },
+          "source": "Routine 7.4 du manuel Atari ST v2, reproduite avec ses erreurs (voir l'errata)" }
+      ]
+    },
+    {
+      "id": "atari-ch07-n3",
+      "titre": "Le son du YM2149",
+      "contenus": [
+        { "type": "cours", "id": "atari-ch07-cours-son", "titre": "Registres, notes, mixeur et mélodie", "fichier": "03-son.md", "source": "Reformulé d'après le manuel Atari ST v2 (§ 5.3), la fiche technique du YM2149 (Yamaha) et ST Internals (Abacus) pour Dosound et _vblqueue" },
+        {
+          "type": "exemple", "id": "atari-ch07-ex-la", "titre": "Un la pendant une seconde",
+          "introduction": "Le la du diapason (440 Hz) sur la voie A pendant 50 images, puis silence. Lance **🎬 Temps réel** pour l'entendre (case 🔊 cochée), ou avance pas à pas dans la routine JOUER et ouvre le panneau **Vecteurs et matériel** du débogueur pour voir les registres du YM2149 changer.",
+          "code": "@code.s#la-exemple",
+          "machine": { "modeUtilisateur": true, "ecran": true },
+          "explications": [
+            { "ligne": 4, "texte": "Supexec exécute JOUER en mode superviseur : le YM2149 est du matériel." },
+            { "ligne": 20, "texte": "A0 = $FFFF8800 : `(A0)` choisit le registre, `2(A0)` (= $FF8802) écrit sa valeur." },
+            { "ligne": 22, "texte": "Registre 0 = $1C : l'octet faible de la période de la voie A." },
+            { "ligne": 24, "texte": "Registre 1 = $01 : période $11C = 284 → 2 000 000 / (16 × 284) ≈ 440 Hz." },
+            { "ligne": 26, "texte": "Mixeur : seul le bit 0 est à 0, donc seul le son carré de la voie A est actif." },
+            { "ligne": 28, "texte": "Volume 15 : la note sonne maintenant, et continuera toute seule." },
+            { "ligne": 11, "texte": "50 images d'attente : une seconde de la." },
+            { "ligne": 14, "texte": "SILENCE remet le volume à 0. Sans cela, le la continuerait même après la fin du programme !" }
+          ],
+          "conclusion": "Une note = une période, un mixeur, un volume. La puce joue toute seule : le programme n'a plus qu'à attendre."
+        },
+        {
+          "type": "prediction", "id": "atari-ch07-pred-frequence", "titre": "Quelle note ?",
+          "introduction": "Période 568 sur une voie : on calcule la fréquence comme la puce.",
+          "code": "@code.s#frequence-prediction",
+          "machine": { "modeUtilisateur": true },
+          "questions": [
+            { "id": "q1", "enonce": "Quelle fréquence (mot faible de D0) ?", "choix": ["220 Hz", "440 Hz", "880 Hz"], "bonne": 0, "explication": "2 000 000 / (16 × 568) = 220 : une période double (568 = 2 × 284) donne une octave plus bas que le la 440. DIVU range le quotient dans le mot faible et le reste (640) dans le mot fort.", "verification": { "D0": "$028000DC" } },
+            { "id": "q2", "enonce": "Quelle valeur du mixeur active le son carré des voies A et B, sans bruit ?", "choix": ["%11111100", "%00000011", "%11000011"], "bonne": 0, "explication": "Dans le mixeur, 0 = actif : bits 0 et 1 à 0 (sons de A et B), bits 3-5 à 1 (pas de bruit), bits 6-7 à 1." }
+          ]
+        },
+        { "type": "exercice", "id": "atari-ch07-exo-mixeur", "titre": "Le mixeur muet", "variante": "corriger", "niveau": 1,
+          "enonce": "La voie B devrait jouer un la (période 284) au volume maximum, en son carré et sans bruit. On n'entend rien : corrige la valeur écrite dans le mixeur.",
+          "indices": ["Dans le mixeur, un bit à 1 **coupe** ; il faut 0 pour activer.", "Son carré de la voie B = bit 1 : `%11111101`."],
+          "codeDepart": "@code.s#mixeur-depart", "solution": "@code.s#mixeur-solution",
+          "check": { "type": "son", "maxSteps": 200, "terminer": true, "expected": { "R7": "$FD", "R2": "$1C", "R3": "$01", "R9": "$0F" } },
+          "machine": { "modeUtilisateur": true } },
+        { "type": "exercice", "id": "atari-ch07-exo-accord", "titre": "Un accord de la majeur", "variante": "ecrire", "niveau": 2,
+          "enonce": "Complète la routine ACCORD : voie A = **la** (période 284), voie B = **do#** (225), voie C = **mi** (190), les trois au **volume 12**, sons carrés seuls (pas de bruit).",
+          "indices": ["Six registres de période (0 à 5 : octet faible, puis fort), le mixeur (7), trois volumes (8 à 10).", "Mixeur : `%11111000`. Astuce : `MOVE.L #$0400BE00,$FFFF8800.W` écrit $BE dans le registre 4 en une instruction."],
+          "codeDepart": "@code.s#accord-depart", "solution": "@code.s#accord-solution",
+          "check": { "type": "son", "maxSteps": 300, "terminer": true, "expected": { "R0": "$1C", "R1": "$01", "R2": "$E1", "R3": "$00", "R4": "$BE", "R5": "$00", "R7": "$F8", "R8": "$0C", "R9": "$0C", "R10": "$0C" } },
+          "machine": { "modeUtilisateur": true } },
+        { "type": "exercice", "id": "atari-ch07-exo-melodie", "titre": "Une mélodie sous VBL", "variante": "ecrire", "niveau": 3,
+          "enonce": "Joue les 4 notes de la table NOTES sur la voie A, **10 images chacune**, depuis une routine placée dans la file des routines VBL (`_vblqueue`, en `$456`). Après la 4ᵉ note, la routine coupe le son (volume 0) et met FINI à −1 ; le programme principal attend FINI, **retire la routine de la file** et quitte.",
+          "indices": ["`$456` est protégé : installe et retire la routine dans des sous-programmes appelés par Supexec. `MOVEA.L $456.W,A0` puis `MOVE.L #MELODIE,(A0)` occupe la 1ʳᵉ place de la file.", "Dans MELODIE : décompte ATTENTE ; quand il tombe à 0, joue la note n° RANG (`MOVE.W 0(A0,D0.W),D1` avec D0 = RANG × 2), recharge ATTENTE à 10 et avance RANG ; quand RANG vaut 4, silence et `ST FINI`."],
+          "codeDepart": "@code.s#melodie-depart", "solution": "@code.s#melodie-solution",
+          "check": { "type": "son", "maxSteps": 50000, "terminer": true, "expected": { "R0": "$D5", "R1": "$00", "R7": "$FE", "R8": "$00" } },
+          "machine": { "modeUtilisateur": true } }
+      ]
+    }
+  ],
+  "qcm": {
+    "id": "atari-ch07-qcm",
+    "seuil": 0.7,
+    "questions": [
+      { "id": "q1", "enonce": "Après Cnecin, où est le code clavier de la touche ?", "choix": ["Dans l'octet faible de D0", "Dans les bits 23 à 16 de D0", "Dans A0"], "bonne": 1, "explication": "Code ASCII en bas, code clavier dans le mot fort : SWAP D0 l'amène en bas." },
+      { "id": "q2", "enonce": "Comment reconnaît-on la flèche bas ?", "choix": ["À son code ASCII", "À son code clavier $50", "À son code ASCII $50"], "bonne": 1, "explication": "Les flèches n'ont pas de code ASCII (0) : seul le code clavier compte." },
+      { "id": "q3", "enonce": "Que renvoie XBIOS 34, Kbdvbase ?", "choix": ["L'état du clavier", "L'adresse de la table des vecteurs du clavier", "Le dernier code clavier"], "bonne": 1, "explication": "Une table de 9 vecteurs ; le joystick est à l'offset 24." },
+      { "id": "q4", "enonce": "Dans le paquet passé à la routine joystick, où est l'état du joystick 1 (la prise des jeux) ?", "choix": ["0(A0)", "1(A0)", "2(A0)"], "bonne": 2, "explication": "1(A0) : joystick 0 (prise souris) ; 2(A0) : joystick 1. Le manuel les inverse." },
+      { "id": "q5", "enonce": "Pourquoi faut-il remettre l'ancien vecteur joystick avant de quitter ?", "choix": ["Pour libérer la mémoire", "Sinon le TOS appellera une routine qui n'existe plus", "Pour que le joystick soit plus rapide"], "bonne": 1, "explication": "Au prochain mouvement, le TOS sauterait dans la mémoire d'un programme terminé : bombes." },
+      { "id": "q6", "enonce": "Quel bit de l'état du joystick correspond au bouton de tir ?", "choix": ["Bit 0", "Bit 3", "Bit 7"], "bonne": 2, "explication": "Bits 0-3 : haut, bas, gauche, droite ; bit 7 : tir." },
+      { "id": "q7", "enonce": "Pour choisir le registre 8 du YM2149, on écrit 8…", "choix": ["en $FF8800", "en $FF8802", "en $FF8240"], "bonne": 0, "explication": "$FF8800 : choix du registre ; $FF8802 : sa valeur." },
+      { "id": "q8", "enonce": "Dans le mixeur (registre 7), un bit à 0…", "choix": ["coupe la source", "active la source", "règle le volume"], "bonne": 1, "explication": "C'est l'inverse de l'intuition : 0 = actif." },
+      { "id": "q9", "enonce": "Si on double la période d'une voie, la note…", "choix": ["monte d'une octave", "descend d'une octave", "ne change pas"], "bonne": 1, "explication": "Fréquence = 2 MHz / (16 × période) : période double, fréquence divisée par deux." },
+      { "id": "q10", "enonce": "À quoi sert la file `_vblqueue` ($456) ?", "choix": ["À ranger les touches tapées", "À faire appeler des routines à chaque VBL", "À jouer des sons tout seul"], "bonne": 1, "explication": "Le TOS appelle chacune de ses routines 50 fois par seconde : idéal pour un rejoueur de musique." }
+    ]
+  },
+  "bonus": [
+    { "type": "exercice", "id": "atari-ch07-bonus-bip", "titre": "Le carré au joystick", "variante": "ecrire", "niveau": 3,
+      "enonce": "Défi : déplace le carré (16 × 16, couleur 1, lignes 92 à 107, départ en X = 0) avec le **joystick** : 2 pixels par image vers la gauche ou la droite, sans sortir de l'écran (X entre 0 et 304). Fais « bip » (Dosound) quand il touche un bord. Le bouton de tir quitte, en rendant son vecteur au TOS. Pour la vérification, le simulateur pousse le joystick à droite de l'image 3 à l'image 200, puis appuie sur le tir. Dans le bac à sable, joue toi-même avec « 🕹 Flèches + Espace » !",
+      "indices": ["Reprends la routine JOY de l'exemple et la routine DESSINER du défi du chapitre 6.", "À chaque image : lis ETAT ; bit 3 → X + 2, bit 2 → X − 2 ; si X < 0 ou X > 304, ramène-le au bord et appelle Dosound avec une petite liste (`DC.B 0,$80,1,0,7,$FE,8,15,$FF,4,8,0,$FF,0`)."],
+      "codeDepart": "@code.s#bip-depart", "solution": "@code.s#bip-solution",
+      "check": { "type": "pixels", "maxSteps": 400000, "terminer": true, "expected": { "304,92": "1", "319,107": "1", "303,92": "0", "0,92": "0" } },
+      "machine": { "modeUtilisateur": true, "ecran": true, "evenements": [{ "image": 3, "joystick": 8 }, { "image": 200, "joystick": 0 }, { "image": 205, "joystick": 128 }] } }
+  ]
 }
