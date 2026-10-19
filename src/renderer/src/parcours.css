@@ -830,3 +830,53 @@
     width: 100%;
   }
 }
+
+/* --- Bac à sable ------------------------------------------------------------ */
+
+.sidebar-dbg {
+  width: 420px;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.toolbar-option {
+  font-size: 13px;
+  color: #ccc;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  cursor: pointer;
+}
+
+/* --- À propos ---------------------------------------------------------------- */
+
+.apropos-card h3 {
+  margin: 18px 0 4px;
+  font-size: 14px;
+  color: #9cdcfe;
+}
+
+.apropos-texte {
+  font-size: 13px;
+  color: #bbb;
+  line-height: 1.5;
+}
+
+.btn-danger {
+  background: #5a1d1d;
+  color: #fff;
+  border: none;
+  padding: 7px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.btn-danger:hover {
+  background: #7a2525;
+}
+
+.apropos-card {
+  max-width: 640px;
+}
