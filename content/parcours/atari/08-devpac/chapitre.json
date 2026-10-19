@@ -2,6 +2,183 @@
   "id": "atari-ch08",
   "titre": "Devpac en profondeur, débogage avancé et bonnes pratiques",
   "plateforme": "atari",
-  "esquisse": true,
-  "resume": "**Plan prévu** (module 6 du manuel ; la version minimale des outils est déjà vue au chapitre 1) :\n\n1. **Devpac 2 sur un vrai ST ou sous Hatari** : GENST (éditeur, options d'assemblage, création d'un .PRG), MONST (pas à pas, points d'arrêt, vues registres, désassemblage, mémoire).\n2. **Les sections** `TEXT`, `DATA`, `BSS` d'un programme TOS, `INCBIN` (inclure une image Degas .PI1 de 32 034 octets), `EVEN`, `EQU`, macros et `INCLUDE`.\n3. **Débogage avancé** : lire un cadre de pile après des bombes, points d'arrêt, trace, erreurs classiques (registre « sale » dans son mot fort, pile déséquilibrée, `.B` sur un registre d'adresse, `#` oublié, BGT au lieu de BHI).\n4. **Bonnes pratiques** : conventions de registres (D0-D2/A0-A2 de travail), commenter entrées et sorties des sous-programmes, restaurer les vecteurs avant de quitter, ne passer en superviseur que le temps nécessaire.\n\nDans 68k Trainer, les directives `TEXT`/`DATA`/`BSS` sont déjà acceptées (les sections sont mises bout à bout). Piste pour plus tard : exporter un vrai fichier .PRG pour le lancer dans Hatari."
+  "resume": "Le dernier chapitre fait de toi un codeur autonome : les **sections** TEXT/DATA/BSS, les constantes, les structures **RS** et les **macros**, l'inclusion d'une image Degas avec **INCBIN**, puis l'export d'un **vrai fichier .PRG** à lancer dans Hatari ou sur un ST. Tu apprendras à lire le **cadre de pile** d'une erreur, à traquer les pièges classiques avec les points d'arrêt, et les **bonnes pratiques** qui rendent un programme propre. Défi final : ta propre petite intro façon démo. Correspond au module 6 du manuel.",
+  "notions": [
+    {
+      "id": "atari-ch08-n1",
+      "titre": "Sections, constantes, macros et inclusions",
+      "contenus": [
+        { "type": "cours", "id": "atari-ch08-cours-devpac", "titre": "Devpac, sections, EQU, RS, macros et INCBIN", "fichier": "01-devpac.md", "source": "Reformulé d'après le manuel Atari ST v2 (§ 6.1 et 6.2) et le manuel de Devpac 2 (HiSoft)" },
+        {
+          "type": "exemple", "id": "atari-ch08-ex-sections", "titre": "Un programme en trois sections",
+          "introduction": "Le code dans TEXT, le message dans DATA, un tampon dans BSS. Regarde les adresses de MESSAGE et de TAMPON dans A0 et A1 : les sections sont rangées bout à bout, et la BSS est remplie de zéros.",
+          "code": "@code.s#sections-exemple",
+          "machine": { "modeUtilisateur": true },
+          "explications": [
+            { "ligne": 4, "texte": "A0 pointe sur le message, rangé dans la section DATA, juste après le code." },
+            { "ligne": 5, "texte": "A1 pointe sur le tampon de la section BSS, après les données. Regarde-le dans la vue mémoire : que des zéros." },
+            { "ligne": 7, "texte": "Un octet copié. MOVE positionne Z : il vaut 1 quand l'octet copié est le 0 final." },
+            { "ligne": 8, "texte": "Tant que l'octet copié n'était pas nul, on continue (avance jusqu'au bout avec « Jusqu'au bout »)." },
+            { "ligne": 11, "texte": "La copie s'affiche : elle a bien été faite dans la BSS." }
+          ],
+          "conclusion": "TEXT pour le code, DATA pour ce qui a une valeur de départ, BSS pour ce qui commence à zéro. Dans le .PRG, la BSS ne prend que 4 octets : sa taille."
+        },
+        {
+          "type": "prediction", "id": "atari-ch08-pred-rs", "titre": "Une structure avec RS",
+          "introduction": "Les champs d'un « vaisseau » décrits avec RS, puis utilisés comme déplacements.",
+          "code": "@code.s#rs-prediction",
+          "machine": { "modeUtilisateur": true },
+          "questions": [
+            { "id": "q1", "enonce": "Que vaut D0 (la valeur de VIES) ?", "choix": ["4", "2", "5"], "bonne": 0, "explication": "POS_X = 0, POS_Y = 2 (après un mot), VIES = 4 (après deux mots).", "verification": { "D0": "$00000004" } },
+            { "id": "q2", "enonce": "Et D1 (TAILLE) ?", "choix": ["5", "6", "4"], "bonne": 0, "explication": "Après VIES (un octet), le compteur vaut 5 ; `RS.B 0` donne cette valeur sans rien ajouter : la taille de la structure.", "verification": { "D1": "$00000005" } },
+            { "id": "q3", "enonce": "Et D2 ?", "choix": ["3", "0", "4"], "bonne": 0, "explication": "`MOVE.B #3,VIES(A0)` a écrit 3 à 4 octets du début du vaisseau, et on le relit au même endroit.", "verification": { "D2": "$00000003" } }
+          ]
+        },
+        { "type": "exercice", "id": "atari-ch08-exo-equ", "titre": "La constante manquante", "variante": "completer", "niveau": 1,
+          "enonce": "Le programme affiche NB_ETOILES étoiles, mais l'assembleur ne connaît pas NB_ETOILES. Définis la constante avec **EQU** pour qu'il en affiche **5**.",
+          "indices": ["Une ligne en colonne 1 : le nom, EQU, la valeur.", "`NB_ETOILES EQU 5`, avant ou après le code."],
+          "codeDepart": "@code.s#equ-depart", "solution": "@code.s#equ-solution",
+          "check": { "type": "output", "maxSteps": 500, "terminer": true, "expected": { "output": "*****" } },
+          "machine": { "modeUtilisateur": true } },
+        { "type": "exercice", "id": "atari-ch08-exo-macro", "titre": "Ta première macro", "variante": "ecrire", "niveau": 2,
+          "enonce": "Le programme utilise trois fois une macro **AFFICHE** qui n'existe pas encore. Écris-la, au-dessus de START : elle affiche avec Cconws le texte dont l'étiquette est passée en paramètre. Résultat attendu : « Bonjour et au revoir ».",
+          "indices": ["`AFFICHE MACRO` en colonne 1, le corps, puis `ENDM`.", "Dans le corps, `\\1` est remplacé par le paramètre : `PEA \\1`, puis l'appel Cconws habituel."],
+          "codeDepart": "@code.s#macro-depart", "solution": "@code.s#macro-solution",
+          "check": { "type": "output", "maxSteps": 500, "terminer": true, "expected": { "output": "Bonjour et au revoir" } },
+          "machine": { "modeUtilisateur": true } },
+        {
+          "type": "exemple", "id": "atari-ch08-ex-image", "titre": "Une image Degas avec INCBIN",
+          "introduction": "L'image `LOGO.PI1` (32 034 octets) est incluse telle quelle dans la section DATA. On charge sa palette, puis on recopie ses 32 000 octets dans l'écran. Utilise « Jusqu'au bout » pour la copie (8 000 tours).",
+          "code": "@code.s#image-exemple",
+          "machine": { "modeUtilisateur": true, "ecran": true },
+          "explications": [
+            { "ligne": 3, "texte": "IMAGE + 2 : la palette, juste après le mot de résolution." },
+            { "ligne": 5, "texte": "Setpalette : les 16 couleurs de l'image remplacent celles du TOS. Regarde l'écran : le fond est déjà bleu foncé." },
+            { "ligne": 11, "texte": "IMAGE + 34 = 2 + 32 : le début de l'écran de l'image." },
+            { "ligne": 15, "texte": "8 000 mots longs = 32 000 octets : l'image entière." }
+          ],
+          "conclusion": "INCBIN + Setpalette + une boucle de copie : c'est ainsi que les jeux et les démos affichaient leurs écrans de titre, dessinés avec Degas Elite ou NEOchrome."
+        },
+        { "type": "exercice", "id": "atari-ch08-exo-image", "titre": "Afficher l'image", "variante": "ecrire", "niveau": 2,
+          "enonce": "L'image `LOGO.PI1` est déjà incluse à l'étiquette IMAGE. Affiche-la : **sa palette** (avec Setpalette), puis **ses 32 000 octets** d'écran recopiés à l'adresse renvoyée par Physbase.",
+          "indices": ["Palette en IMAGE + 2 (`PEA IMAGE+2`, XBIOS 6), écran en IMAGE + 34.", "Copie : `MOVE.L (A0)+,(A1)+` dans une boucle de 32000/4 − 1 tours."],
+          "codeDepart": "@code.s#image-depart", "solution": "@code.s#image-solution",
+          "check": { "type": "memory", "maxSteps": 50000, "terminer": true, "expected": { "$FF8248.W": "$0760", "$FF825E.W": "$0777", "$FC510.L": "$FFFFFFFF" } },
+          "machine": { "modeUtilisateur": true, "ecran": true } }
+      ]
+    },
+    {
+      "id": "atari-ch08-n2",
+      "titre": "Exporter un vrai programme",
+      "contenus": [
+        { "type": "cours", "id": "atari-ch08-cours-prg", "titre": "Le format .PRG, la relocation et l'export", "fichier": "02-prg.md", "source": "Atari GEMDOS Reference Manual (format des exécutables), Atari Compendium" },
+        {
+          "type": "prediction", "id": "atari-ch08-pred-entete", "titre": "Lire un en-tête de .PRG",
+          "introduction": "Un en-tête de programme rangé en mémoire, lu champ par champ.",
+          "code": "@code.s#entete-prediction",
+          "machine": { "modeUtilisateur": true },
+          "questions": [
+            { "id": "q1", "enonce": "Quelle est la taille de la section TEXT (D1) ?", "choix": ["36 octets", "24 octets", "16 octets"], "bonne": 0, "explication": "Le mot long à l'offset 2 vaut $24 = 36.", "verification": { "D1": "$00000024" } },
+            { "id": "q2", "enonce": "Et celle de la BSS (D2) ?", "choix": ["256 octets", "16 octets", "0 : elle n'est pas dans le fichier"], "bonne": 0, "explication": "Le mot long à l'offset 10 vaut $100 = 256. La BSS n'est pas dans le fichier, mais sa **taille** l'est : le TOS doit savoir combien réserver.", "verification": { "D2": "$00000100" } },
+            { "id": "q3", "enonce": "Que vaut D0, le « nombre magique », vu comme une instruction ?", "choix": ["BRA.S qui saute par-dessus l'en-tête", "NOP", "RTS"], "bonne": 0, "explication": "$60xx est un BRA.S de xx octets : $601A saute 26 octets plus loin, juste après les 28 octets de l'en-tête.", "verification": { "D0": "$0000601A" } }
+          ]
+        },
+        { "type": "exercice", "id": "atari-ch08-exo-prg", "titre": "Ton premier .PRG", "variante": "ecrire", "niveau": 1,
+          "enonce": "Écris un programme complet qui affiche **Bonjour, Atari !** (sans retour à la ligne), **attend une touche**, puis rend la main au TOS avec Pterm0. Quand il est accepté, le bouton **Exporter .PRG** apparaît : enregistre-le et lance-le dans Hatari !",
+          "indices": ["Cconws (GEMDOS 9) pour le texte, Cnecin (GEMDOS 8) pour la touche.", "Le texte en `DC.B 'Bonjour, Atari !',0` après le code."],
+          "codeDepart": "@code.s#prg-depart", "solution": "@code.s#prg-solution",
+          "check": { "type": "output", "maxSteps": 500, "terminer": true, "expected": { "output": "Bonjour, Atari !" } },
+          "machine": { "modeUtilisateur": true, "touches": [{ "ascii": 32, "scancode": 57 }] } }
+      ]
+    },
+    {
+      "id": "atari-ch08-n3",
+      "titre": "Débogage avancé",
+      "contenus": [
+        { "type": "cours", "id": "atari-ch08-cours-debogage", "titre": "Bombes, cadre de pile, méthode et pièges classiques", "fichier": "03-debogage.md", "source": "M68000PRM (Motorola) pour le cadre de pile, le cours du Féroce Lapin et l'errata du manuel pour les pièges" },
+        {
+          "type": "exemple", "id": "atari-ch08-ex-cadre", "titre": "Le cadre d'une erreur d'adresse",
+          "introduction": "On installe avec **Setexec** (BIOS 5) notre propre routine pour l'erreur d'adresse (vecteur 3), puis on la provoque en lisant un mot à une adresse impaire. Au lieu de 3 bombes, c'est notre routine qui prend la main : elle range le cadre de pile dans D3 à D7. Regarde la pile en arrivant dans ERREUR.",
+          "code": "@code.s#cadre-exemple",
+          "machine": { "modeUtilisateur": true },
+          "explications": [
+            { "ligne": 6, "texte": "Setexec(3, ERREUR) : le vecteur n° 3 (adresse $0C) pointe désormais sur notre routine." },
+            { "ligne": 9, "texte": "Lecture d'un mot en $2001 : erreur d'adresse ! Le 68000 passe en superviseur, empile 7 mots et saute à ERREUR. Regarde la pile." },
+            { "ligne": 15, "texte": "Mot d'état : `$0019` = lecture (bit 4), pas une instruction (bit 3), données du mode utilisateur (type 1)." },
+            { "ligne": 16, "texte": "L'adresse fautive : `$00002001`. Impaire : voilà le coupable." },
+            { "ligne": 17, "texte": "`$3010` : le premier mot de `MOVE.W (A0),D0`." },
+            { "ligne": 18, "texte": "Le SR d'avant la faute : mode utilisateur (bit S à 0)." },
+            { "ligne": 19, "texte": "Le PC empilé, qui mène à l'instruction en cause." }
+          ],
+          "conclusion": "Adresse fautive, instruction, SR, PC : le cadre de pile raconte le plantage. MONST l'affiche, et le TOS le range en mémoire après les bombes."
+        },
+        {
+          "type": "prediction", "id": "atari-ch08-pred-cadre", "titre": "Ce que dit le cadre",
+          "introduction": "Le même programme : que contiennent les registres à la fin ?",
+          "code": "@code.s#cadre-exemple",
+          "machine": { "modeUtilisateur": true },
+          "questions": [
+            { "id": "q1", "enonce": "Que vaut D5, l'adresse fautive ?", "choix": ["$00002001", "$00002000", "$0000000C"], "bonne": 0, "explication": "C'est l'adresse que l'instruction a tenté de lire.", "verification": { "D5": "$00002001" } },
+            { "id": "q2", "enonce": "Que vaut D6 ?", "choix": ["$00003010", "$00002001", "$0000000C"], "bonne": 0, "explication": "Le premier mot de l'instruction fautive, `MOVE.W (A0),D0` = $3010.", "verification": { "D6": "$00003010" } },
+            { "id": "q3", "enonce": "Sans la routine ERREUR, combien de bombes aurait affichées le TOS ?", "choix": ["2", "3", "4"], "bonne": 1, "explication": "Erreur d'adresse = vecteur 3 = 3 bombes." }
+          ]
+        },
+        { "type": "exercice", "id": "atari-ch08-exo-pile", "titre": "La pile déséquilibrée", "variante": "corriger", "niveau": 2,
+          "enonce": "SOMME3 doit renvoyer dans D0 la somme de D1, D2 et D3 sans les abîmer. Le programme plante au retour du sous-programme. Pose un point d'arrêt sur le RTS de SOMME3 et regarde la pile : que va-t-il dépiler ?",
+          "indices": ["Le sommet de la pile, au moment du RTS, devrait être l'adresse de retour.", "MOVEM sauvegarde D1-D3 (3 registres) mais n'en restaure que 2."],
+          "codeDepart": "@code.s#pile-depart", "solution": "@code.s#pile-solution",
+          "check": { "type": "registers", "maxSteps": 500, "terminer": true, "expected": { "D7": "$0000003C", "D3": "$0000001E" } },
+          "machine": { "modeUtilisateur": true } },
+        { "type": "exercice", "id": "atari-ch08-exo-pieges", "titre": "Deux pièges classiques", "variante": "corriger", "niveau": 3,
+          "enonce": "MAXI doit trouver le plus grand des 4 mots **non signés** de la table (de 0 à 65 535) : ici `$9000`. Il trouve autre chose. Il contient **deux** erreurs classiques : trouve-les avec le pas à pas.",
+          "indices": ["Combien de tours fait DBF quand on charge 4 ? Quel mot est lu au dernier tour ?", "`$9000` est négatif pour une comparaison signée (BLE) : il faut une comparaison non signée (BLS)."],
+          "codeDepart": "@code.s#pieges-depart", "solution": "@code.s#pieges-solution",
+          "check": { "type": "registers", "maxSteps": 500, "terminer": true, "expected": { "D0": "$00009000" } },
+          "machine": { "modeUtilisateur": true } }
+      ]
+    },
+    {
+      "id": "atari-ch08-n4",
+      "titre": "Les bonnes pratiques",
+      "contenus": [
+        { "type": "cours", "id": "atari-ch08-cours-pratiques", "titre": "Registres, commentaires, vecteurs rendus, superviseur", "fichier": "04-pratiques.md", "source": "Reformulé d'après le manuel Atari ST v2 (module 6), le cours du Féroce Lapin et l'errata (préservation de D3-D7/A3-A6)" },
+        { "type": "exercice", "id": "atari-ch08-exo-registre", "titre": "Le sous-programme qui abîme un registre", "variante": "corriger", "niveau": 2,
+          "enonce": "Le programme additionne dans D3 les 5 valeurs de TABLE, doublées par DOUBLE : le total devrait être 30. Mais DOUBLE se sert de D3 comme intermédiaire et détruit le total. Corrige **DOUBLE** (sans toucher au programme principal) pour qu'il rende D3 intact.",
+          "indices": ["D3 fait partie des registres « durables » : un sous-programme qui s'en sert doit le sauvegarder.", "`MOVE.L D3,-(SP)` au début de DOUBLE, `MOVE.L (SP)+,D3` avant RTS (ou utilise D1, un registre de travail)."],
+          "codeDepart": "@code.s#registre-depart", "solution": "@code.s#registre-solution",
+          "check": { "type": "registers", "maxSteps": 500, "terminer": true, "expected": { "D3": "$0000001E" } },
+          "machine": { "modeUtilisateur": true } },
+        { "type": "exercice", "id": "atari-ch08-exo-chainer", "titre": "Se chaîner et rendre le vecteur", "variante": "ecrire", "niveau": 3,
+          "enonce": "Installe en `$70` ta propre routine VBL : elle ajoute 1 à COMPTEUR, puis **se chaîne** à la routine VBL du TOS. Le programme principal attend que COMPTEUR atteigne 10, **remet l'ancien vecteur** et quitte. Le vérificateur contrôle que `$70` est rendu, et que la routine du TOS a continué de compter les images (`_frclock`, en `$466`, doit valoir 10).",
+          "indices": ["Installer et retirer : deux petites routines appelées par Supexec (`MOVE.L $70.W,ANCIEN`, `MOVE.L #MAVBL,$70.W`).", "Se chaîner : `MOVE.L ANCIEN(PC),-(SP)` puis `RTS` à la fin de MAVBL. Attends avec Vsync dans une boucle, en comparant COMPTEUR à 10."],
+          "codeDepart": "@code.s#chainer-depart", "solution": "@code.s#chainer-solution",
+          "check": { "type": "memory", "maxSteps": 20000, "terminer": true, "expected": { "$70.L": "$00FC0100", "$466.L": "$0000000A" } },
+          "machine": { "modeUtilisateur": true } }
+      ]
+    }
+  ],
+  "qcm": {
+    "id": "atari-ch08-qcm",
+    "seuil": 0.7,
+    "questions": [
+      { "id": "q1", "enonce": "Dans quelle section range-t-on un tampon de 32 000 octets à zéro ?", "choix": ["TEXT", "DATA", "BSS"], "bonne": 2, "explication": "La BSS ne prend pas de place dans le fichier : seule sa taille est notée, et le TOS la remplit de zéros." },
+      { "id": "q2", "enonce": "Que fait `LARGEUR EQU 320` ?", "choix": ["Réserve 320 octets", "Donne le nom LARGEUR à la valeur 320", "Range 320 en mémoire"], "bonne": 1, "explication": "EQU ne produit aucun octet : il nomme une valeur." },
+      { "id": "q3", "enonce": "Dans une macro, que représente `\\1` ?", "choix": ["Le registre D1", "Le premier paramètre de la macro", "La première ligne de la macro"], "bonne": 1, "explication": "Chaque utilisation remplace \\1, \\2… par les paramètres écrits après le nom de la macro." },
+      { "id": "q4", "enonce": "Combien d'octets fait une image Degas .PI1 ?", "choix": ["32 000", "32 034", "32 768"], "bonne": 1, "explication": "2 (résolution) + 32 (palette) + 32 000 (écran)." },
+      { "id": "q5", "enonce": "À quoi sert la table de relocation d'un .PRG ?", "choix": ["À corriger les adresses absolues selon l'endroit où le TOS charge le programme", "À compresser le programme", "À trouver les symboles pour le débogueur"], "bonne": 0, "explication": "Le TOS ajoute l'adresse de chargement à chaque mot long noté dans la table." },
+      { "id": "q6", "enonce": "Dans le cadre de pile d'une erreur d'adresse, que trouve-t-on à 2(SP) ?", "choix": ["Le SR", "L'adresse fautive", "Le PC"], "bonne": 1, "explication": "Mot d'état en 0, adresse fautive en 2, instruction en 6, SR en 8, PC en 10." },
+      { "id": "q7", "enonce": "Pour comparer deux adresses (non signées), après CMP on utilise…", "choix": ["BGT", "BHI", "BMI"], "bonne": 1, "explication": "BGT compare en signé ; BHI (plus grand, non signé) convient aux adresses et aux valeurs 0-65 535." },
+      { "id": "q8", "enonce": "Quels registres un appel au TOS laisse-t-il intacts ?", "choix": ["D0-D2 et A0-A2", "D3-D7 et A3-A6", "Tous"], "bonne": 1, "explication": "D0-D2/A0-A2 peuvent être modifiés (D0 = résultat) ; D3-D7/A3-A6 sont préservés." },
+      { "id": "q9", "enonce": "Pourquoi une routine VBL à soi doit-elle se « chaîner » à l'ancienne ?", "choix": ["Pour aller plus vite", "Pour que le TOS continue son travail (compteurs, file VBL, palette…)", "Parce que RTE est interdit"], "bonne": 1, "explication": "Sinon _frclock ne bouge plus, Vsync attend pour toujours, la file VBL n'est plus appelée…" },
+      { "id": "q10", "enonce": "Avant de quitter, un programme doit…", "choix": ["remettre les vecteurs et le matériel dans leur état", "effacer la mémoire", "repasser en superviseur"], "bonne": 0, "explication": "Un programme est un invité : il laisse la machine comme il l'a trouvée, et quitte par Pterm0." }
+    ]
+  },
+  "bonus": [
+    { "type": "exercice", "id": "atari-ch08-bonus-intro", "titre": "Défi final : ta petite intro", "variante": "ecrire", "niveau": 3,
+      "enonce": "Le grand final ! Écris une **petite intro façon démo** : affiche le logo `LOGO.PI1`, ajoute des **barres de couleur** dans la bande du bas du logo (rasters avec le timer B), une petite **musique** jouée sous VBL, et termine proprement sur la touche **Espace** (vecteurs, timer et son remis en place). Lance-la en **🎬 Temps réel**, puis exporte-la en .PRG pour Hatari ! Le vérificateur contrôle le logo et la sortie propre (le simulateur appuie sur Espace au bout d'une seconde) ; les rasters et la musique, c'est pour tes yeux et tes oreilles.",
+      "indices": ["Plan : Setpalette + copie du logo ; Supexec(INSTALLER) ; boucle Vsync + Cconis/Cnecin jusqu'à Espace ; Supexec(RETIRER) ; Pterm0.", "VBL : relance le timer B (arrêt, 100 lignes, mode 8), fait avancer la musique, puis se chaîne. TIMERB : change la couleur 2, reprogramme 2 lignes, `BCLR #0,$FFFFFA0F.W`, RTE. La solution complète est un bon modèle pour tes propres démos."],
+      "codeDepart": "@code.s#intro-depart", "solution": "@code.s#intro-solution",
+      "check": { "type": "pixels", "maxSteps": 400000, "terminer": true, "expected": { "160,110": "15", "70,22": "3", "70,100": "7", "8,155": "8", "24,155": "9" } },
+      "machine": { "modeUtilisateur": true, "ecran": true, "evenements": [{ "image": 50, "touche": 57, "caractere": " " }] } }
+  ]
 }

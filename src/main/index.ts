@@ -3,7 +3,7 @@ import { is } from '@electron-toolkit/utils'
 import { readFile, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { IPC, type AssembleRequest, type ProgressState } from '../shared/ipc'
-import { assemblerDansApplication } from './assemblage'
+import { assemblerDansApplication, fabriquerPrg } from './assemblage'
 import { GestionProfils } from './profils'
 import { loadContent } from './content'
 import { getBuildInfo } from './buildInfo'
@@ -85,6 +85,7 @@ app.whenReady().then(() => {
     await writeFile(choix.filePath, Buffer.from(octets))
     return { ok: true, chemin: choix.filePath }
   })
+  ipcMain.handle(IPC.fabriquerPrg, (_event, source: string) => fabriquerPrg(source))
   ipcMain.handle(IPC.loadContent, () => loadContent())
   ipcMain.handle(IPC.getBuildInfo, () => getBuildInfo())
 

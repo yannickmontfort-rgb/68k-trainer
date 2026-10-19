@@ -2,6 +2,8 @@ import { app } from 'electron'
 import { existsSync, readFileSync } from 'fs'
 import { join, normalize } from 'path'
 import { assemblerSource } from '../shared/assemblage'
+import { assembler } from '../asm/assembleur'
+import { creerPrg, empechementPrg } from '../asm/prg'
 import type { AssembleResult } from '../shared/ipc'
 
 /**
@@ -19,15 +21,28 @@ function chemin(nom: string): string | null {
   return p.startsWith(racine) && existsSync(p) ? p : null
 }
 
+const lecteurs = {
+  lireTexte: (nom: string): string | null => {
+    const p = chemin(nom)
+    return p ? readFileSync(p, 'utf-8') : null
+  },
+  lireBinaire: (nom: string): Uint8Array | null => {
+    const p = chemin(nom)
+    return p ? new Uint8Array(readFileSync(p)) : null
+  }
+}
+
 export function assemblerDansApplication(source: string): AssembleResult {
-  return assemblerSource(source, {
-    lireTexte: (nom) => {
-      const p = chemin(nom)
-      return p ? readFileSync(p, 'utf-8') : null
-    },
-    lireBinaire: (nom) => {
-      const p = chemin(nom)
-      return p ? new Uint8Array(readFileSync(p)) : null
-    }
-  })
+  return assemblerSource(source, lecteurs)
+}
+
+/** Fabrique un .PRG (INCLUDE et INCBIN compris), ou dit pourquoi c'est impossible. */
+export function fabriquerPrg(source: string): { octets?: Uint8Array; raison?: string } {
+  const r = assembler(source, { ...lecteurs, prg: true })
+  const raison = empechementPrg(r)
+  if (raison) {
+    const premiere = r.erreurs[0]
+    return { raison: premiere ? `${raison}\nLigne ${premiere.ligne} : ${premiere.message}` : raison }
+  }
+  return { octets: creerPrg(r) }
 }

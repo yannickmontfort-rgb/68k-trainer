@@ -1,9 +1,7 @@
 /**
- * « Exporter pour Hatari / un vrai ST » : assemble le source avec l'assembleur maison en .PRG
- * relogeable et propose de l'enregistrer.
+ * « Exporter pour Hatari / un vrai ST » : le processus principal assemble le source en .PRG
+ * relogeable (avec les fichiers d'INCLUDE et d'INCBIN), puis propose de l'enregistrer.
  */
-import { assembler } from '../../asm/assembleur'
-import { creerPrg, empechementPrg } from '../../asm/prg'
 
 export interface ResultatExport {
   ok: boolean
@@ -22,13 +20,9 @@ function nomTos(nom: string): string {
 }
 
 export async function exporterPrg(source: string, nom: string): Promise<ResultatExport> {
-  const r = assembler(source, { prg: true })
-  const raison = empechementPrg(r)
-  if (raison) {
-    const premiere = r.erreurs[0]
-    return { ok: false, message: premiere ? `${raison}\nLigne ${premiere.ligne} : ${premiere.message}` : raison }
-  }
-  const enregistre = await window.api.enregistrerPrg(creerPrg(r), nomTos(nom))
+  const prg = await window.api.fabriquerPrg(source)
+  if (!prg.octets) return { ok: false, message: prg.raison ?? 'Export impossible.' }
+  const enregistre = await window.api.enregistrerPrg(prg.octets, nomTos(nom))
   if (!enregistre.ok) return { ok: false, message: 'Export annulé.' }
   // Sur un vrai ST, un programme rend la main au bureau par GEMDOS Pterm0 (TRAP #1), pas par RTS
   const conseil = /\btrap\s+#1\b/i.test(source)

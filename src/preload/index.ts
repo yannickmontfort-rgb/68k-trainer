@@ -35,7 +35,9 @@ const api = {
   tableauProfils: (): Promise<{ profil: ProfilPublic; progression: ProgressState }[]> =>
     ipcRenderer.invoke(IPC.tableauProfils),
   enregistrerPrg: (octets: Uint8Array, nom: string): Promise<{ ok: boolean; chemin?: string }> =>
-    ipcRenderer.invoke(IPC.enregistrerPrg, octets, nom)
+    ipcRenderer.invoke(IPC.enregistrerPrg, octets, nom),
+  fabriquerPrg: (source: string): Promise<{ octets?: Uint8Array; raison?: string }> =>
+    ipcRenderer.invoke(IPC.fabriquerPrg, source)
 }
 
 contextBridge.exposeInMainWorld('api', api)
