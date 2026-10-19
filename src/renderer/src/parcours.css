@@ -469,7 +469,7 @@
   border-radius: 4px;
   padding: 8px 12px;
   margin: 6px 0;
-  font-family: Consolas, 'Courier New', monospace;
+  font-family: var(--police-code);
   font-size: 13px;
   overflow-x: auto;
 }
@@ -712,7 +712,7 @@
   background: #1e1e1e;
   color: #ddd;
   border: 1px solid #444;
-  font-family: Consolas, monospace;
+  font-family: var(--police-code);
   font-size: 11px;
   width: 60px;
 }
@@ -721,7 +721,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1px 10px;
-  font-family: Consolas, monospace;
+  font-family: var(--police-code);
 }
 
 .dbg-reg {
@@ -748,7 +748,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 3px;
-  font-family: Consolas, monospace;
+  font-family: var(--police-code);
 }
 
 .dbg-sr-hex.change {
@@ -782,7 +782,7 @@
 .dbg-desasm-ligne {
   display: flex;
   gap: 10px;
-  font-family: Consolas, monospace;
+  font-family: var(--police-code);
   color: #aaa;
 }
 
@@ -823,7 +823,7 @@
 .dbg-pile-ligne {
   display: flex;
   gap: 10px;
-  font-family: Consolas, monospace;
+  font-family: var(--police-code);
   color: #aaa;
 }
 
@@ -837,7 +837,7 @@
 }
 
 .dbg-mem {
-  font-family: Consolas, monospace;
+  font-family: var(--police-code);
   font-size: 11px;
   white-space: pre;
   overflow-x: auto;
@@ -857,7 +857,7 @@
   min-height: 18px;
   max-height: 120px;
   overflow-y: auto;
-  font-family: Consolas, monospace;
+  font-family: var(--police-code);
   white-space: pre-wrap;
   color: #b5e8a0;
 }

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from 'electron'
 import { is } from '@electron-toolkit/utils'
 import { readFile, writeFile } from 'fs/promises'
 import { join } from 'path'
@@ -13,6 +13,10 @@ function createWindow(): void {
     width: 1280,
     height: 860,
     show: false,
+    // Linux : l'icône de la fenêtre n'est pas prise dans l'exécutable
+    ...(process.platform === 'linux'
+      ? { icon: app.isPackaged ? join(process.resourcesPath, 'icon.png') : join(app.getAppPath(), 'resources', 'icon.png') }
+      : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
@@ -108,6 +112,13 @@ app.whenReady().then(() => {
   })
   ipcMain.handle(IPC.loadContent, () => loadContent())
   ipcMain.handle(IPC.getBuildInfo, () => getBuildInfo())
+
+  // macOS : le menu de l'application (« 68k Trainer », Quitter avec Cmd+Q) est obligatoire
+  if (process.platform === 'darwin') {
+    Menu.setApplicationMenu(
+      Menu.buildFromTemplate([{ role: 'appMenu' }, { role: 'editMenu' }, { role: 'viewMenu' }, { role: 'windowMenu' }])
+    )
+  }
 
   createWindow()
 

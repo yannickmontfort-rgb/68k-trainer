@@ -16,7 +16,10 @@
     "version:bump": "node scripts/bump-version.mjs",
     "dist:win": "npm run version:bump && electron-vite build && electron-builder --win",
     "asm": "vite-node src/asm/cli/asm.ts --",
-    "desasm": "vite-node src/asm/cli/desasm.ts --"
+    "desasm": "vite-node src/asm/cli/desasm.ts --",
+    "build:meta": "node scripts/build-meta.mjs",
+    "dist:linux": "npm run build:meta && electron-vite build && electron-builder --linux",
+    "dist:mac": "npm run build:meta && electron-vite build && electron-builder --mac"
   },
   "dependencies": {
     "marked": "^18.0.9",
@@ -37,7 +40,8 @@
     "appId": "com.yannick.trainer68k",
     "productName": "68k Trainer",
     "directories": {
-      "output": "dist"
+      "output": "dist",
+      "buildResources": "resources"
     },
     "files": [
       "out/**/*",
@@ -51,6 +55,10 @@
       {
         "from": "build-meta.json",
         "to": "build-meta.json"
+      },
+      {
+        "from": "resources/icon.png",
+        "to": "icon.png"
       }
     ],
     "win": {
@@ -73,6 +81,41 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true
+    },
+    "icon": "resources/icon.png",
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "category": "Education",
+      "maintainer": "Yannick Montfort <yannickmontfort-rgb@users.noreply.github.com>",
+      "synopsis": "Apprendre l'assembleur 68000 sur un Atari ST simulé",
+      "artifactName": "68k-Trainer-${version}-${arch}.${ext}"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
+      "category": "public.app-category.education",
+      "minimumSystemVersion": "11.0",
+      "artifactName": "68k-Trainer-${version}-${arch}.${ext}"
     }
-  }
+  },
+  "homepage": "https://github.com/yannickmontfort-rgb/68k-trainer"
 }

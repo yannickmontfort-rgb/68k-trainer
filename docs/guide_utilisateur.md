@@ -100,6 +100,7 @@ s'ouvre directement.
 - **Tableau de suivi** (écran « Qui es-tu ? », dès qu'il y a plusieurs profils) : la progression de
   chaque profil, chapitre par chapitre. Il ne montre ni le code ni les mots de passe.
 
-Tout reste sur l'ordinateur : aucun compte en ligne, aucun serveur. Les données sont dans
-`%APPDATA%	rainer-68k` (un dossier par profil). La progression d'une version précédente est
+Tout reste sur l'ordinateur : aucun compte en ligne, aucun serveur. Les données sont dans le
+dossier de l'application (un dossier par profil) : `%APPDATA%\trainer-68k` sous Windows,
+`~/.config/trainer-68k` sous Linux, `~/Library/Application Support/trainer-68k` sous macOS. La progression d'une version précédente est
 reprise automatiquement dans un profil nommé « Moi ».
