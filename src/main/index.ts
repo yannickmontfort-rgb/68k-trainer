@@ -74,6 +74,17 @@ app.whenReady().then(() => {
       return { ok: false, erreur: "Ce fichier n'est pas un profil 68k Trainer lisible." }
     }
   })
+  ipcMain.handle(IPC.enregistrerPrg, async (event, octets: Uint8Array, nom: string) => {
+    const fenetre = BrowserWindow.fromWebContents(event.sender)!
+    const choix = await dialog.showSaveDialog(fenetre, {
+      title: 'Exporter pour Hatari ou un vrai Atari ST',
+      defaultPath: `${nom}.PRG`,
+      filters: [{ name: 'Programme Atari ST', extensions: ['PRG', 'TOS', 'TTP'] }]
+    })
+    if (choix.canceled || !choix.filePath) return { ok: false }
+    await writeFile(choix.filePath, Buffer.from(octets))
+    return { ok: true, chemin: choix.filePath }
+  })
   ipcMain.handle(IPC.loadContent, () => loadContent())
   ipcMain.handle(IPC.getBuildInfo, () => getBuildInfo())
 

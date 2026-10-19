@@ -2,6 +2,7 @@ import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 import { platformFor } from '../../../shared/runProgram'
 import { Debogueur } from '../components/debogueur'
 import { Execution } from '../components/execution'
+import { exporterPrg } from '../exportPrg'
 import { ecrireLocal as ecrire, lireLocal as lire } from '../profilActif'
 
 const DEFAULT_PROGRAM = `; Bac à sable : écris ici ce que tu veux, puis Assembler et Pas / Exécuter.
@@ -25,6 +26,7 @@ export function renderTrainer(container: HTMLElement, initialProgram?: string): 
       <button id="btn-step" disabled>Pas</button>
       <button id="btn-run" disabled>Exécuter</button>
       <button id="btn-reset" disabled>Réinitialiser</button>
+      <button id="btn-prg" title="Fabrique un programme .PRG à lancer dans l'émulateur Hatari ou sur un vrai Atari ST">Exporter .PRG</button>
       <label class="toolbar-option" title="Comme sous le vrai TOS : vecteurs, variables système et matériel protégés">
         <input type="checkbox" id="opt-utilisateur" /> Mode utilisateur
       </label>
@@ -121,6 +123,12 @@ export function renderTrainer(container: HTMLElement, initialProgram?: string): 
     afficherFin(error)
   }
 
+  container.querySelector('#btn-prg')!.addEventListener('click', () => {
+    void exporterPrg(editor.getValue(), 'BACASABL').then((r) => {
+      statusEl.textContent = r.ok ? '.PRG exporté' : 'Export impossible'
+      errorsEl.textContent = r.message
+    })
+  })
   btnAssemble.addEventListener('click', () => void onAssemble())
   btnStep.addEventListener('click', doStep)
   btnReset.addEventListener('click', () => {

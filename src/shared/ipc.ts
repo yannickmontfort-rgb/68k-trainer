@@ -145,6 +145,7 @@ export const IPC = {
   exporterProfil: '68k:exporterProfil',
   importerProfil: '68k:importerProfil',
   tableauProfils: '68k:tableauProfils',
+  enregistrerPrg: '68k:enregistrerPrg',
   assemble: '68k:assemble',
   loadProgress: '68k:loadProgress',
   saveProgress: '68k:saveProgress',

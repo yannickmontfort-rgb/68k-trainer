@@ -14,6 +14,7 @@ import { corrigerQcm, detailChapitre, etatNotion } from '../../../../shared/prog
 import { platformFor } from '../../../../shared/runProgram'
 import { Debogueur } from '../../components/debogueur'
 import { Execution } from '../../components/execution'
+import { exporterPrg } from '../../exportPrg'
 import { enregistrerQcm, marquerExerciceReussi, marquerVu } from '../../progressionStore'
 import { ecrireLocal, lireLocal } from '../../profilActif'
 import { sourceOrdonne, verifierExercice } from '../../verifier'
@@ -239,7 +240,9 @@ export function ecranExercice(el: HTMLElement, ex: ContenuExercice, ctx: Context
             <button id="btn-indice">Indice (0/${ex.indices.length})</button>
             <button id="btn-solution" disabled title="Disponible après avoir vu les indices ou après 3 essais">Voir la solution</button>
             ${ordonner ? '' : '<button id="btn-reinit" title="Revenir au code de départ">↺</button>'}
+            <button id="btn-prg" ${reussi ? '' : 'hidden'} title="Lance ton programme dans l'émulateur Hatari ou sur un vrai Atari ST !">Exporter .PRG</button>
           </div>
+          <p class="export-prg" id="export-prg" hidden></p>
           <ul class="indices" id="indices"></ul>
           <div class="verdict" id="verdict" hidden></div>
         </div>
@@ -328,6 +331,15 @@ export function ecranExercice(el: HTMLElement, ex: ContenuExercice, ctx: Context
 
   // Vérification
   const verdictEl = el.querySelector<HTMLDivElement>('#verdict')!
+  // Export .PRG, proposé une fois l'exercice réussi
+  const btnPrg = el.querySelector<HTMLButtonElement>('#btn-prg')!
+  const exportEl = el.querySelector<HTMLParagraphElement>('#export-prg')!
+  btnPrg.addEventListener('click', () => {
+    void exporterPrg(sourceActuel(), ex.id.split('-').pop() ?? ex.id).then((r) => {
+      exportEl.hidden = false
+      exportEl.textContent = r.message
+    })
+  })
   const btnVerifier = el.querySelector<HTMLButtonElement>('#btn-verifier')!
   btnVerifier.addEventListener('click', () => {
     void (async () => {
@@ -343,6 +355,7 @@ export function ecranExercice(el: HTMLElement, ex: ContenuExercice, ctx: Context
           `<p class="verdict-titre">${v.success ? (ex.bonus ? '★ Défi relevé !' : '✓ Réussi !') : '✗ Pas encore…'}</p>` +
           `<pre>${echapper(v.message)}</pre>` +
           (v.pistes.length ? `<div class="pistes"><strong>Pour déboguer :</strong><ul>${v.pistes.map((p) => `<li>${echapper(p)}</li>`).join('')}</ul></div>` : '')
+        if (v.success) btnPrg.hidden = false
         if (v.success && marquerExerciceReussi(ex.id)) ctx.progressionChangee()
         majSolution()
       } finally {

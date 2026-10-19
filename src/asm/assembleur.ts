@@ -46,6 +46,8 @@ export interface ResultatAssemblage {
   sections: { text: Uint8Array; data: Uint8Array; bss: number }
   /** Positions, depuis le début de TEXT, des mots longs contenant une adresse du programme. */
   relocs: number[]
+  /** OPT D+ : le source demande une table de symboles (débogage avec MONST). */
+  debogage: boolean
 }
 
 interface LigneSrc {
@@ -123,6 +125,7 @@ class Assembleur {
   private relocs: { section: NomSection; position: number }[] = []
   private ligneCourante!: LigneSrc
   private profondeurInclude = 0
+  private debogage = false
 
   constructor(source: string, private readonly options: OptionsAssemblage) {
     this.base = options.base ?? 0x1000
@@ -160,6 +163,7 @@ class Assembleur {
     this.macros = new Map()
     this.compteurMacro = 0
     this.rs = 0
+    this.debogage = false
     this.dernierGlobal = ''
     this.adresseVersLigne = {}
     this.relocs = []
@@ -696,6 +700,13 @@ class Assembleur {
         throw new AsmErreur(`${nom} sans ${nom === 'ENDM' ? 'MACRO' : 'REPT'} correspondant.`, mnemo.col, nom.length)
       default:
         if (DIRECTIVES_IGNOREES.has(nom)) {
+          // Seule option retenue : OPT D+ / D- (table de symboles dans le .PRG, pour MONST)
+          if (nom === 'OPT' && op) {
+            for (const o of op.texte.split(',')) {
+              const m = /^\s*D([+-])\s*$/i.exec(o)
+              if (m) this.debogage = m[1] === '+'
+            }
+          }
           if (etiquette) this.definirEtiquetteIci(etiquette)
           return
         }
@@ -784,7 +795,8 @@ class Assembleur {
       symboles,
       relogeable: !this.absolu,
       sections: { text, data, bss },
-      relocs
+      relocs,
+      debogage: this.debogage
     }
   }
 }

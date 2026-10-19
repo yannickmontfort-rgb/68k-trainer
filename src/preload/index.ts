@@ -33,7 +33,9 @@ const api = {
   importerProfil: (motDePasse?: string): Promise<ResultatProfil & { brouillons?: ExportProfil['brouillons'] }> =>
     ipcRenderer.invoke(IPC.importerProfil, motDePasse),
   tableauProfils: (): Promise<{ profil: ProfilPublic; progression: ProgressState }[]> =>
-    ipcRenderer.invoke(IPC.tableauProfils)
+    ipcRenderer.invoke(IPC.tableauProfils),
+  enregistrerPrg: (octets: Uint8Array, nom: string): Promise<{ ok: boolean; chemin?: string }> =>
+    ipcRenderer.invoke(IPC.enregistrerPrg, octets, nom)
 }
 
 contextBridge.exposeInMainWorld('api', api)
