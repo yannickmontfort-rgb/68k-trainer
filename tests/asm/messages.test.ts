@@ -76,3 +76,15 @@ describe('avertissements pédagogiques', () => {
     expect(assemble('START:\n    MOVE.W START,D0\n    MOVE.B $484,D1\n    RTS\n').warnings).toEqual([])
   })
 })
+
+describe('registre écrit avec une lettre', () => {
+  it('Do : la lettre O au lieu du zéro', () => {
+    const r = assemble('START:\n    MOVE.W #4,Do\n    RTS\n')
+    expect(r.errors[0].message).toContain('la lettre « o » au lieu du chiffre zéro')
+    expect(r.errors[0].message).toContain('D0')
+  })
+
+  it('Al : la lettre l au lieu du un', () => {
+    expect(assemble('START:\n    MOVEA.L #0,Al\n    RTS\n').errors[0].message).toContain('A1')
+  })
+})

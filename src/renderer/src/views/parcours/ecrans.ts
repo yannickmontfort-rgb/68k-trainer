@@ -431,7 +431,13 @@ export function ecranExercice(el: HTMLElement, ex: ContenuExercice, ctx: Context
     exec.arreter()
     const res = await exec.assembler(sourceActuel())
     aJour = true
-    dbgStatut.textContent = res.success ? 'Prêt : avance pas à pas' : 'Erreur d’assemblage : voir les lignes soulignées'
+    if (res.success) dbgStatut.textContent = 'Prêt : avance pas à pas'
+    else {
+      // L'erreur en clair, sans avoir à survoler la ligne soulignée
+      const e = res.errors[0]
+      const autres = res.errors.length > 1 ? ` (et ${res.errors.length - 1} autre${res.errors.length > 2 ? 's' : ''})` : ''
+      dbgStatut.textContent = e ? `Erreur d’assemblage, ligne ${e.line} : ${e.message}${autres}` : 'Erreur d’assemblage'
+    }
   }
   editor?.onDidChangeModelContent(() => {
     if (!exec || !aJour) return

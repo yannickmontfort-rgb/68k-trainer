@@ -254,6 +254,12 @@ class Assembleur {
       const connus = [...this.defsPasse1.keys()].filter((k) => !k.includes('.') && !k.includes('$'))
       const proche = suggestion(nom, connus)
       if (/^[DA][89]$/i.test(nom)) throw new AsmErreur(`« ${nom} » n'existe pas : les registres vont de D0 à D7 et de A0 à A7.`, col, nom.length)
+      // Lettre O au lieu du chiffre 0 (ou l/I au lieu de 1) : l'erreur la plus fréquente des débutants
+      if (/^[DA][OoIil]$/.test(nom)) {
+        const registre = nom[0].toUpperCase() + (/[Oo]/.test(nom[1]) ? '0' : '1')
+        const lettre = /[Oo]/.test(nom[1]) ? `la lettre « ${nom[1]} » au lieu du chiffre zéro` : `la lettre « ${nom[1]} » au lieu du chiffre un`
+        throw new AsmErreur(`« ${nom} » : tu as tapé ${lettre}. Le registre s'écrit ${registre}.`, col, nom.length)
+      }
       const memeLettres = connus.find((k) => k.toUpperCase() === nom.toUpperCase())
       if (memeLettres) {
         throw new AsmErreur(

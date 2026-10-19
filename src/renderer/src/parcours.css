@@ -463,6 +463,17 @@
   margin-left: 6px;
 }
 
+/* Dans le panneau de pas à pas, le statut (une erreur d'assemblage par exemple) a sa propre ligne */
+.exercice-droite .toolbar-mini {
+  flex-wrap: wrap;
+}
+
+.exercice-droite .statut {
+  flex-basis: 100%;
+  margin-left: 0;
+  line-height: 1.4;
+}
+
 .bloc-code {
   background: #1a1a1a;
   border: 1px solid #333;
