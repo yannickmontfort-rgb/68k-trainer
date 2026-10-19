@@ -1,0 +1,194 @@
+{
+  "id": "atari-ch04",
+  "titre": "Le TOS : appels système, superviseur et vecteurs",
+  "plateforme": "atari",
+  "resume": "Ton programme n'est plus seul : il vit sous le **TOS**, le système de l'Atari. Tu vas l'appeler pour afficher du texte (`TRAP`), découvrir le **mode utilisateur** et ses protections (et comment en sortir avec `Supexec`), puis installer tes propres routines d'exception. **À partir de maintenant, les programmes démarrent en mode utilisateur**, comme sur un vrai ST. Correspond au module 2 du manuel et à l'exercice 2 de son module 7.",
+  "notions": [
+    {
+      "id": "atari-ch04-n1",
+      "titre": "Appeler le TOS",
+      "contenus": [
+        { "type": "cours", "id": "atari-ch04-cours-trap", "titre": "TRAP, GEMDOS, BIOS, XBIOS", "fichier": "01-trap.md", "aRelire": true, "source": "Reformulé d'après le manuel Atari ST v1 et v2 (§ 2.2-2.3) et le cours du Féroce Lapin ; fonctions vérifiées dans le TOS simulé" },
+        {
+          "type": "exemple", "id": "atari-ch04-ex-bonjour", "titre": "Bonjour, Atari !", "aRelire": true,
+          "introduction": "Le premier programme qui **affiche** quelque chose. Regarde la pile pendant la préparation de l'appel, puis la zone **Sortie texte**.",
+          "code": "@code.s#bonjour",
+          "machine": { "modeUtilisateur": true },
+          "explications": [
+            { "ligne": 2, "texte": "`PEA` empile l'**adresse** du texte : SP diminue de 4. On est en mode utilisateur : c'est la pile USP." },
+            { "ligne": 3, "texte": "On empile le numéro de la fonction, 9 = **Cconws** (afficher une chaîne). SP diminue de 2." },
+            { "ligne": 4, "texte": "`TRAP #1` appelle le GEMDOS. Il lit le numéro et le paramètre sur la pile, et affiche le texte jusqu'à son 0 final : regarde la sortie texte !" },
+            { "ligne": 5, "texte": "C'est à nous de **nettoyer la pile** : 4 + 2 = 6 octets. SP revient à sa valeur de départ." },
+            { "ligne": 6, "texte": "On empile 0 : la fonction **Pterm0**." },
+            { "ligne": 7, "texte": "Le GEMDOS termine le programme et rend la main au bureau GEM. Pas de retour." }
+          ],
+          "conclusion": "Tous les appels système suivent ce rituel : paramètres, numéro, `TRAP`, nettoyage. Et désormais, on termine avec `Pterm0`."
+        },
+        {
+          "type": "prediction", "id": "atari-ch04-pred-cconout", "titre": "Qu'est-ce qui s'affiche ?", "aRelire": true,
+          "introduction": "Deux appels à Cconout (GEMDOS 2), qui affiche **un** caractère.",
+          "code": "@code.s#predire-cconout",
+          "machine": { "modeUtilisateur": true },
+          "questions": [
+            { "id": "q1", "enonce": "Qu'affiche ce programme ?", "choix": ["OK", "KO", "2"], "bonne": 0, "explication": "Le caractère est le paramètre empilé avant le numéro de fonction : d'abord 'O', puis 'K'.", "verification": { "SORTIE": "OK" } },
+            { "id": "q2", "enonce": "Pourquoi `ADDQ.L #4,SP` et pas `#6` ?", "choix": ["Parce qu'on a empilé deux mots (2 + 2 octets)", "Parce que TRAP retire 2 octets tout seul", "Par hasard, 6 marcherait aussi"], "bonne": 0, "explication": "Le caractère (un mot) et le numéro (un mot) : 4 octets. Avec Cconws, l'adresse est un long, d'où 4 + 2 = 6." }
+          ]
+        },
+        { "type": "exercice", "id": "atari-ch04-exo-nettoyer", "titre": "La ligne oubliée", "variante": "completer", "niveau": 1, "aRelire": true,
+          "enonce": "Ce programme affiche bien `SALUT`… puis plante sur le `RTS`. Il manque **une** ligne après le `TRAP`. Ajoute-la.",
+          "indices": ["Combien d'octets ont été empilés avant le TRAP ?", "`ADDQ.L #6,SP`"],
+          "codeDepart": "@code.s#nettoyer-depart", "solution": "@code.s#nettoyer-solution",
+          "check": { "type": "output", "maxSteps": 100, "terminer": true, "expected": { "output": "SALUT\n" } },
+          "machine": { "modeUtilisateur": true } },
+        {
+          "type": "exercice", "id": "atari-ch04-exo-ordonner", "titre": "Remets l'appel dans l'ordre", "variante": "ordonner", "niveau": 1, "aRelire": true,
+          "enonce": "Remets les lignes dans l'ordre pour afficher `A` avec Cconout, puis terminer avec Pterm0.",
+          "indices": ["Paramètre d'abord, numéro ensuite, TRAP, nettoyage.", "Pterm0 en tout dernier."],
+          "codeDepart": "", "entete": "@code.s#ordonner-pterm-entete", "pied": "", "solution": "",
+          "lignes": ["    MOVE.W  #'A',-(SP)", "    MOVE.W  #2,-(SP)", "    TRAP    #1", "    ADDQ.L  #4,SP", "    CLR.W   -(SP)", "    TRAP    #1"],
+          "check": { "type": "output", "maxSteps": 100, "terminer": true, "expected": { "output": "A" } },
+          "machine": { "modeUtilisateur": true }
+        },
+        { "type": "exercice", "id": "atari-ch04-exo-afficher", "titre": "Afficher un texte", "variante": "ecrire", "niveau": 2, "aRelire": true,
+          "enonce": "Écris l'appel à **Cconws** qui affiche le texte `TEXTE` (déjà défini), puis termine avec **Pterm0**.",
+          "indices": ["`PEA TEXTE`, puis le numéro 9.", "Nettoyage de 6 octets, puis `CLR.W -(SP)` et `TRAP #1`."],
+          "codeDepart": "@code.s#afficher-depart", "solution": "@code.s#afficher-solution",
+          "check": { "type": "output", "maxSteps": 100, "terminer": true, "expected": { "output": "68000\n" } },
+          "machine": { "modeUtilisateur": true } },
+        { "type": "exercice", "id": "atari-ch04-exo-etoiles", "titre": "Cinq étoiles", "variante": "ecrire", "niveau": 3, "aRelire": true,
+          "enonce": "Affiche `*****` (cinq étoiles) avec **Cconout** dans une boucle, puis termine avec Pterm0. Attention au registre choisi pour compter les tours : le TOS peut modifier D0-D2 et A0-A2.",
+          "indices": ["Un compteur dans D3 (préservé par le TOS) et `DBRA`.", "Le corps de la boucle : empiler `'*'`, empiler 2, TRAP #1, ADDQ.L #4,SP."],
+          "codeDepart": "@code.s#etoiles-depart", "solution": "@code.s#etoiles-solution",
+          "check": { "type": "output", "maxSteps": 500, "terminer": true, "expected": { "output": "*****" } },
+          "machine": { "modeUtilisateur": true } }
+      ]
+    },
+    {
+      "id": "atari-ch04-n2",
+      "titre": "Mode utilisateur et superviseur",
+      "contenus": [
+        { "type": "cours", "id": "atari-ch04-cours-superviseur", "titre": "Protections, Supexec et Super", "fichier": "02-superviseur.md", "aRelire": true, "source": "Reformulé d'après le manuel Atari ST v2 (§ 1.4, exercice 7.1-2), le manuel v1 (§ 2.3) et le cours EPITA (II.2)" },
+        {
+          "type": "exemple", "id": "atari-ch04-ex-supexec", "titre": "Changer la couleur du fond avec Supexec", "aRelire": true,
+          "introduction": "L'exercice 2 du module 7 du manuel, complété : la routine passe en superviseur pour toucher à la palette et à une variable système. Observe le bit **S** et le passage de A7 de la pile utilisateur à la pile superviseur.",
+          "code": "@code.s#supexec-exemple",
+          "machine": { "modeUtilisateur": true, "ecran": true },
+          "explications": [
+            { "ligne": 2, "texte": "On empile l'adresse de la routine à exécuter." },
+            { "ligne": 3, "texte": "Fonction 38 du XBIOS : **Supexec**." },
+            { "ligne": 4, "texte": "Le XBIOS passe en superviseur (S = 1, A7 = SSP) et appelle ROUTINE. Le PC est maintenant dans la routine." },
+            { "ligne": 9, "texte": "En superviseur, l'écriture dans la palette est permise : le fond devient bleu." },
+            { "ligne": 10, "texte": "La variable système `conterm` ($484) aussi : le bit 0 (clic des touches) passe à 0." },
+            { "ligne": 11, "texte": "Le `RTS` de la routine revient dans le XBIOS, qui repasse en mode utilisateur (S = 0) et revient juste après le TRAP." },
+            { "ligne": 5, "texte": "De retour en mode utilisateur, on nettoie la pile (6 octets)." },
+            { "ligne": 7, "texte": "Pterm0 : fin du programme." }
+          ],
+          "conclusion": "Supexec limite le mode superviseur aux seules instructions qui en ont besoin. Le reste du programme profite des protections du mode utilisateur."
+        },
+        {
+          "type": "prediction", "id": "atari-ch04-pred-bus", "titre": "Directement dans la palette ?", "aRelire": true,
+          "introduction": "Même programme, mais sans Supexec. Rappel : on est en mode utilisateur.",
+          "code": "@code.s#predire-bus",
+          "machine": { "modeUtilisateur": true },
+          "questions": [
+            { "id": "q1", "enonce": "Que se passe-t-il ?", "choix": ["Le fond devient bleu", "Erreur de bus : 2 bombes", "Erreur d'adresse : 3 bombes"], "bonne": 1, "explication": "En mode utilisateur, les registres matériels ($FF8000 et au-delà) sont protégés : le premier accès provoque une erreur de bus (exception 2). L'adresse $FF8240 est paire : ce n'est pas une erreur d'adresse." }
+          ]
+        },
+        { "type": "exercice", "id": "atari-ch04-exo-vert", "titre": "Les deux bombes", "variante": "corriger", "niveau": 2, "aRelire": true,
+          "enonce": "Ce programme veut un fond **vert** (`$070`) mais il plante avec 2 bombes. Corrige-le en faisant écrire la palette par une routine appelée avec **Supexec**.",
+          "indices": ["Déplace le `MOVE.W` dans une routine terminée par `RTS`.", "Appelle-la avec `PEA routine`, `MOVE.W #38,-(SP)`, `TRAP #14`, `ADDQ.L #6,SP`."],
+          "codeDepart": "@code.s#vert-depart", "solution": "@code.s#vert-solution",
+          "check": { "type": "memory", "maxSteps": 100, "terminer": true, "expected": { "$FF8240": "$0070" } },
+          "machine": { "modeUtilisateur": true, "ecran": true } },
+        { "type": "exercice", "id": "atari-ch04-exo-setcolor", "titre": "Changer une couleur sans superviseur", "variante": "ecrire", "niveau": 1, "aRelire": true,
+          "enonce": "Le XBIOS propose aussi **Setcolor** (XBIOS 7), qui change une couleur sans que tu aies à passer en superviseur. Ses paramètres : `Setcolor(numéro, couleur)`. Mets la couleur 0 en **jaune** (`$770`), puis termine avec Pterm0.",
+          "indices": ["Les paramètres s'empilent du dernier au premier : la couleur, puis le numéro, puis 7.", "Nettoyage : 3 mots = 6 octets."],
+          "codeDepart": "@code.s#setcolor-depart", "solution": "@code.s#setcolor-solution",
+          "check": { "type": "memory", "maxSteps": 100, "terminer": true, "expected": { "$FF8240": "$0770" } },
+          "machine": { "modeUtilisateur": true, "ecran": true } },
+        { "type": "exercice", "id": "atari-ch04-exo-conterm", "titre": "Lire une variable système", "variante": "ecrire", "niveau": 3, "aRelire": true,
+          "enonce": "Lis l'octet `conterm` (adresse `$484`) dans **D7**, sans planter, puis termine avec Pterm0. D7 est un registre que le TOS préserve : sa valeur survivra à la fin de la routine.",
+          "indices": ["Lire $484 en mode utilisateur provoque une erreur de bus : passe par Supexec.", "Dans la routine : `MOVEQ #0,D7` puis `MOVE.B $484,D7`."],
+          "codeDepart": "@code.s#conterm-depart", "solution": "@code.s#conterm-solution",
+          "check": { "type": "registers", "maxSteps": 100, "terminer": true, "expected": { "D7": "$00000007" } },
+          "machine": { "modeUtilisateur": true } }
+      ]
+    },
+    {
+      "id": "atari-ch04-n3",
+      "titre": "Vecteurs et exceptions",
+      "contenus": [
+        { "type": "cours", "id": "atari-ch04-cours-vecteurs", "titre": "La table des vecteurs, RTE et Setexec", "fichier": "03-vecteurs.md", "aRelire": true, "source": "Reformulé d'après le manuel Atari ST v1 (§ 2.1) et v2 (§ 2.1), le M68000PRM (chapitre 6, exceptions) et le cours du Féroce Lapin" },
+        {
+          "type": "exemple", "id": "atari-ch04-ex-setexec", "titre": "Ta propre routine de TRAP", "aRelire": true,
+          "introduction": "On installe une routine sur `TRAP #3` (libre sur l'Atari), puis on l'appelle. Observe le passage en superviseur au moment du TRAP, et le retour en utilisateur au `RTE`.",
+          "code": "@code.s#setexec-exemple",
+          "machine": { "modeUtilisateur": true },
+          "explications": [
+            { "ligne": 2, "texte": "Premier paramètre empilé : l'adresse de notre routine." },
+            { "ligne": 3, "texte": "Le numéro du vecteur : 32 + 3 = **35** pour TRAP #3." },
+            { "ligne": 4, "texte": "BIOS 5 : **Setexec**." },
+            { "ligne": 5, "texte": "Le BIOS écrit notre adresse dans le vecteur 35 (adresse $8C) et renvoie l'ancien dans D0." },
+            { "ligne": 6, "texte": "Nettoyage : 4 + 2 + 2 = 8 octets." },
+            { "ligne": 8, "texte": "`TRAP #3` : le 68000 passe en superviseur, empile le PC et le SR sur la pile superviseur (regarde la pile !), lit le vecteur 35 et saute à MAROUTINE." },
+            { "ligne": 12, "texte": "Notre routine double D0 : 40." },
+            { "ligne": 13, "texte": "`RTE` dépile SR (retour au mode utilisateur) et PC : on repart juste après le TRAP." },
+            { "ligne": 9, "texte": "Fin du programme avec Pterm0." }
+          ],
+          "conclusion": "Une routine d'exception se termine par `RTE`, pas par `RTS` : il faut aussi restaurer le registre d'état. Dans un vrai programme, on remettrait l'ancien vecteur (renvoyé par Setexec) avant de quitter."
+        },
+        {
+          "type": "prediction", "id": "atari-ch04-pred-pile-trap", "titre": "Ce que TRAP empile", "aRelire": true,
+          "introduction": "Dans la routine, on lit ce que le 68000 a empilé lors du TRAP. Avant l'appel, les flags sont tous à 0 et le masque d'interruption vaut 3.",
+          "code": "@code.s#predire-pile-trap",
+          "machine": { "modeUtilisateur": true },
+          "questions": [
+            { "id": "q1", "enonce": "Que vaut D6 (le mot au sommet de la pile superviseur) ?", "choix": ["$0300 : l'ancien registre d'état", "$2300 : le nouveau registre d'état", "l'adresse de retour"], "bonne": 0, "explication": "Le 68000 empile le PC, puis l'**ancien** SR : c'est donc lui qui est au sommet. S valait 0 (mode utilisateur), masque 3, flags à 0 : $0300.", "verification": { "D6": "$00000300" } },
+            { "id": "q2", "enonce": "Et D5, le long lu en `2(SP)` ?", "choix": ["L'adresse de l'instruction qui suit TRAP #4", "L'adresse de TRAP #4 lui-même", "L'adresse de la routine"], "bonne": 0, "explication": "Pour un TRAP, le PC empilé est celui de l'instruction **suivante** : après RTE, le programme continue." }
+          ]
+        },
+        { "type": "exercice", "id": "atari-ch04-exo-vecteur", "titre": "Le bon numéro de vecteur", "variante": "completer", "niveau": 1, "aRelire": true,
+          "enonce": "Remplace le `0` par le numéro du vecteur de **TRAP #5**, pour que la routine s'exécute (D0 = 7).",
+          "indices": ["Les TRAP #0 à #15 occupent les vecteurs 32 à 47.", "32 + 5 = 37."],
+          "codeDepart": "@code.s#vecteur-depart", "solution": "@code.s#vecteur-solution",
+          "check": { "type": "registers", "maxSteps": 100, "terminer": true, "expected": { "D0": "$00000007" } },
+          "machine": { "modeUtilisateur": true } },
+        { "type": "exercice", "id": "atari-ch04-exo-divzero", "titre": "Intercepter la division par zéro", "variante": "completer", "niveau": 2, "aRelire": true,
+          "enonce": "Ce programme divise par zéro, ce qui affiche 5 bombes. Ajoute au début l'installation d'une routine sur le **vecteur 5** (avec Setexec), et écris cette routine : elle met **D7 à −1** et revient avec `RTE`. Le programme doit alors aller jusqu'à Pterm0.",
+          "indices": ["Setexec(5, DIVZERO) : `PEA DIVZERO`, `MOVE.W #5,-(SP)` (le vecteur), `MOVE.W #5,-(SP)` (la fonction), `TRAP #13`, `ADDQ.L #8,SP`.", "La routine : `MOVEQ #-1,D7` puis `RTE`."],
+          "codeDepart": "@code.s#divzero-depart", "solution": "@code.s#divzero-solution",
+          "check": { "type": "registers", "maxSteps": 100, "terminer": true, "expected": { "D7": "$FFFFFFFF" } },
+          "machine": { "modeUtilisateur": true } },
+        { "type": "exercice", "id": "atari-ch04-exo-compteur", "titre": "Un TRAP qui compte", "variante": "ecrire", "niveau": 3, "aRelire": true,
+          "enonce": "Installe sur **TRAP #4** une routine qui ajoute 1 à D6. Le programme l'appelle trois fois : à la fin, D6 = 3.",
+          "indices": ["Vecteur 36 = TRAP #4.", "La routine : `ADDQ.L #1,D6` puis `RTE`."],
+          "codeDepart": "@code.s#compteur-depart", "solution": "@code.s#compteur-solution",
+          "check": { "type": "registers", "maxSteps": 100, "terminer": true, "expected": { "D6": "$00000003" } },
+          "machine": { "modeUtilisateur": true } }
+      ]
+    }
+  ],
+  "qcm": {
+    "id": "atari-ch04-qcm",
+    "seuil": 0.7,
+    "questions": [
+      { "id": "q1", "enonce": "Quelle instruction appelle le GEMDOS ?", "choix": ["TRAP #1", "TRAP #13", "TRAP #14"], "bonne": 0, "explication": "TRAP #1 = GEMDOS, #13 = BIOS, #14 = XBIOS." },
+      { "id": "q2", "enonce": "Après `PEA TEXTE` / `MOVE.W #9,-(SP)` / `TRAP #1`, de combien faut-il corriger SP ?", "choix": ["4", "6", "8"], "bonne": 1, "explication": "Une adresse (4 octets) + un numéro de fonction (2 octets)." },
+      { "id": "q3", "enonce": "Dans quel registre le TOS renvoie-t-il le résultat d'une fonction ?", "choix": ["D0", "D7", "A0"], "bonne": 0, "explication": "Toujours D0." },
+      { "id": "q4", "enonce": "Quels registres le TOS peut-il modifier lors d'un appel ?", "choix": ["D3-D7 et A3-A6", "D0-D2 et A0-A2", "aucun"], "bonne": 1, "explication": "D0-D2/A0-A2 sont des registres de travail ; D3-D7/A3-A6 sont préservés." },
+      { "id": "q5", "enonce": "Un programme en mode utilisateur écrit dans `$FF8240`. Résultat ?", "choix": ["Ça marche", "2 bombes (erreur de bus)", "8 bombes (violation de privilège)"], "bonne": 1, "explication": "Les registres matériels sont protégés en mode utilisateur : erreur de bus." },
+      { "id": "q6", "enonce": "À quoi sert Supexec (XBIOS 38) ?", "choix": ["À exécuter une routine en mode superviseur", "À arrêter le programme", "À changer de résolution"], "bonne": 0, "explication": "La routine s'exécute en superviseur, puis le programme revient en mode utilisateur." },
+      { "id": "q7", "enonce": "À quelle adresse se trouve le vecteur de TRAP #1 ?", "choix": ["$01", "$84", "$100"], "bonne": 1, "explication": "Vecteur 33 (32 + 1) × 4 = 132 = $84." },
+      { "id": "q8", "enonce": "Comment se termine une routine d'exception ?", "choix": ["RTS", "RTE", "TRAP #0"], "bonne": 1, "explication": "RTE dépile le SR et le PC empilés par l'exception." },
+      { "id": "q9", "enonce": "Que renvoie Setexec dans D0 ?", "choix": ["0 si tout va bien", "L'ancien vecteur", "Le numéro du vecteur"], "bonne": 1, "explication": "L'ancienne adresse, à remettre en place avant de quitter." }
+    ]
+  },
+  "bonus": [
+    { "type": "exercice", "id": "atari-ch04-bonus-palette", "titre": "Un dégradé de rouges", "variante": "ecrire", "niveau": 2, "aRelire": true,
+      "enonce": "La fonction **Setpalette** (XBIOS 6) installe les 16 couleurs d'un coup, à partir d'une table de 16 mots. Installe la palette `PALETTE` (un dégradé du noir au rouge, puis à l'orange et au blanc), puis termine avec Pterm0.",
+      "indices": ["Un seul paramètre : l'adresse de la table (`PEA PALETTE`).", "Nettoyage : 4 + 2 octets."],
+      "codeDepart": "@code.s#bonus-palette-depart", "solution": "@code.s#bonus-palette-solution",
+      "check": { "type": "memory", "maxSteps": 100, "terminer": true, "expected": { "$FF8240": "$0000", "$FF824E": "$0700", "$FF825E": "$0777" } },
+      "machine": { "modeUtilisateur": true, "ecran": true } }
+  ]
+}

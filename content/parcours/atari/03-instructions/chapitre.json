@@ -45,7 +45,7 @@
           "indices": ["Les pointeurs doivent être chargés avant d'être utilisés.", "`RTS` en dernier, sinon on n'atteint jamais les copies."],
           "codeDepart": "", "entete": "@code.s#copie-entete", "pied": "@code.s#copie-pied", "solution": "",
           "lignes": ["    LEA     SOURCE,A0", "    LEA     $3000,A1", "    MOVE.L  (A0)+,(A1)+", "    MOVE.L  (A0)+,(A1)+", "    RTS"],
-          "check": { "type": "memory", "maxSteps": 50, "expected": { "$3000.L": "$0000CAFE", "$3004.L": "$0000BABE" } },
+          "check": { "type": "memory", "maxSteps": 50, "terminer": true, "expected": { "$3000.L": "$0000CAFE", "$3004.L": "$0000BABE" } },
           "machine": { "memoire": 12288 }
         },
         { "type": "exercice", "ref": "general-l1-e6", "id": "general-l1-e6", "titre": "Parcours mémoire postincrémenté", "variante": "ecrire", "niveau": 3, "solution": "@code.s#sol-l1-e6" }
@@ -86,7 +86,7 @@
           "enonce": "Calcule dans **D0** la moyenne entière de D1, D2 et D3 (12, 7 et 20). À la fin, D0 ne doit contenir **que** le quotient (`$0000000D`).",
           "indices": ["Additionne d'abord les trois valeurs dans D0.", "Après `DIVU`, le mot fort contient le reste : efface-le (`AND.L #$FFFF,D0`, ou `SWAP`/`CLR.W`/`SWAP`)."],
           "codeDepart": "@code.s#moyenne-depart", "solution": "@code.s#moyenne-solution",
-          "check": { "type": "registers", "maxSteps": 50, "expected": { "D0": "$0000000D" } } }
+          "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "D0": "$0000000D" } } }
       ]
     },
     {
@@ -124,7 +124,7 @@
           "enonce": "D0 vaut 7. Calcule **D0 = 7 × 10** avec des décalages et des additions, sans `MULU` ni `MULS` (c'est ainsi qu'on gagnait des cycles dans les démos).",
           "indices": ["10 = 8 + 2.", "×8 = trois décalages à gauche ; ×2 = un décalage (ou une addition avec soi-même)."],
           "codeDepart": "@code.s#fois10-depart", "solution": "@code.s#fois10-solution",
-          "check": { "type": "registers", "maxSteps": 50, "expected": { "D0": "$00000046" } } }
+          "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "D0": "$00000046" } } }
       ]
     },
     {
@@ -162,7 +162,7 @@
           "enonce": "D1 et D2 sont des octets **non signés** (de 0 à 255). Le programme doit mettre le plus grand des deux dans D0 (200), mais il trouve 100. Trouve pourquoi et corrige **une seule** instruction.",
           "indices": ["Comment s'écrit 200 en hexadécimal ? Quel est son bit 7 ?", "Pour des nombres non signés, « plus grand » s'écrit `BHI`."],
           "codeDepart": "@code.s#nonsigne-depart", "solution": "@code.s#nonsigne-solution",
-          "check": { "type": "registers", "maxSteps": 50, "expected": { "D0": "$000000C8" } } }
+          "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "D0": "$000000C8" } } }
       ]
     },
     {
@@ -202,14 +202,14 @@
           "indices": ["Les initialisations viennent avant l'étiquette de la boucle.", "Le corps de la boucle est entre l'étiquette et DBRA."],
           "codeDepart": "", "entete": "@code.s#ordonner-boucle-entete", "pied": "", "solution": "",
           "lignes": ["    MOVEQ   #0,D0", "    MOVE.W  #4,D1", "BOUCLE:", "    ADDQ.W  #2,D0", "    DBRA    D1,BOUCLE", "    RTS"],
-          "check": { "type": "registers", "maxSteps": 100, "expected": { "D0": "$0000000A" } }
+          "check": { "type": "registers", "maxSteps": 100, "terminer": true, "expected": { "D0": "$0000000A" } }
         },
         { "type": "exercice", "ref": "general-l4-e2", "id": "general-l4-e2", "titre": "Compter les valeurs positives", "variante": "completer", "niveau": 2, "solution": "@code.s#sol-l4-e2" },
         { "type": "exercice", "id": "atari-ch03-exo-espaces", "titre": "Compter les espaces", "variante": "ecrire", "niveau": 3, "aRelire": true,
           "enonce": "Range dans D0 le **nombre d'espaces** du texte `'IL ETAIT UNE FOIS'` (A0 pointe déjà dessus).",
           "indices": ["Parcours le texte avec `MOVE.B (A0)+,D1` jusqu'au 0 final.", "Le code ASCII de l'espace s'écrit `#' '` : `CMP.B #' ',D1`."],
           "codeDepart": "@code.s#espaces-depart", "solution": "@code.s#espaces-solution",
-          "check": { "type": "registers", "maxSteps": 500, "expected": { "D0": "$00000003" } } }
+          "check": { "type": "registers", "maxSteps": 500, "terminer": true, "expected": { "D0": "$00000003" } } }
       ]
     },
     {
@@ -249,7 +249,7 @@
           "enonce": "Écris le corps du sous-programme **VALABS**, qui remplace D0.L par sa valeur absolue. Le programme principal l'appelle avec −42 et range le résultat dans D5.",
           "indices": ["Si D0 est déjà positif, il n'y a rien à faire : `TST.L D0` puis `BPL`.", "Sinon, `NEG.L D0` change son signe."],
           "codeDepart": "@code.s#abs-depart", "solution": "@code.s#abs-solution",
-          "check": { "type": "registers", "maxSteps": 50, "expected": { "D5": "$0000002A" } } }
+          "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "D5": "$0000002A" } } }
       ]
     },
     {
@@ -260,17 +260,17 @@
           "enonce": "Ce programme doit additionner les 4 mots de `TABLE` (D0 = 100). Il contient **deux** erreurs de syntaxe : corrige-les une par une, en lisant les messages.",
           "indices": ["Le mode postincrémenté s'écrit `(A0)+` : le `+` est **après** la parenthèse.", "Vérifie l'orthographe de l'étiquette dans `DBRA`."],
           "codeDepart": "@code.s#bilan-syntaxe-depart", "solution": "@code.s#bilan-syntaxe-solution",
-          "check": { "type": "registers", "maxSteps": 100, "expected": { "D0": "$00000064" } } },
+          "check": { "type": "registers", "maxSteps": 100, "terminer": true, "expected": { "D0": "$00000064" } } },
         { "type": "exercice", "id": "atari-ch03-exo-bilan-logique", "titre": "L'erreur « à un près »", "variante": "corriger", "niveau": 2, "aRelire": true,
           "enonce": "Ce programme s'assemble et ne plante pas, mais il trouve **1100** au lieu de **100**. Utilise le pas à pas en comptant les tours de boucle, puis corrige.",
           "indices": ["Combien de tours fait `DBRA` quand le compteur part de 4 ?", "Pour 4 tours, le compteur doit partir de 3."],
           "codeDepart": "@code.s#bilan-logique-depart", "solution": "@code.s#bilan-logique-solution",
-          "check": { "type": "registers", "maxSteps": 100, "expected": { "D0": "$00000064" } } },
+          "check": { "type": "registers", "maxSteps": 100, "terminer": true, "expected": { "D0": "$00000064" } } },
         { "type": "exercice", "id": "atari-ch03-exo-bilan-max", "titre": "Le maximum d'une table", "variante": "ecrire", "niveau": 3, "aRelire": true,
           "enonce": "Écris un programme qui range dans **D0.W** la plus grande valeur (signée) de `TABLE`, qui contient 6 mots. Tout ce chapitre te sert : pointeur, boucle, comparaison.",
           "indices": ["Prends le premier élément comme maximum provisoire, puis compare-lui chacun des 5 suivants.", "Comparaison signée : `CMP.W D0,D2` puis `BLE` pour ignorer les valeurs plus petites."],
           "codeDepart": "@code.s#bilan-max-depart", "solution": "@code.s#bilan-max-solution",
-          "check": { "type": "registers", "maxSteps": 200, "expected": { "D0": "$0000002D" } } }
+          "check": { "type": "registers", "maxSteps": 200, "terminer": true, "expected": { "D0": "$0000002D" } } }
       ]
     }
   ],
@@ -297,11 +297,11 @@
       "enonce": "Range dans D0 le nombre de bits à 1 du mot D1 (`$F0F1`). Idée : fais sortir les bits un par un dans le flag C.",
       "indices": ["`LSR.W #1,D1` fait sortir le bit 0 dans C.", "16 tours de boucle, et `BCC` pour sauter quand le bit sorti vaut 0."],
       "codeDepart": "@code.s#bonus-bits-depart", "solution": "@code.s#bonus-bits-solution",
-      "check": { "type": "registers", "maxSteps": 200, "expected": { "D0": "$00000009" } } },
+      "check": { "type": "registers", "maxSteps": 200, "terminer": true, "expected": { "D0": "$00000009" } } },
     { "type": "exercice", "id": "atari-ch03-bonus-fibo", "titre": "La suite de Fibonacci", "variante": "ecrire", "niveau": 3, "aRelire": true,
       "enonce": "Calcule dans D0 le **20ᵉ terme** de la suite de Fibonacci : F(1) = 1, F(2) = 1, et chaque terme est la somme des deux précédents (1, 1, 2, 3, 5, 8…).",
       "indices": ["Garde les deux derniers termes dans deux registres.", "F(20) = 6765 : vérifie ton nombre de tours de boucle !"],
       "codeDepart": "@code.s#bonus-fibo-depart", "solution": "@code.s#bonus-fibo-solution",
-      "check": { "type": "registers", "maxSteps": 500, "expected": { "D0": "$00001A6D" } } }
+      "check": { "type": "registers", "maxSteps": 500, "terminer": true, "expected": { "D0": "$00001A6D" } } }
   ]
 }

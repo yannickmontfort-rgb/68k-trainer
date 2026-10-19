@@ -76,7 +76,7 @@
           "indices": ["Quel nombre, plus 2, donne 9 ?", "`MOVE.W #7,D0`"],
           "codeDepart": "@code.s#completer-depart",
           "solution": "@code.s#completer-solution",
-          "check": { "type": "registers", "maxSteps": 50, "expected": { "D0": "$00000009" } }
+          "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "D0": "$00000009" } }
         },
         {
           "type": "exercice",
@@ -92,7 +92,7 @@
           "lignes": ["    MOVE.W  #6,D2", "    ADDQ.W  #2,D2", "    MULU.W  #5,D2", "    RTS"],
           "pied": "",
           "solution": "",
-          "check": { "type": "registers", "maxSteps": 50, "expected": { "D2": "$00000028" } }
+          "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "D2": "$00000028" } }
         },
         {
           "type": "exercice",
@@ -105,7 +105,7 @@
           "indices": ["Deux `MOVE.W` pour charger les valeurs.", "La soustraction s'écrit `SUB.W source,destination` : la destination reçoit destination − source."],
           "codeDepart": "@code.s#ecrire-depart",
           "solution": "@code.s#ecrire-solution",
-          "check": { "type": "registers", "maxSteps": 50, "expected": { "D1": "$0000004B" } }
+          "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "D1": "$0000004B" } }
         },
         {
           "type": "exercice",
@@ -118,7 +118,7 @@
           "indices": ["Calcule d'abord 4 + 5 dans D0.", "Multiplier par 3, c'est ajouter trois fois la même valeur : garde une copie dans un autre registre."],
           "codeDepart": "@code.s#autonome-depart",
           "solution": "@code.s#autonome-solution",
-          "check": { "type": "registers", "maxSteps": 50, "expected": { "D0": "$0000001B" } }
+          "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "D0": "$0000001B" } }
         }
       ]
     },
@@ -178,7 +178,7 @@
           "indices": ["Le message parle d'une instruction inconnue.", "L'addition s'écrit `ADD`, avec un seul D."],
           "codeDepart": "@code.s#corriger-syntaxe-depart",
           "solution": "@code.s#corriger-syntaxe-solution",
-          "check": { "type": "registers", "maxSteps": 50, "expected": { "D2": "$0000000C" } }
+          "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "D2": "$0000000C" } }
         },
         {
           "type": "exercice",
@@ -191,7 +191,7 @@
           "indices": ["Regarde quel registre change sur la ligne de l'addition.", "Dans `ADD.W source,destination`, c'est la destination qui reçoit le résultat."],
           "codeDepart": "@code.s#corriger-logique-depart",
           "solution": "@code.s#corriger-logique-solution",
-          "check": { "type": "registers", "maxSteps": 50, "expected": { "D3": "$0000001E" } }
+          "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "D3": "$0000001E" } }
         },
         {
           "type": "exercice",
@@ -204,7 +204,7 @@
           "indices": ["Sans `#`, `$1000` est une adresse, pas une valeur.", "À l'adresse $1000, il y a… le code de ta propre première instruction !"],
           "codeDepart": "@code.s#corriger-diese-depart",
           "solution": "@code.s#corriger-diese-solution",
-          "check": { "type": "registers", "maxSteps": 50, "expected": { "D5": "$00001001" } }
+          "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "D5": "$00001001" } }
         }
       ]
     }
@@ -237,7 +237,7 @@
       "indices": ["Une seule instruction suffit : un `MOVE.W` d'une valeur immédiate vers une adresse.", "`MOVE.W #$700,$FF8240`"],
       "codeDepart": "@code.s#bonus-fond-depart",
       "solution": "@code.s#bonus-fond-solution",
-      "check": { "type": "memory", "maxSteps": 50, "expected": { "$FF8240": "$0700" } },
+      "check": { "type": "memory", "maxSteps": 50, "terminer": true, "expected": { "$FF8240": "$0700" } },
       "machine": { "ecran": true }
     }
   ]

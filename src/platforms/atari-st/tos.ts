@@ -240,6 +240,8 @@ export function createTos(options: TosOptions = {}): Platform {
       for (let i = 0; i < 9; i++) mem.writeU32(KBDVBASE + i * 4, ROM_RTS)
       // Piles en RAM. Comme sous le TOS, la pile du programme contient l'adresse de retour (un RTS
       // final termine proprement le programme) puis l'adresse de la page de base.
+      // Le TOS fait tourner les programmes avec le masque d'interruption à 3 (SR = $0300 / $2300)
+      cpu.intMask = 3
       const stack = options.userMode ? USER_STACK : SUPERVISOR_STACK
       mem.writeU32(stack - 8, ROM_PROGRAM_EXIT)
       mem.writeU32(stack - 4, BASEPAGE)

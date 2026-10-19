@@ -4,5 +4,5 @@
   "plateforme": "atari",
   "description": "Du premier MOVE à l'écran du ST : le 68000 expliqué pas à pas, avec une machine simulée.",
   "statut": "actif",
-  "chapitres": ["01-demarrer", "02-architecture", "03-instructions"]
+  "chapitres": ["01-demarrer", "02-architecture", "03-instructions", "04-tos"]
 }

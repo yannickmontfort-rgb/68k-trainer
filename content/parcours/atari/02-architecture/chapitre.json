@@ -35,17 +35,17 @@
           "enonce": "Remplace `%0000` par l'écriture **binaire** de 15, pour que D0 = `$0000000F`.",
           "indices": ["15 = 8 + 4 + 2 + 1.", "`%1111`"],
           "codeDepart": "@code.s#unites-completer-depart", "solution": "@code.s#unites-completer-solution",
-          "check": { "type": "registers", "maxSteps": 50, "expected": { "D0": "$0000000F" } } },
+          "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "D0": "$0000000F" } } },
         { "type": "exercice", "id": "atari-ch02-exo-octet", "titre": "Ne change que l'octet faible", "variante": "ecrire", "niveau": 2, "aRelire": true,
           "enonce": "D3 vaut `$12345678`. Avec **une seule** instruction, fais en sorte que D3 = `$123456FF`.",
           "indices": ["Quelle taille d'instruction ne modifie que 8 bits ?", "`MOVE.B #$FF,D3`"],
           "codeDepart": "@code.s#unites-octet-depart", "solution": "@code.s#unites-octet-solution",
-          "check": { "type": "registers", "maxSteps": 50, "expected": { "D3": "$123456FF" } } },
+          "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "D3": "$123456FF" } } },
         { "type": "exercice", "id": "atari-ch02-exo-bases", "titre": "Le même nombre, trois écritures", "variante": "ecrire", "niveau": 3, "aRelire": true,
           "enonce": "Mets **200** dans D1, D2 et D3, en l'écrivant en **décimal** pour D1, en **hexadécimal** pour D2 et en **binaire** pour D3.",
           "indices": ["200 = 12 × 16 + 8.", "En binaire : 128 + 64 + 8 = 200."],
           "codeDepart": "@code.s#unites-bases-depart", "solution": "@code.s#unites-bases-solution",
-          "check": { "type": "registers", "maxSteps": 50, "expected": { "D1": "$000000C8", "D2": "$000000C8", "D3": "$000000C8" } } }
+          "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "D1": "$000000C8", "D2": "$000000C8", "D3": "$000000C8" } } }
       ]
     },
     {
@@ -79,17 +79,17 @@
           "enonce": "Ce programme doit mettre **1040** dans D0, mais il plante avec une **erreur d'adresse**. Lance le pas à pas pour voir où, puis corrige en **ajoutant une seule ligne**.",
           "indices": ["Compte les octets de `'ST',0` : NOMBRE tombe-t-il à une adresse paire ?", "Ajoute `EVEN` juste avant `NOMBRE:`."],
           "codeDepart": "@code.s#memoire-even-depart", "solution": "@code.s#memoire-even-solution",
-          "check": { "type": "registers", "maxSteps": 50, "expected": { "D0": "$00000410" } } },
+          "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "D0": "$00000410" } } },
         { "type": "exercice", "id": "atari-ch02-exo-poids-fort", "titre": "L'octet de poids fort", "variante": "ecrire", "niveau": 2, "aRelire": true,
           "enonce": "Range le mot `$ABCD` à l'adresse `$3000`, puis copie son **octet de poids fort** dans D1 (D1 doit valoir `$000000AB`).",
           "indices": ["Le poids fort est à l'adresse la plus basse.", "`MOVE.B $3000,D1`"],
           "codeDepart": "@code.s#memoire-ecrire-depart", "solution": "@code.s#memoire-ecrire-solution",
-          "check": { "type": "registers", "maxSteps": 50, "expected": { "D1": "$000000AB" } } },
+          "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "D1": "$000000AB" } } },
         { "type": "exercice", "id": "atari-ch02-exo-inverser", "titre": "Inverser les deux octets d'un mot", "variante": "ecrire", "niveau": 3, "aRelire": true,
           "enonce": "Le mot en `$3000` vaut `$1234`. En ne manipulant **que des octets** (`.B`), transforme-le en `$3412`.",
           "indices": ["Il faut mettre l'un des deux octets de côté dans un registre.", "Un `MOVE.B` peut aller directement d'une adresse mémoire à une autre."],
           "codeDepart": "@code.s#memoire-inverser-depart", "solution": "@code.s#memoire-inverser-solution",
-          "check": { "type": "memory", "maxSteps": 50, "expected": { "$3000": "$3412" } },
+          "check": { "type": "memory", "maxSteps": 50, "terminer": true, "expected": { "$3000": "$3412" } },
           "machine": { "memoire": 12288 } }
       ]
     },
@@ -124,17 +124,17 @@
           "enonce": "Ce programme doit mettre **1** dans A0, mais il ne s'assemble pas. Lis le message d'erreur et corrige.",
           "indices": ["Les registres d'adresse n'acceptent que `.W` ou `.L`.", "`MOVEA.L #1,A0` (ou `MOVEA.W #1,A0`)."],
           "codeDepart": "@code.s#registres-corriger-depart", "solution": "@code.s#registres-corriger-solution",
-          "check": { "type": "registers", "maxSteps": 50, "expected": { "A0": "$00000001" } } },
+          "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "A0": "$00000001" } } },
         { "type": "exercice", "id": "atari-ch02-exo-ecran", "titre": "Pointer sur l'écran", "variante": "ecrire", "niveau": 2, "aRelire": true,
           "enonce": "Mets dans A0 l'adresse de l'écran du 1040 ST : `$F8000`. Attention au piège de l'extension de signe.",
           "indices": ["`MOVEA.W` ne convient pas pour une adresse aussi grande.", "`LEA $F8000,A0` ou `MOVEA.L #$F8000,A0`."],
           "codeDepart": "@code.s#registres-ecran-depart", "solution": "@code.s#registres-ecran-solution",
-          "check": { "type": "registers", "maxSteps": 50, "expected": { "A0": "$000F8000" } } },
+          "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "A0": "$000F8000" } } },
         { "type": "exercice", "id": "atari-ch02-exo-extension", "titre": "Utiliser l'extension de signe", "variante": "ecrire", "niveau": 3, "aRelire": true,
           "enonce": "Avec **une seule instruction de taille `.W`**, mets `$FFFFFFF0` dans A1.",
           "indices": ["Quel mot de 16 bits, étendu en signe, donne $FFFFFFF0 ?", "`MOVEA.W #$FFF0,A1` (ou `#-16`)."],
           "codeDepart": "@code.s#registres-extension-depart", "solution": "@code.s#registres-extension-solution",
-          "check": { "type": "registers", "maxSteps": 50, "expected": { "A1": "$FFFFFFF0" } } }
+          "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "A1": "$FFFFFFF0" } } }
       ]
     },
     {
@@ -170,17 +170,17 @@
           "enonce": "Remplace le `0` de la soustraction pour que le flag **Z** soit à 1 à la fin.",
           "indices": ["Z vaut 1 quand le résultat est nul.", "5 − 5 = 0."],
           "codeDepart": "@code.s#sr-completer-depart", "solution": "@code.s#sr-completer-solution",
-          "check": { "type": "registers", "maxSteps": 50, "expected": { "Z": "$1" } } },
+          "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "Z": "$1" } } },
         { "type": "exercice", "id": "atari-ch02-exo-v", "titre": "Provoque un débordement", "variante": "ecrire", "niveau": 2, "aRelire": true,
           "enonce": "Écris deux instructions qui terminent avec le flag **V = 1**, grâce à une addition en `.B`.",
           "indices": ["Les octets signés vont de −128 à +127.", "Additionne deux positifs dont la somme dépasse 127, par exemple $70 + $20."],
           "codeDepart": "@code.s#sr-debordement-depart", "solution": "@code.s#sr-debordement-solution",
-          "check": { "type": "registers", "maxSteps": 50, "expected": { "V": "$1" } } },
+          "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "V": "$1" } } },
         { "type": "exercice", "id": "atari-ch02-exo-c", "titre": "Retenue sans débordement", "variante": "ecrire", "niveau": 3, "aRelire": true,
           "enonce": "Avec une addition en `.W`, termine avec **C = 1** mais **V = 0** : un résultat faux en non signé, mais juste en signé.",
           "indices": ["Quel mot vaut à la fois 65 535 en non signé et −1 en signé ?", "$FFFF + 1."],
           "codeDepart": "@code.s#sr-retenue-depart", "solution": "@code.s#sr-retenue-solution",
-          "check": { "type": "registers", "maxSteps": 50, "expected": { "C": "$1", "V": "$0" } } }
+          "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "C": "$1", "V": "$0" } } }
       ]
     },
     {
@@ -214,17 +214,17 @@
           "enonce": "D0 et D1 ont été empilés. Ajoute deux instructions pour qu'à la fin **D0 = `$BBBB`** et **D1 = `$AAAA`**.",
           "indices": ["La première valeur dépilée est la dernière empilée (D1).", "`MOVE.L (SP)+,D0` puis `MOVE.L (SP)+,D1`."],
           "codeDepart": "@code.s#pile-echange-depart", "solution": "@code.s#pile-echange-solution",
-          "check": { "type": "registers", "maxSteps": 50, "expected": { "D0": "$0000BBBB", "D1": "$0000AAAA" } } },
+          "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "D0": "$0000BBBB", "D1": "$0000AAAA" } } },
         { "type": "exercice", "id": "atari-ch02-exo-desequilibre", "titre": "La pile déséquilibrée", "variante": "corriger", "niveau": 2, "aRelire": true,
           "enonce": "Ce programme calcule bien **D2 = 10**… puis plante sur `RTS`. Explique pourquoi avec le pas à pas (regarde le sommet de la pile juste avant `RTS`), puis corrige.",
           "indices": ["Au moment du `RTS`, quelle valeur est au sommet de la pile ?", "Il faut retirer les 4 octets empilés : `ADDQ.L #4,SP` avant `RTS`."],
           "codeDepart": "@code.s#pile-desequilibre-depart", "solution": "@code.s#pile-desequilibre-solution",
-          "check": { "type": "registers", "maxSteps": 50, "expected": { "D2": "$0000000A" } } },
+          "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "D2": "$0000000A" } } },
         { "type": "exercice", "id": "atari-ch02-exo-rotation", "titre": "Inverser trois registres", "variante": "ecrire", "niveau": 3, "aRelire": true,
           "enonce": "Au départ D0 = 1, D1 = 2, D2 = 3. En passant **par la pile**, obtiens D0 = 3, D1 = 2, D2 = 1.",
           "indices": ["Empile les trois registres dans l'ordre D0, D1, D2.", "Dépile ensuite dans D0, D1, D2 : l'ordre s'inverse tout seul."],
           "codeDepart": "@code.s#pile-rotation-depart", "solution": "@code.s#pile-rotation-solution",
-          "check": { "type": "registers", "maxSteps": 50, "expected": { "D0": "$00000003", "D1": "$00000002", "D2": "$00000001" } } }
+          "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "D0": "$00000003", "D1": "$00000002", "D2": "$00000001" } } }
       ]
     }
   ],
@@ -250,7 +250,7 @@
       "enonce": "L'écran du 1040 ST commence à l'adresse **`$F8000`**. En basse résolution, le premier **mot** de cette mémoire contient 16 pixels (un bit par pixel du premier plan de couleur). Allume les **16 premiers pixels** de la ligne du haut, puis admire le résultat dans le pas à pas. On décortiquera tout ça au chapitre « Graphisme ».",
       "indices": ["16 pixels allumés = 16 bits à 1.", "`MOVE.W #$FFFF,$F8000`"],
       "codeDepart": "@code.s#bonus-ligne-depart", "solution": "@code.s#bonus-ligne-solution",
-      "check": { "type": "pixels", "maxSteps": 50, "expected": { "0,0": "1", "15,0": "1", "16,0": "0" } },
+      "check": { "type": "pixels", "maxSteps": 50, "terminer": true, "expected": { "0,0": "1", "15,0": "1", "16,0": "0" } },
       "machine": { "ecran": true }
     }
   ]

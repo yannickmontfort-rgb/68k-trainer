@@ -27,6 +27,7 @@ function lireEtat(cpu: Cpu, cle: string): string {
   if (/^A[0-7]$/.test(cle)) return h(snap.a[+cle[1]])
   if (cle === 'PC') return h(snap.pc)
   if (cle === 'SR') return '$' + snap.sr.toString(16).toUpperCase().padStart(4, '0')
+  if (cle === 'SORTIE') return cpu.output.replace(/\r/g, '')
   if (/^[XNZVC]$/.test(cle)) return snap.flags[cle.toLowerCase() as 'x'] ? '1' : '0'
   const m = cle.match(/^\$([0-9A-F]+)\.([BWL])$/i)
   if (m) {

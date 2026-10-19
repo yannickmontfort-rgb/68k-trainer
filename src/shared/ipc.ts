@@ -71,6 +71,11 @@ export interface ExerciseCheck {
    * - "pixels"    : clé = "x,y" sur l'écran Atari basse résolution, valeur = numéro de couleur 0-15 en décimal
    */
   expected: Record<string, string>
+  /**
+   * Le programme doit s'être terminé (Pterm0, RTS final, TRAP #15) avant `maxSteps` : sinon il
+   * « tourne dans le vide » (pile déséquilibrée, fin oubliée) et la vérification échoue.
+   */
+  terminer?: boolean
 }
 
 export interface Exercise {

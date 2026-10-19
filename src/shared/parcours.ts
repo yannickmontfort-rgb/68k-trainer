@@ -90,7 +90,7 @@ export interface QuestionQcm {
    * Prédictions sur du code : état attendu après exécution de `code` (ou du code de la
    * prédiction), vérifié par les tests pour garantir que la bonne réponse est vraie.
    * Clés : "D0".."D7", "A0".."A7", "PC", "SR" (hexa) ; "X" "N" "Z" "V" "C" ("0"/"1") ;
-   * "$adresse.B|W|L" (hexa).
+   * "$adresse.B|W|L" (hexa) ; "SORTIE" (texte affiché, sans les retours chariot).
    */
   verification?: Record<string, string>
 }

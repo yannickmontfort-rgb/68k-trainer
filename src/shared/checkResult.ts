@@ -40,6 +40,14 @@ function readMemory(cpu: Cpu, key: string): number {
  * d'assembler et d'exécuter avant d'appeler cette fonction.
  */
 export function evaluateCheck(cpu: Cpu, check: ExerciseCheck): CheckResult {
+  if (check.terminer && !cpu.halted) {
+    return {
+      success: false,
+      message:
+        `Le programme ne s'est pas terminé : il tournait encore après ${check.maxSteps} instructions. ` +
+        'As-tu oublié la fin (Pterm0) ? La pile est-elle équilibrée avant RTS ?'
+    }
+  }
   if (check.type === 'output') {
     const sansCR = (s: string): string => s.replace(/\r/g, '')
     const expectedOutput = sansCR(check.expected.output ?? '')
