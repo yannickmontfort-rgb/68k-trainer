@@ -79,6 +79,11 @@ export class Ikbd {
     if (this.irqActif) this.irq(true)
   }
 
+  /** Cycle d'arrivée possible du prochain octet (Infinity = rien à envoyer). */
+  get prochainOctetCycle(): number {
+    return this.file.length && this.recu === null ? this.prochainOctet : Infinity
+  }
+
   /** Des octets attendent-ils ? (pour savoir s'il faut appeler `avancer`). */
   get enAttente(): boolean {
     return this.file.length > 0

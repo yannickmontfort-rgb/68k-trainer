@@ -35,6 +35,12 @@ export interface MaterielAtari {
    * (16 mots par ligne), ou `null` si elle n'a pas changé en cours de trame.
    */
   palettesParLigne(): Uint16Array | null
+  /**
+   * Cycle du prochain événement matériel qui peut demander une interruption (timer, octet du
+   * clavier, ligne pour le timer B, pas de Dosound, action programmée). Une attente active (Vsync,
+   * touche) peut avancer le temps jusque-là sans rien manquer.
+   */
+  prochainEvenement(): number
 }
 
 const registre = new WeakMap<Cpu, MaterielAtari>()
@@ -194,7 +200,21 @@ export function createMateriel(options: MaterielOptions = {}): Platform {
       sonPosition = 0
       sonAttente = 0
       prochainPasSon = Infinity
-      registre.set(cpu, { mfp, ikbd, psg, dosound, palettesParLigne: () => derniere })
+      registre.set(cpu, {
+        mfp,
+        ikbd,
+        psg,
+        dosound,
+        palettesParLigne: () => derniere,
+        prochainEvenement: () =>
+          Math.min(
+            mfp.prochaineEcheance,
+            ikbd.prochainOctetCycle,
+            prochainPasSon,
+            prochaineAction,
+            mfp.timerBCompteLignes ? prochainEvenement : Infinity
+          )
+      })
       programmer()
       // État laissé par le TOS au lancement d'un programme : vecteurs MFP en $100-$13C (EOI
       // logiciel), timer C à 200 Hz, interruptions du clavier et du timer C autorisées.

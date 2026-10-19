@@ -2,6 +2,209 @@
   "id": "atari-ch06",
   "titre": "Animation, sprites et décalage au pixel",
   "plateforme": "atari",
-  "esquisse": true,
-  "resume": "**Plan prévu** (module 4 du manuel et routine 7.3) :\n\n1. **Copier un bloc graphique** (*blitting* logiciel) : ligne par ligne, saut de ligne = 160 − largeur du bloc.\n2. **Effacer et redessiner** : le double tampon (deux écrans et `Setscreen`), synchronisation sur la VBL avec `Vsync`.\n3. **Déplacement au pixel près** : décaler les bits du sprite sur deux groupes de 16 pixels, avec un masque (AND) puis le sprite (OR). La routine 7.3 du manuel est fausse (débordement perdu, voir l'errata) : elle deviendra un exercice « à corriger ».\n4. **Découpage** (*clipping*) aux bords de l'écran.\n5. **Effet miroir** avec une table de correspondance de 256 octets.\n\nDéfi bonus prévu : afficher et déplacer un sprite.\n\nPrérequis techniques déjà en place dans le simulateur : écran, palette, Setscreen, Vsync. Restent à ajouter : un affichage animé pendant l'exécution (rafraîchissement de l'écran à chaque Vsync)."
+  "resume": "Faire bouger les choses ! Tu vas copier des blocs graphiques ligne par ligne, animer au rythme de la **VBL** (50 images par seconde), supprimer le scintillement avec le **double tampon**, puis placer un sprite **au pixel près** en décalant ses bits sur 32 bits, avec un masque. Au passage, tu répareras la routine 7.3 du manuel. Le bouton **🎬 Temps réel** fait tourner tes programmes à la vitesse d'un vrai ST. Correspond au module 4 du manuel et à sa routine 7.3.",
+  "notions": [
+    {
+      "id": "atari-ch06-n1",
+      "titre": "Copier un bloc graphique",
+      "contenus": [
+        { "type": "cours", "id": "atari-ch06-cours-blocs", "titre": "Sprites, copie ligne par ligne et saut de ligne", "fichier": "01-blocs.md", "source": "Reformulé d'après le manuel Atari ST v2 (§ 4.1)" },
+        {
+          "type": "exemple", "id": "atari-ch06-ex-copie", "titre": "Copier un carré de 16 × 16",
+          "introduction": "Le dessin d'un carré (bord en couleur 3, intérieur en couleur 4) est rangé à la fin du programme, au format de l'écran : 16 lignes de 4 mots. On le copie en X = 128, Y = 50. Suis A0 (la source) et A1 (la destination), et regarde l'**écran** se remplir ligne par ligne.",
+          "code": "@code.s#copie-exemple",
+          "machine": { "modeUtilisateur": true, "ecran": true },
+          "explications": [
+            { "ligne": 5, "texte": "A1 pointe sur le début de l'écran." },
+            { "ligne": 6, "texte": "50 × 160 + 8 × 8 = 8 064 octets plus loin : ligne 50, groupe n° 8, c'est-à-dire X = 8 × 16 = 128. L'assembleur a calculé l'expression." },
+            { "ligne": 7, "texte": "A0 pointe sur le dessin, dans la mémoire du programme." },
+            { "ligne": 8, "texte": "16 lignes : DBF fera 15 + 1 tours." },
+            { "ligne": 10, "texte": "Un mot long = deux mots : les plans 0 et 1 des 16 pixels. Les deux pointeurs avancent de 4." },
+            { "ligne": 11, "texte": "Les plans 2 et 3. Une ligne du dessin est copiée : A1 a avancé de 8 octets." },
+            { "ligne": 12, "texte": "Saut de 160 − 8 = 152 octets : A1 revient en X = 128, une ligne plus bas. A0, lui, n'a pas besoin de saut : dans le dessin, les lignes se suivent." },
+            { "ligne": 13, "texte": "Ligne suivante. Avec « Jusqu'au bout », le carré apparaît en entier." }
+          ],
+          "conclusion": "Copier un bloc = pour chaque ligne, copier la largeur du bloc puis sauter de 160 − largeur. Toute l'animation sur ST repose sur cette boucle."
+        },
+        {
+          "type": "prediction", "id": "atari-ch06-pred-saut", "titre": "Combien sauter ?",
+          "introduction": "On efface deux lignes d'un bloc de 32 pixels de large (16 octets) à partir de l'adresse `$10000`.",
+          "code": "@code.s#saut-prediction",
+          "machine": { "modeUtilisateur": true },
+          "questions": [
+            { "id": "q1", "enonce": "Que vaut A1 à la fin ?", "choix": ["$00010140", "$00010020", "$00010120"], "bonne": 0, "explication": "Chaque tour avance de 16 (les 4 CLR.L) puis de 144 (le saut) : 160 octets, une ligne exactement. Deux tours : $10000 + 320 = $10140.", "verification": { "A1": "$00010140" } },
+            { "id": "q2", "enonce": "Pour un bloc de 48 pixels de large, quel saut faut-il ?", "choix": ["112", "136", "144"], "bonne": 1, "explication": "48 pixels = 3 groupes = 24 octets ; 160 − 24 = 136." }
+          ]
+        },
+        { "type": "exercice", "id": "atari-ch06-exo-saut", "titre": "Le bon saut de ligne", "variante": "completer", "niveau": 1,
+          "enonce": "Le programme copie un bloc de **32 × 8 pixels** (couleur 1) au début de la ligne 20, mais le saut de ligne vaut 0 : le bloc s'étale sur une seule ligne. Remplace ce 0 par la bonne valeur.",
+          "indices": ["Le bloc fait 32 pixels de large : combien d'octets copie-t-on par ligne ?", "2 groupes = 16 octets ; le saut est 160 − 16."],
+          "codeDepart": "@code.s#saut-depart", "solution": "@code.s#saut-solution",
+          "check": { "type": "pixels", "maxSteps": 500, "terminer": true, "expected": { "0,20": "1", "31,27": "1", "0,21": "1", "32,20": "0", "0,28": "0" } },
+          "machine": { "modeUtilisateur": true, "ecran": true } },
+        { "type": "exercice", "id": "atari-ch06-exo-effacer", "titre": "Effacer un rectangle", "variante": "ecrire", "niveau": 2,
+          "enonce": "Le programme remplit tout l'écran en couleur 15. Ajoute de quoi **effacer** (couleur 0) le rectangle X = 64 à 95, Y = 20 à 39, sans toucher au reste.",
+          "indices": ["Le coin en haut à gauche : écran + 20 × 160 + (64 ÷ 16) × 8. `LEA 20*160+64/16*8(A1),A1` le calcule pour toi.", "32 pixels = 16 octets = 4 `CLR.L (A1)+` par ligne, puis un saut de 160 − 16. 20 lignes : `MOVEQ #19,D7` et DBF."],
+          "codeDepart": "@code.s#effacer-depart", "solution": "@code.s#effacer-solution",
+          "check": { "type": "pixels", "maxSteps": 50000, "terminer": true, "expected": { "64,20": "0", "95,39": "0", "80,30": "0", "63,20": "15", "96,20": "15", "64,19": "15", "64,40": "15" } },
+          "machine": { "modeUtilisateur": true, "ecran": true } }
+      ]
+    },
+    {
+      "id": "atari-ch06-n2",
+      "titre": "Animer : la VBL et le double tampon",
+      "contenus": [
+        { "type": "cours", "id": "atari-ch06-cours-animer", "titre": "Vsync, budget d'une image et double tampon", "fichier": "02-animer.md", "source": "Reformulé d'après le manuel Atari ST v2 (§ 4.1 et 5.3), ST Internals (Abacus) pour Setscreen et les registres du Shifter" },
+        {
+          "type": "exemple", "id": "atari-ch06-ex-descente", "titre": "Un carré qui descend",
+          "introduction": "Un carré de 16 × 16 descend d'une ligne à chaque image, pendant 60 images. Essaie d'abord **🎬 Temps réel** pour voir l'animation à la vitesse d'un ST, puis **Recommencer** et avance pas à pas : chaque clic sur la ligne `TRAP #14` du Vsync fait passer une image (regarde le compteur de cycles).",
+          "code": "@code.s#descente-exemple",
+          "machine": { "modeUtilisateur": true, "ecran": true },
+          "explications": [
+            { "ligne": 6, "texte": "A1 = haut de l'écran, X = 64 : la position du carré." },
+            { "ligne": 7, "texte": "60 images : à 50 images par seconde, l'animation durera un peu plus d'une seconde." },
+            { "ligne": 9, "texte": "Le sous-programme CARRE dessine 16 lignes de 16 pixels à partir de A1." },
+            { "ligne": 11, "texte": "Vsync : le programme attend la VBL suivante. Le compteur d'images (sous le registre d'état) vient d'avancer de 1 : environ 160 000 cycles se sont écoulés." },
+            { "ligne": 13, "texte": "Astuce : le carré ne descend que d'une ligne, il suffit donc d'effacer sa ligne du haut ; le dessin suivant recouvre le reste." },
+            { "ligne": 14, "texte": "Le carré descend d'une ligne : +160 octets." },
+            { "ligne": 15, "texte": "Image suivante." }
+          ],
+          "conclusion": "Une étape par image, synchronisée par Vsync : c'est le rythme de toutes les animations du ST. Ici on efface et on dessine sur l'écran affiché ; avec des sprites plus gros, on verrait scintiller."
+        },
+        {
+          "type": "prediction", "id": "atari-ch06-pred-aligner", "titre": "Arrondir une adresse",
+          "introduction": "La recette pour trouver le premier multiple de 256 à partir d'une adresse.",
+          "code": "@code.s#aligner-prediction",
+          "machine": { "modeUtilisateur": true },
+          "questions": [
+            { "id": "q1", "enonce": "Que vaut D0 à la fin ?", "choix": ["$00012400", "$00012300", "$0001244E"], "bonne": 0, "explication": "$1234F + $FF = $1244E, puis CLR.B met l'octet de poids faible à 0 : $12400, le premier multiple de 256 qui n'est pas en dessous de $1234F.", "verification": { "D0": "$00012400" } },
+            { "id": "q2", "enonce": "Pourquoi un écran doit-il commencer à un multiple de 256 sur un STF ?", "choix": ["Parce que le Shifter ne mémorise que les bits 23 à 8 de son adresse", "Parce que la mémoire est rangée par pages de 256 octets", "Parce que Setscreen refuse les autres adresses"], "bonne": 0, "explication": "Les registres `$FF8201` et `$FF8203` ne contiennent que les octets fort et moyen de l'adresse : l'octet faible est toujours 0. Setscreen accepte n'importe quelle adresse… et le Shifter l'arrondit vers le bas." }
+          ]
+        },
+        {
+          "type": "exemple", "id": "atari-ch06-ex-double", "titre": "Le double tampon",
+          "introduction": "Deux écrans réservés dans la section BSS (64 256 octets !) : on dessine toujours sur l'écran caché, puis on l'affiche avec **Setscreen** et on attend la VBL. Le carré avance de 16 pixels par image. Lance **🎬 Temps réel**, puis suis l'échange pas à pas : regarde l'adresse de l'écran affiché dans le panneau **Vecteurs et matériel** du débogueur.",
+          "code": "@code.s#double-exemple",
+          "machine": { "modeUtilisateur": true, "ecran": true },
+          "explications": [
+            { "ligne": 3, "texte": "L'adresse de la réserve + 255, sans son octet faible : le premier multiple de 256 dans la réserve." },
+            { "ligne": 5, "texte": "32 000 = $7D00 : le second écran commence lui aussi à un multiple de 256." },
+            { "ligne": 10, "texte": "A0 = l'écran caché : on peut effacer et dessiner tranquillement, personne ne le voit." },
+            { "ligne": 11, "texte": "DESSINER efface la bande du carré puis le dessine dans la colonne D5." },
+            { "ligne": 14, "texte": "Les deux adresses sont échangées : celui qu'on vient de finir devient « visible », l'autre devient le prochain écran caché." },
+            { "ligne": 19, "texte": "Setscreen : le Shifter affichera désormais l'écran qu'on vient de dessiner. Regarde l'écran : le carré a avancé d'un coup, sans jamais apparaître à moitié dessiné." },
+            { "ligne": 22, "texte": "Vsync : on attend la VBL avant de toucher à l'autre écran." },
+            { "ligne": 24, "texte": "La colonne suivante, pour l'image suivante." }
+          ],
+          "conclusion": "On ne dessine jamais sur l'écran affiché : plus de scintillement. Le prix : 32 000 octets de mémoire en plus, et il faut tout redessiner sur chaque écran."
+        },
+        { "type": "exercice", "id": "atari-ch06-exo-aligne", "titre": "L'écran mal aligné", "variante": "corriger", "niveau": 2,
+          "enonce": "Le programme dessine un carré en haut à gauche de son propre écran, puis l'affiche avec Setscreen. Mais le carré n'apparaît pas en haut à gauche ! Trouve pourquoi et corrige le programme.",
+          "indices": ["Regarde l'adresse de MONECRAN dans le débogueur : est-ce un multiple de 256 ?", "Réserve 256 octets de plus, arrondis l'adresse (`ADD.L #255` puis `CLR.B`), et utilise l'adresse arrondie **pour dessiner et pour Setscreen**."],
+          "codeDepart": "@code.s#aligne-depart", "solution": "@code.s#aligne-solution",
+          "check": { "type": "pixels", "maxSteps": 5000, "terminer": true, "expected": { "0,0": "1", "15,15": "1", "16,0": "0", "0,16": "0" } },
+          "machine": { "modeUtilisateur": true, "ecran": true } },
+        { "type": "exercice", "id": "atari-ch06-exo-dix", "titre": "Dix images vers la droite", "variante": "ecrire", "niveau": 3,
+          "enonce": "Fais avancer un carré de 16 × 16 (couleur 1, lignes 50 à 65) de **16 pixels vers la droite à chaque image**, 10 fois, en partant de X = 0. À la fin, il doit être en X = 160 et **nulle part ailleurs**. Attends la VBL (`Vsync`) entre deux images.",
+          "indices": ["Écris un sous-programme qui écrit un mot (D1) dans le plan 0 de 16 lignes à partir de A1 : avec $FFFF il dessine, avec 0 il efface.", "Dessine en X = 0, puis 10 fois : Vsync, effacer, `ADDQ.L #8,A1`, dessiner."],
+          "codeDepart": "@code.s#dix-depart", "solution": "@code.s#dix-solution",
+          "check": { "type": "pixels", "maxSteps": 20000, "terminer": true, "expected": { "160,50": "1", "175,65": "1", "144,50": "0", "0,50": "0", "176,50": "0", "160,66": "0" } },
+          "machine": { "modeUtilisateur": true, "ecran": true } }
+      ]
+    },
+    {
+      "id": "atari-ch06-n3",
+      "titre": "Sprites au pixel près",
+      "contenus": [
+        { "type": "cours", "id": "atari-ch06-cours-pixel", "titre": "Décaler sur 32 bits, masquer le fond", "fichier": "03-pixel.md", "source": "Reformulé d'après le manuel Atari ST v2 (§ 4.2 et routine 7.3, corrigée : voir l'errata)" },
+        {
+          "type": "exemple", "id": "atari-ch06-ex-pixel", "titre": "Une balle en X = 44",
+          "introduction": "Une balle de 8 × 8 pixels en X = 44 : elle commence au 13ᵉ pixel d'un groupe et déborde sur le suivant. Surveille D0 à chaque tour de boucle.",
+          "code": "@code.s#pixel-exemple",
+          "machine": { "modeUtilisateur": true, "ecran": true },
+          "explications": [
+            { "ligne": 6, "texte": "A0 = début de la ligne 10." },
+            { "ligne": 11, "texte": "44 ÷ 16 = 2, × 8 = 16 octets : A0 pointe sur le groupe des pixels 32 à 47." },
+            { "ligne": 12, "texte": "44 mod 16 = 12 : le dessin doit être décalé de 12 pixels vers la droite." },
+            { "ligne": 17, "texte": "D0 = `$0000003C` : la première ligne de la balle (`%00111100`)." },
+            { "ligne": 18, "texte": "ROR.L #8 fait tourner D0 de 8 bits : l'octet arrive en haut, D0 = `$3C000000`." },
+            { "ligne": 19, "texte": "Décalé de 12 : D0 = `$0003C000`. Rien n'est perdu : les pixels qui dépassent du premier groupe sont descendus dans le mot faible." },
+            { "ligne": 20, "texte": "SWAP échange les deux moitiés : D0.W = `$0003`, la partie gauche." },
+            { "ligne": 21, "texte": "Les bits 1 et 0 du premier groupe : pixels 46 et 47." },
+            { "ligne": 23, "texte": "D0.W = `$C000` : les bits 15 et 14 du groupe suivant, pixels 48 et 49. La ligne de la balle est à cheval sur deux groupes." },
+            { "ligne": 25, "texte": "Ligne suivante de la balle." }
+          ],
+          "conclusion": "Un registre de 32 bits, un LSR.L, deux SWAP : le décalage au pixel près ne perd aucun bit. Pour un sprite de 16 pixels, on part d'un mot dans le mot fort, et le principe est le même."
+        },
+        {
+          "type": "prediction", "id": "atari-ch06-pred-decalage", "titre": "Décaler sur 32 bits",
+          "introduction": "8 pixels allumés tout à gauche d'un registre, décalés de 12.",
+          "code": "@code.s#decalage-prediction",
+          "machine": { "modeUtilisateur": true },
+          "questions": [
+            { "id": "q1", "enonce": "Que vaut D0 après `LSR.L D1,D0` (décalage de 12) ?", "choix": ["$000FF000", "$0000000F", "$00FF0000"], "bonne": 0, "explication": "Décaler de 12 bits = de 3 chiffres hexadécimaux : `$FF000000` devient `$000FF000`.", "verification": { "D0": "$000FF000" } },
+            { "id": "q2", "enonce": "Et après un `SWAP D0` ?", "code": "@code.s#decalage-prediction-swap", "choix": ["$F000000F", "$000F000F", "$0FF00000"], "bonne": 0, "explication": "Les deux moitiés sont échangées : le mot faible `$000F` (partie gauche, 4 pixels) est prêt à être écrit dans le premier groupe.", "verification": { "D0": "$F000000F" } }
+          ]
+        },
+        { "type": "exercice", "id": "atari-ch06-exo-masque", "titre": "Un trou dans le fond", "variante": "completer", "niveau": 2,
+          "enonce": "Le fond est en couleur 2 (plan 1). On y dessine 8 pixels en couleur 1 (plan 0)… et ils apparaissent en couleur 3, car les bits du fond restent allumés dessous. Ajoute **une** instruction qui éteint le plan 1 sous le dessin.",
+          "indices": ["D3 contient le masque inversé : 0 sous le dessin, 1 ailleurs.", "`AND.W D3,2(A0)` : le plan 1 est le mot à l'offset 2."],
+          "codeDepart": "@code.s#masque-depart", "solution": "@code.s#masque-solution",
+          "check": { "type": "pixels", "maxSteps": 2000, "terminer": true, "expected": { "4,0": "1", "11,7": "1", "3,0": "2", "12,0": "2", "20,3": "2", "4,8": "0" } },
+          "machine": { "modeUtilisateur": true, "ecran": true } },
+        { "type": "exercice", "id": "atari-ch06-exo-routine73", "titre": "Réparer la routine 7.3", "variante": "corriger", "niveau": 3,
+          "enonce": "Voici la routine 7.3 du manuel, qui doit dessiner une balle de 8 × 8 pixels en **X = 44, Y = 10**. Elle ne plante pas… mais la balle n'apparaît pas. Elle contient **plusieurs erreurs** : avance pas à pas en surveillant A0 et D0, et compare avec le cours.",
+          "indices": ["Même début que PSET au chapitre 5 : le mot fort de D0 et l'alignement `$FFFE`.", "`LSR.W` perd les pixels qui débordent, `SWAP` ramène un mot fort jamais préparé, et `OR.B` vise le mauvais octet. Travaille sur 32 bits : `MOVEQ #0,D0`, `MOVE.B`, `ROR.L #8`, `LSR.L D1,D0`, puis SWAP / `OR.W` / SWAP / `OR.W`."],
+          "codeDepart": "@code.s#sprite73-depart", "solution": "@code.s#sprite73-solution",
+          "check": { "type": "pixels", "maxSteps": 500, "terminer": true, "expected": { "46,10": "1", "49,10": "1", "45,10": "0", "50,10": "0", "44,12": "1", "51,12": "1", "43,12": "0", "52,12": "0", "48,17": "1" } },
+          "machine": { "modeUtilisateur": true, "ecran": true },
+          "source": "Routine 7.3 du manuel Atari ST v2, reproduite avec ses erreurs (voir l'errata)" }
+      ]
+    },
+    {
+      "id": "atari-ch06-n4",
+      "titre": "Les bords et l'effet miroir",
+      "contenus": [
+        { "type": "cours", "id": "atari-ch06-cours-bords", "titre": "Découper aux bords, retourner avec une table", "fichier": "04-bords.md", "source": "Reformulé d'après le manuel Atari ST v2 (§ 4.3)" },
+        {
+          "type": "prediction", "id": "atari-ch06-pred-bord", "titre": "Le débordement à droite",
+          "introduction": "8 pixels dessinés en X = 316 sur la ligne 10 : le dessin déborde du dernier groupe de la ligne.",
+          "code": "@code.s#bord-prediction",
+          "machine": { "modeUtilisateur": true, "ecran": true },
+          "questions": [
+            { "id": "q1", "enonce": "Où apparaissent les 4 pixels qui débordent ?", "choix": ["À gauche de l'écran, sur la ligne 11", "Nulle part : ils sont perdus", "À droite, sur la ligne 10"], "bonne": 0, "explication": "8(A0) après le dernier groupe de la ligne 10, c'est le premier groupe de la ligne 11 : la mémoire de l'écran continue. Regarde l'écran !", "verification": { "$F86E0.W": "$F000" } }
+          ]
+        },
+        { "type": "exercice", "id": "atari-ch06-exo-miroir", "titre": "La table miroir", "variante": "ecrire", "niveau": 3,
+          "enonce": "Construis en `$20000` une **table de 256 octets** : l'octet n° n doit contenir n « lu à l'envers » (le bit 7 devient le bit 0, le bit 6 le bit 1, etc.). Par exemple, la case 1 contient `$80` et la case `$0C` contient `$30`.",
+          "indices": ["Deux boucles : une sur n (0 à 255), une sur les 8 bits de n.", "Pour chaque bit : `LSR.B #1,D1` fait sortir le bit de droite de n dans le flag X, puis `ROXL.B #1,D2` le fait entrer par la droite du miroir."],
+          "codeDepart": "@code.s#miroir-depart", "solution": "@code.s#miroir-solution",
+          "check": { "type": "memory", "maxSteps": 20000, "terminer": true, "expected": { "$20000.B": "$00", "$20001.B": "$80", "$20003.B": "$C0", "$2000C.B": "$30", "$20012.B": "$48", "$200F0.B": "$0F", "$200FF.B": "$FF" } },
+          "machine": { "modeUtilisateur": true } }
+      ]
+    }
+  ],
+  "qcm": {
+    "id": "atari-ch06-qcm",
+    "seuil": 0.7,
+    "questions": [
+      { "id": "q1", "enonce": "Pour copier un bloc de 32 pixels de large, quel saut ajoute-t-on à la fin de chaque ligne ?", "choix": ["128", "144", "160"], "bonne": 1, "explication": "32 pixels = 16 octets ; 160 − 16 = 144." },
+      { "id": "q2", "enonce": "Combien d'images par seconde affiche un ST européen ?", "choix": ["25", "50", "60"], "bonne": 1, "explication": "50 Hz en PAL (60 Hz sur un ST américain)." },
+      { "id": "q3", "enonce": "Que fait `Vsync` (XBIOS 37) ?", "choix": ["Il efface l'écran", "Il attend la prochaine VBL", "Il change d'écran"], "bonne": 1, "explication": "Il attend le prochain retour vertical : une image vient de s'afficher." },
+      { "id": "q4", "enonce": "Pourquoi le double tampon supprime-t-il le scintillement ?", "choix": ["Parce que l'écran affiché n'est jamais en train d'être modifié", "Parce qu'il dessine deux fois plus vite", "Parce qu'il double la fréquence de la VBL"], "bonne": 0, "explication": "On dessine sur l'écran caché, puis on l'affiche d'un coup, pendant le retour du faisceau." },
+      { "id": "q5", "enonce": "Sur un STF, à quelle condition une adresse peut-elle servir d'écran ?", "choix": ["Être paire", "Être un multiple de 256", "Être sous $80000"], "bonne": 1, "explication": "Le Shifter ne mémorise que les octets fort et moyen de l'adresse." },
+      { "id": "q6", "enonce": "Pourquoi décaler un sprite avec `LSR.L` plutôt qu'avec `LSR.W` ?", "choix": ["C'est plus rapide", "Les bits qui débordent passent dans le mot faible au lieu d'être perdus", "LSR.W n'accepte pas de décalage dans un registre"], "bonne": 1, "explication": "Le mot faible récupère le débordement, à écrire dans le groupe suivant." },
+      { "id": "q7", "enonce": "À quoi sert le masque inversé d'un sprite ?", "choix": ["À faire un trou dans le fond avec AND avant de poser le sprite", "À allumer les pixels du sprite", "À retourner le sprite"], "bonne": 0, "explication": "AND avec le masque inversé éteint les bits du fond sous le sprite, OR pose ensuite le dessin." },
+      { "id": "q8", "enonce": "Une image d'un ST dure environ…", "choix": ["16 000 cycles", "160 000 cycles", "1 600 000 cycles"], "bonne": 1, "explication": "8 MHz ÷ 50 images ≈ 160 000 cycles (160 256 exactement)." },
+      { "id": "q9", "enonce": "Un sprite dessiné dans le dernier groupe d'une ligne déborde…", "choix": ["au début de la ligne suivante", "dans la ligne au-dessus", "nulle part"], "bonne": 0, "explication": "La mémoire continue : le groupe suivant est le premier de la ligne d'en dessous. Il faut découper." }
+    ]
+  },
+  "bonus": [
+    { "type": "exercice", "id": "atari-ch06-bonus-rebond", "titre": "La balle qui rebondit", "variante": "ecrire", "niveau": 3,
+      "enonce": "Défi : un carré de 16 × 16 (couleur 1, lignes 92 à 107) part de X = 0 et avance de **2 pixels par image** vers la droite. Quand il arrive en X = 304 (le bord droit), il repart vers la gauche ; en X = 0, il repart vers la droite. Arrête le programme après **200 images**. Lance-le en **🎬 Temps réel** pour le voir rebondir !",
+      "indices": ["Une variable de vitesse (+2 ou −2) que tu ajoutes à X à chaque image ; tu changes son signe au bord.", "Pour dessiner en X quelconque : `MOVE.L #$FFFF0000,D2`, `LSR.L` de X mod 16, puis le mot fort dans le groupe de X et le mot faible dans le suivant. Efface la bande avant de redessiner."],
+      "codeDepart": "@code.s#rebond-depart", "solution": "@code.s#rebond-solution",
+      "check": { "type": "pixels", "maxSteps": 400000, "terminer": true, "expected": { "208,92": "1", "223,107": "1", "207,92": "0", "224,92": "0", "0,92": "0", "304,100": "0" } },
+      "machine": { "modeUtilisateur": true, "ecran": true } }
+  ]
 }

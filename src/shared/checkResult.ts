@@ -2,6 +2,7 @@ import type { Cpu } from '../cpu/cpu'
 import type { CpuSnapshot } from '../cpu/types'
 import type { ExerciseCheck } from './ipc'
 import { readPixel, screenAddress } from '../platforms/atari-st/screen'
+import { materielAtari } from '../platforms/atari-st/materiel'
 
 export interface CheckResult {
   success: boolean
@@ -70,6 +71,20 @@ export function evaluateCheck(cpu: Cpu, check: ExerciseCheck): CheckResult {
     }
     if (mismatches.length > 0) return { success: false, message: mismatches.join('\n') }
     return { success: true, message: 'Bravo, l’écran est exactement comme prévu !' }
+  }
+
+  if (check.type === 'son') {
+    const registres = materielAtari(cpu)?.psg.etat.registres
+    const ecarts: string[] = []
+    for (const [cle, attendu] of Object.entries(check.expected)) {
+      const r = parseInt(cle.slice(1), 10)
+      const valeur = registres?.[r] ?? 0
+      if (valeur !== parseInt(attendu.replace('$', ''), 16)) {
+        ecarts.push(`Registre ${r} du YM2149 : ${attendu} attendu, $${valeur.toString(16).toUpperCase().padStart(2, '0')} obtenu`)
+      }
+    }
+    if (ecarts.length > 0) return { success: false, message: ecarts.join('\n') }
+    return { success: true, message: 'Bravo, la puce sonore est réglée comme prévu !' }
   }
 
   const snap = cpu.getSnapshot()

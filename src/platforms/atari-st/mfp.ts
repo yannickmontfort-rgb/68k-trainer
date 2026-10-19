@@ -150,13 +150,29 @@ export class Mfp {
     t.echeance = maintenant + (t.compteur || 256) * t.periodeTick
   }
 
+  /**
+   * Seuls les timers dont l'interruption est autorisée (IER) entrent dans l'agenda : le timer D,
+   * horloge de la liaison série à ~300 kHz, ne réveille pas l'émulation tous les 26 cycles.
+   */
   private recalculerProchaine(): void {
-    this.prochaine = Math.min(...this.timers.map((t) => (t.mode >= 1 && t.mode <= 7 ? t.echeance : Infinity)))
+    this.prochaine = Math.min(
+      ...this.timers.map((t) => (t.mode >= 1 && t.mode <= 7 && this.ier & (1 << t.canal) ? t.echeance : Infinity))
+    )
+  }
+
+  /** Rattrape l'échéance d'un timer sans interruption (calcul direct, sans boucle). */
+  private rattraper(t: Timer, maintenant: number): void {
+    if (t.echeance > maintenant) return
+    const periode = (t.donnee || 256) * t.periodeTick
+    const n = Math.floor((maintenant - t.echeance) / periode) + 1
+    t.echeance += n * periode
+    t.compteur = t.donnee
   }
 
   /** Valeur actuelle du compteur d'un timer en mode délai. */
   private compteurCourant(t: Timer, maintenant: number): number {
     if (t.mode < 1 || t.mode > 7) return t.compteur & 0xff
+    this.rattraper(t, maintenant)
     const reste = Math.ceil((t.echeance - maintenant) / t.periodeTick)
     return Math.max(1, Math.min(256, reste)) & 0xff
   }
@@ -175,11 +191,25 @@ export class Mfp {
     if (t.mode === 0) t.compteur = valeur
   }
 
+  /** Cycle de la prochaine expiration d'un timer en mode délai (Infinity = aucune). */
+  get prochaineEcheance(): number {
+    return this.prochaine
+  }
+
+  /** Le timer B compte-t-il les lignes (mode événement) ? */
+  get timerBCompteLignes(): boolean {
+    return this.timers[1].mode === 8
+  }
+
   /** Fait avancer les timers en mode délai jusqu'au cycle `maintenant`. */
   avancer(maintenant: number): void {
     if (maintenant < this.prochaine) return
     for (const t of this.timers) {
       if (t.mode < 1 || t.mode > 7) continue
+      if (!(this.ier & (1 << t.canal))) {
+        this.rattraper(t, maintenant)
+        continue
+      }
       while (t.echeance <= maintenant) {
         this.declencher(t.canal)
         t.compteur = t.donnee
@@ -268,6 +298,8 @@ export class Mfp {
         this.ier = r === MFP.iera ? haut(this.ier) : bas(this.ier)
         // Désactiver un canal efface aussi son attente
         this.ipr &= this.ier
+        for (const t of this.timers) this.rattraper(t, maintenant)
+        this.recalculerProchaine()
         break
       case MFP.ipra:
         this.ipr &= (v << 8) | 0xff // écrire 0 efface, 1 ne change rien

@@ -2,6 +2,7 @@ import type { Cpu } from '../../cpu/cpu'
 import type { Platform } from '../../cpu/platform'
 import { assembler } from '../../asm/assembleur'
 import { CYCLES_PER_VBL, ROM_VBL, SYSVAR, VBLQUEUE_TABLE, VBLQUEUE_SLOTS } from './machine'
+import { materielAtari } from './materiel'
 
 /**
  * Routine VBL du TOS (vecteur $70, niveau 4), en vrai code 68000 placé « en ROM » : on peut la
@@ -109,8 +110,9 @@ export function createVbl(options: VblOptions = {}): Vbl {
       if (attendue === null) attendue = prochaine
       if (prochaine === attendue) {
         cpu.pc = (cpu.pc - 2) & 0xffffff
-        // ≈ un tour de la boucle « CMP.L _frclock,D0 / BEQ » du TOS
-        cpu.cycles += Math.min(28, Math.max(4, prochaine - cpu.cycles))
+        // Le temps avance jusqu'au prochain événement (VBL, timer, clavier...) : rien n'est manqué
+        const evenement = materielAtari(cpu)?.prochainEvenement() ?? Infinity
+        cpu.cycles = Math.max(cpu.cycles + 4, Math.min(prochaine, evenement))
         cpu.waiting = true
       } else attendue = null
       return true

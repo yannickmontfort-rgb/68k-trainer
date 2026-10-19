@@ -111,7 +111,8 @@ export function createTos(options: TosOptions = {}): Platform {
    */
   function attendreTouche(cpu: Cpu): boolean {
     cpu.pc = (cpu.pc - 2) & 0xffffff
-    cpu.cycles += 100
+    const evenement = materielAtari(cpu)?.prochainEvenement() ?? Infinity
+    cpu.cycles = Math.max(cpu.cycles + 4, Math.min(cpu.cycles + 40000, evenement))
     cpu.waiting = true
     return true
   }

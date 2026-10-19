@@ -58,7 +58,7 @@ export interface CourseFile {
   markdown: string
 }
 
-export type ExerciseCheckType = 'registers' | 'memory' | 'output' | 'pixels'
+export type ExerciseCheckType = 'registers' | 'memory' | 'output' | 'pixels' | 'son'
 
 export interface ExerciseCheck {
   type: ExerciseCheckType
@@ -72,6 +72,7 @@ export interface ExerciseCheck {
    * - "output"    : une seule clé "output", valeur = chaîne exacte attendue dans cpu.output (pas de l'hexa ;
    *                 les retours chariot (CR, code 13) sont ignorés des deux côtés)
    * - "pixels"    : clé = "x,y" sur l'écran Atari basse résolution, valeur = numéro de couleur 0-15 en décimal
+   * - "son"       : clé = registre du YM2149 "R0".."R15", valeur = contenu attendu en hexa ("$1C")
    */
   expected: Record<string, string>
   /**
