@@ -16,6 +16,13 @@ Les choix pédagogiques s'appuient sur la recherche : exemples résolus puis ret
 l'aide, une difficulté à la fois, lire et prédire avant d'écrire, enseignement explicite du
 débogage.
 
+## Tu as trouvé une erreur ?
+
+Les cours et les exercices sont là pour être améliorés : une explication fausse, un exercice
+impossible, une faute ? [Ouvre une *issue*](../../issues/new/choose) (modèle « Erreur dans un cours ou un
+exercice »). Les corrections proposées par *pull request* sont aussi les bienvenues : le format du
+contenu est décrit dans [content/parcours/README.md](content/parcours/README.md).
+
 ## Utiliser
 
 Voir le [guide de l'utilisateur](docs/guide_utilisateur.md).

@@ -1,0 +1,30 @@
+name: Erreur dans un cours ou un exercice
+description: Une explication fausse ou peu claire, un exercice impossible, une faute…
+title: "[Contenu] "
+labels: ["contenu"]
+body:
+  - type: input
+    id: endroit
+    attributes:
+      label: Où ?
+      description: Chapitre et titre de l'étape (cours, exemple, exercice, QCM…)
+      placeholder: "Chapitre 3, exercice « Signé ou non signé ? »"
+    validations:
+      required: true
+  - type: textarea
+    id: probleme
+    attributes:
+      label: Qu'est-ce qui ne va pas ?
+      description: Cite le passage ou colle ton code si c'est un exercice.
+    validations:
+      required: true
+  - type: textarea
+    id: correction
+    attributes:
+      label: Ta proposition de correction (facultatif)
+  - type: input
+    id: version
+    attributes:
+      label: Version de 68k Trainer
+      description: Onglet « À propos »
+      placeholder: "0.2.1"

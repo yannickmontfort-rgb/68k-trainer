@@ -13,7 +13,7 @@
           "id": "atari-ch01-cours-atelier",
           "titre": "Assembleur, langage machine et atelier",
           "fichier": "01-atelier.md",
-          "aRelire": true,
+
           "source": "Rédigé pour 68k Trainer d'après le manuel Atari ST v2 (module 6) et le cours du Féroce Lapin (cours 1)"
         },
         {
@@ -21,14 +21,14 @@
           "id": "atari-ch01-cours-ligne",
           "titre": "Anatomie d'une ligne d'assembleur",
           "fichier": "02-ligne.md",
-          "aRelire": true,
+
           "source": "Reformulé d'après le cours EPITA de David Bouchet (structure d'un code source) et le manuel Atari ST v2 (§ 1.1)"
         },
         {
           "type": "exemple",
           "id": "atari-ch01-ex-premier",
           "titre": "Ton premier programme, pas à pas",
-          "aRelire": true,
+
           "introduction": "Voici un programme de quatre instructions. Clique sur **Pas suivant** pour exécuter une instruction à la fois : à droite, le registre qui vient de changer s'allume en jaune, et sous le code une explication te dit ce qui s'est passé.",
           "code": "@code.s#premier",
           "explications": [
@@ -43,7 +43,7 @@
           "type": "prediction",
           "id": "atari-ch01-pred-sub",
           "titre": "Lis, puis devine",
-          "aRelire": true,
+
           "introduction": "Sans exécuter le programme, réponds aux questions. Ensuite seulement, vérifie en l'exécutant. `SUB.W D1,D0` signifie « D0 ← D0 − D1 ».",
           "code": "@code.s#predire-sub",
           "questions": [
@@ -71,7 +71,7 @@
           "titre": "Trouve la bonne valeur",
           "variante": "completer",
           "niveau": 1,
-          "aRelire": true,
+
           "enonce": "Le programme ajoute 2 à D0. Remplace le `0` de la première instruction pour que **D0 vaille 9** à la fin.",
           "indices": ["Quel nombre, plus 2, donne 9 ?", "`MOVE.W #7,D0`"],
           "codeDepart": "@code.s#completer-depart",
@@ -84,7 +84,7 @@
           "titre": "Remets le programme dans l'ordre",
           "variante": "ordonner",
           "niveau": 1,
-          "aRelire": true,
+
           "enonce": "Les instructions ont été mélangées. Avec les flèches, remets-les dans l'ordre pour que **D2 = (6 + 2) × 5 = 40**. `ADDQ` est un `ADD` rapide pour les petites valeurs (1 à 8), `MULU` une multiplication.",
           "indices": ["Il faut d'abord une valeur dans D2, et RTS doit être la dernière instruction.", "Addition avant multiplication : (6 + 2), puis × 5."],
           "codeDepart": "",
@@ -100,7 +100,7 @@
           "titre": "Ton propre calcul",
           "variante": "ecrire",
           "niveau": 2,
-          "aRelire": true,
+
           "enonce": "Écris le programme : place **100** dans D1, **25** dans D2, puis soustrais D2 de D1 pour que **D1 = 75** à la fin.",
           "indices": ["Deux `MOVE.W` pour charger les valeurs.", "La soustraction s'écrit `SUB.W source,destination` : la destination reçoit destination − source."],
           "codeDepart": "@code.s#ecrire-depart",
@@ -113,7 +113,7 @@
           "titre": "Multiplier sans multiplication",
           "variante": "ecrire",
           "niveau": 3,
-          "aRelire": true,
+
           "enonce": "Calcule **D0 = 3 × (4 + 5)** en n'utilisant que `MOVE` et `ADD` (pas de `MULU`).",
           "indices": ["Calcule d'abord 4 + 5 dans D0.", "Multiplier par 3, c'est ajouter trois fois la même valeur : garde une copie dans un autre registre."],
           "codeDepart": "@code.s#autonome-depart",
@@ -131,14 +131,14 @@
           "id": "atari-ch01-cours-deboguer",
           "titre": "Deux sortes d'erreurs et une méthode",
           "fichier": "03-deboguer.md",
-          "aRelire": true,
+
           "source": "Rédigé pour 68k Trainer ; méthode issue de la revue de littérature (enseignement explicite du débogage)"
         },
         {
           "type": "exemple",
           "id": "atari-ch01-ex-bug",
           "titre": "Une erreur de logique, traquée pas à pas",
-          "aRelire": true,
+
           "introduction": "Ce programme devrait calculer **D0 = 2 × (3 + 4) = 14**. Il s'assemble sans erreur… mais à la fin, D0 vaut 7. Suis la méthode : **hypothèse**, **inspection** pas à pas, **vérification**.",
           "code": "@code.s#bug-logique",
           "explications": [
@@ -154,7 +154,7 @@
           "type": "prediction",
           "id": "atari-ch01-pred-crash",
           "titre": "Que va-t-il se passer ?",
-          "aRelire": true,
+
           "introduction": "Ce programme s'assemble sans erreur. Lis-le attentivement, en particulier l'adresse de destination.",
           "code": "@code.s#predire-crash",
           "questions": [
@@ -173,7 +173,7 @@
           "titre": "Corrige l'erreur de syntaxe",
           "variante": "corriger",
           "niveau": 1,
-          "aRelire": true,
+
           "enonce": "Ce programme doit mettre **5 + 7 = 12** dans D2, mais il ne s'assemble pas. Clique sur **Vérifier**, lis le message, et corrige la ligne fautive.",
           "indices": ["Le message parle d'une instruction inconnue.", "L'addition s'écrit `ADD`, avec un seul D."],
           "codeDepart": "@code.s#corriger-syntaxe-depart",
@@ -186,7 +186,7 @@
           "titre": "Corrige l'erreur de logique",
           "variante": "corriger",
           "niveau": 2,
-          "aRelire": true,
+
           "enonce": "Ce programme s'assemble, mais **D3** devrait valoir **30** à la fin, et ce n'est pas le cas. Utilise le pas à pas pour trouver la ligne fautive.",
           "indices": ["Regarde quel registre change sur la ligne de l'addition.", "Dans `ADD.W source,destination`, c'est la destination qui reçoit le résultat."],
           "codeDepart": "@code.s#corriger-logique-depart",
@@ -199,7 +199,7 @@
           "titre": "Le dièse oublié",
           "variante": "corriger",
           "niveau": 3,
-          "aRelire": true,
+
           "enonce": "On voulait **D5 = $1001**. Le programme s'assemble et s'exécute sans planter, mais D5 contient une valeur étrange. Explique-toi pourquoi avant de corriger (indice : que trouve-t-on à l'adresse `$1000` ?).",
           "indices": ["Sans `#`, `$1000` est une adresse, pas une valeur.", "À l'adresse $1000, il y a… le code de ta propre première instruction !"],
           "codeDepart": "@code.s#corriger-diese-depart",
@@ -232,7 +232,7 @@
       "titre": "Peins l'écran en rouge",
       "variante": "ecrire",
       "niveau": 2,
-      "aRelire": true,
+
       "enonce": "Sur l'Atari ST, la couleur du fond de l'écran est la **couleur n° 0** de la palette. Elle se règle en écrivant un mot à l'adresse matérielle **`$FF8240`**, au format `$0RVB` : chaque composante va de 0 à 7. Rouge vif = `$700`.\n\nÉcris un programme qui peint le fond en rouge. Lance ensuite le **pas à pas** pour voir l'écran changer.",
       "indices": ["Une seule instruction suffit : un `MOVE.W` d'une valeur immédiate vers une adresse.", "`MOVE.W #$700,$FF8240`"],
       "codeDepart": "@code.s#bonus-fond-depart",

@@ -8,9 +8,9 @@
       "id": "atari-ch03-n1",
       "titre": "MOVE et les modes d'adressage",
       "contenus": [
-        { "type": "cours", "id": "atari-ch03-cours-adressage", "titre": "MOVE, ses variantes et les modes d'adressage", "fichier": "01-adressage.md", "aRelire": true, "source": "Reformulé d'après le cours EPITA de David Bouchet (IV), le polycopié de Philippe Meyne et le M68000PRM" },
+        { "type": "cours", "id": "atari-ch03-cours-adressage", "titre": "MOVE, ses variantes et les modes d'adressage", "fichier": "01-adressage.md", "source": "Reformulé d'après le cours EPITA de David Bouchet (IV), le polycopié de Philippe Meyne et le M68000PRM" },
         {
-          "type": "exemple", "id": "atari-ch03-ex-adressage", "titre": "Pointeurs, déplacement et index", "aRelire": true,
+          "type": "exemple", "id": "atari-ch03-ex-adressage", "titre": "Pointeurs, déplacement et index",
           "introduction": "Ce programme copie deux mots d'une table vers `$3000` avec des pointeurs postincrémentés, puis lit des éléments de la table de deux autres façons. La vue **Mémoire** est placée sur `$3000`.",
           "code": "@code.s#adressage-exemple",
           "machine": { "memoire": 12288 },
@@ -26,7 +26,7 @@
           "conclusion": "Trois façons d'accéder à une table : la parcourir avec `(An)+`, viser une position fixe avec `d16(An)`, ou utiliser un indice variable avec `d8(An,Dn)`."
         },
         {
-          "type": "prediction", "id": "atari-ch03-pred-adressage", "titre": "Avancer, reculer", "aRelire": true,
+          "type": "prediction", "id": "atari-ch03-pred-adressage", "titre": "Avancer, reculer",
           "introduction": "Attention à l'ordre : `(A0)+` lit **puis** avance, `-(A0)` recule **puis** lit.",
           "code": "@code.s#adressage-prediction",
           "questions": [
@@ -40,7 +40,7 @@
         { "type": "exercice", "ref": "general-l1-e4", "id": "general-l1-e4", "titre": "Écriture et lecture en mémoire", "variante": "ecrire", "niveau": 2, "solution": "@code.s#sol-l1-e4" },
         { "type": "exercice", "ref": "general-l1-e5", "id": "general-l1-e5", "titre": "Adressage indirect", "variante": "ecrire", "niveau": 2, "solution": "@code.s#sol-l1-e5" },
         {
-          "type": "exercice", "id": "atari-ch03-exo-copie", "titre": "Remets la copie dans l'ordre", "variante": "ordonner", "niveau": 2, "aRelire": true,
+          "type": "exercice", "id": "atari-ch03-exo-copie", "titre": "Remets la copie dans l'ordre", "variante": "ordonner", "niveau": 2,
           "enonce": "Remets les lignes dans l'ordre pour copier les deux mots longs de `SOURCE` à l'adresse `$3000`.",
           "indices": ["Les pointeurs doivent être chargés avant d'être utilisés.", "`RTS` en dernier, sinon on n'atteint jamais les copies."],
           "codeDepart": "", "entete": "@code.s#copie-entete", "pied": "@code.s#copie-pied", "solution": "",
@@ -55,9 +55,9 @@
       "id": "atari-ch03-n2",
       "titre": "Calculer",
       "contenus": [
-        { "type": "cours", "id": "atari-ch03-cours-arithmetique", "titre": "Addition, soustraction, multiplication, division", "fichier": "02-arithmetique.md", "aRelire": true, "source": "Reformulé d'après le cours EPITA (VIII.2) et le M68000PRM" },
+        { "type": "cours", "id": "atari-ch03-cours-arithmetique", "titre": "Addition, soustraction, multiplication, division", "fichier": "02-arithmetique.md", "source": "Reformulé d'après le cours EPITA (VIII.2) et le M68000PRM" },
         {
-          "type": "exemple", "id": "atari-ch03-ex-arithmetique", "titre": "Quotient, reste et nombres signés", "aRelire": true,
+          "type": "exemple", "id": "atari-ch03-ex-arithmetique", "titre": "Quotient, reste et nombres signés",
           "introduction": "Une division avec reste, puis une multiplication signée. Observe bien **où** le 68000 range le quotient et le reste.",
           "code": "@code.s#arith-exemple",
           "explications": [
@@ -71,7 +71,7 @@
           "conclusion": "Avant de mélanger des tailles, étends le signe (`EXT`) ; après une division, pense à séparer le quotient du reste."
         },
         {
-          "type": "prediction", "id": "atari-ch03-pred-mul", "titre": "MULU ou MULS ?", "aRelire": true,
+          "type": "prediction", "id": "atari-ch03-pred-mul", "titre": "MULU ou MULS ?",
           "introduction": "D0 et D1 contiennent le même mot `$FFFF`. On les multiplie par 2, l'un en non signé, l'autre en signé.",
           "code": "@code.s#arith-prediction",
           "questions": [
@@ -82,7 +82,7 @@
         { "type": "exercice", "ref": "general-l2-e1", "id": "general-l2-e1", "titre": "Addition en mémoire", "variante": "completer", "niveau": 1, "solution": "@code.s#sol-l2-e1" },
         { "type": "exercice", "ref": "general-l2-e2", "id": "general-l2-e2", "titre": "Multiplication non signée", "variante": "ecrire", "niveau": 1, "solution": "@code.s#sol-l2-e2" },
         { "type": "exercice", "ref": "general-l2-e5", "id": "general-l2-e5", "titre": "NEG et NOT", "variante": "completer", "niveau": 2, "solution": "@code.s#sol-l2-e5" },
-        { "type": "exercice", "id": "atari-ch03-exo-moyenne", "titre": "La moyenne", "variante": "ecrire", "niveau": 3, "aRelire": true,
+        { "type": "exercice", "id": "atari-ch03-exo-moyenne", "titre": "La moyenne", "variante": "ecrire", "niveau": 3,
           "enonce": "Calcule dans **D0** la moyenne entière de D1, D2 et D3 (12, 7 et 20). À la fin, D0 ne doit contenir **que** le quotient (`$0000000D`).",
           "indices": ["Additionne d'abord les trois valeurs dans D0.", "Après `DIVU`, le mot fort contient le reste : efface-le (`AND.L #$FFFF,D0`, ou `SWAP`/`CLR.W`/`SWAP`)."],
           "codeDepart": "@code.s#moyenne-depart", "solution": "@code.s#moyenne-solution",
@@ -93,9 +93,9 @@
       "id": "atari-ch03-n3",
       "titre": "Logique, décalages et bits",
       "contenus": [
-        { "type": "cours", "id": "atari-ch03-cours-logique", "titre": "Masques, décalages et bits", "fichier": "03-logique.md", "aRelire": true, "source": "Reformulé d'après le cours EPITA (VIII.3-5), le manuel Atari ST v2 (§ 3.3) et le M68000PRM" },
+        { "type": "cours", "id": "atari-ch03-cours-logique", "titre": "Masques, décalages et bits", "fichier": "03-logique.md", "source": "Reformulé d'après le cours EPITA (VIII.3-5), le manuel Atari ST v2 (§ 3.3) et le M68000PRM" },
         {
-          "type": "exemple", "id": "atari-ch03-ex-logique", "titre": "Allumer, éteindre, inverser, décaler", "aRelire": true,
+          "type": "exemple", "id": "atari-ch03-ex-logique", "titre": "Allumer, éteindre, inverser, décaler",
           "introduction": "Suis la valeur binaire de D0, puis de D1. Les masques s'écrivent en binaire pour qu'on voie quels bits sont visés.",
           "code": "@code.s#logique-exemple",
           "explications": [
@@ -110,7 +110,7 @@
           "conclusion": "AND pour éteindre, OR pour allumer, EOR pour inverser : c'est exactement ce qu'on fera pour dessiner des pixels sur l'écran de l'Atari."
         },
         {
-          "type": "prediction", "id": "atari-ch03-pred-decalage", "titre": "LSR ou ASR ?", "aRelire": true,
+          "type": "prediction", "id": "atari-ch03-pred-decalage", "titre": "LSR ou ASR ?",
           "introduction": "On divise −8 par 2 de deux façons. Rappel : en `.W`, −8 s'écrit `$FFF8`.",
           "code": "@code.s#logique-prediction",
           "questions": [
@@ -120,7 +120,7 @@
         },
         { "type": "exercice", "ref": "general-l2-e3", "id": "general-l2-e3", "titre": "Enchaînement d'opérations logiques", "variante": "completer", "niveau": 1, "solution": "@code.s#sol-l2-e3" },
         { "type": "exercice", "ref": "general-l2-e4", "id": "general-l2-e4", "titre": "Décalages ASL et LSR", "variante": "completer", "niveau": 2, "solution": "@code.s#sol-l2-e4" },
-        { "type": "exercice", "id": "atari-ch03-exo-fois10", "titre": "Multiplier par 10 sans MULU", "variante": "ecrire", "niveau": 3, "aRelire": true,
+        { "type": "exercice", "id": "atari-ch03-exo-fois10", "titre": "Multiplier par 10 sans MULU", "variante": "ecrire", "niveau": 3,
           "enonce": "D0 vaut 7. Calcule **D0 = 7 × 10** avec des décalages et des additions, sans `MULU` ni `MULS` (c'est ainsi qu'on gagnait des cycles dans les démos).",
           "indices": ["10 = 8 + 2.", "×8 = trois décalages à gauche ; ×2 = un décalage (ou une addition avec soi-même)."],
           "codeDepart": "@code.s#fois10-depart", "solution": "@code.s#fois10-solution",
@@ -131,9 +131,9 @@
       "id": "atari-ch03-n4",
       "titre": "Comparer et brancher",
       "contenus": [
-        { "type": "cours", "id": "atari-ch03-cours-branchements", "titre": "CMP, TST et les branchements conditionnels", "fichier": "04-branchements.md", "aRelire": true, "source": "Reformulé d'après le cours EPITA (V), le polycopié de Philippe Meyne et le M68000PRM" },
+        { "type": "cours", "id": "atari-ch03-cours-branchements", "titre": "CMP, TST et les branchements conditionnels", "fichier": "04-branchements.md", "source": "Reformulé d'après le cours EPITA (V), le polycopié de Philippe Meyne et le M68000PRM" },
         {
-          "type": "exemple", "id": "atari-ch03-ex-branchements", "titre": "Un « si… sinon… » en assembleur", "aRelire": true,
+          "type": "exemple", "id": "atari-ch03-ex-branchements", "titre": "Un « si… sinon… » en assembleur",
           "introduction": "Le programme range dans D0 le plus grand de D1 et D2, en comparaison **signée**. Regarde les flags juste après `CMP`, puis le PC sauter (ou non).",
           "code": "@code.s#branchements-exemple",
           "explications": [
@@ -146,7 +146,7 @@
           "conclusion": "Le choix de la condition (BGT ou BHI…) décide si tes nombres sont signés ou non. Le processeur, lui, calcule simplement D1 − D2."
         },
         {
-          "type": "prediction", "id": "atari-ch03-pred-branchements", "titre": "Quel chemin ?", "aRelire": true,
+          "type": "prediction", "id": "atari-ch03-pred-branchements", "titre": "Quel chemin ?",
           "introduction": "Le programme range 100, 200 ou 300 dans D0 selon l'octet D1. Pour chaque question, seule la première ligne change (la valeur de D1).",
           "code": "@code.s#signe-moins5",
           "questions": [
@@ -158,7 +158,7 @@
         { "type": "exercice", "ref": "general-l3-e1", "id": "general-l3-e1", "titre": "Tester le signe d'une valeur", "variante": "completer", "niveau": 1, "solution": "@code.s#sol-l3-e1" },
         { "type": "exercice", "ref": "general-l3-e2", "id": "general-l3-e2", "titre": "Le plus grand de deux nombres", "variante": "completer", "niveau": 2, "solution": "@code.s#sol-l3-e2" },
         { "type": "exercice", "ref": "general-l3-e3", "id": "general-l3-e3", "titre": "Tester un bit précis", "variante": "completer", "niveau": 2, "solution": "@code.s#sol-l3-e3" },
-        { "type": "exercice", "id": "atari-ch03-exo-nonsigne", "titre": "Signé ou non signé ?", "variante": "corriger", "niveau": 3, "aRelire": true,
+        { "type": "exercice", "id": "atari-ch03-exo-nonsigne", "titre": "Signé ou non signé ?", "variante": "corriger", "niveau": 3,
           "enonce": "D1 et D2 sont des octets **non signés** (de 0 à 255). Le programme doit mettre le plus grand des deux dans D0 (200), mais il trouve 100. Trouve pourquoi et corrige **une seule** instruction.",
           "indices": ["Comment s'écrit 200 en hexadécimal ? Quel est son bit 7 ?", "Pour des nombres non signés, « plus grand » s'écrit `BHI`."],
           "codeDepart": "@code.s#nonsigne-depart", "solution": "@code.s#nonsigne-solution",
@@ -169,9 +169,9 @@
       "id": "atari-ch03-n5",
       "titre": "Les boucles",
       "contenus": [
-        { "type": "cours", "id": "atari-ch03-cours-boucles", "titre": "Compteurs, DBRA et parcours de chaînes", "fichier": "05-boucles.md", "aRelire": true, "source": "Reformulé d'après le cours EPITA (V.3-4) et le TP 2 de David Bouchet" },
+        { "type": "cours", "id": "atari-ch03-cours-boucles", "titre": "Compteurs, DBRA et parcours de chaînes", "fichier": "05-boucles.md", "source": "Reformulé d'après le cours EPITA (V.3-4) et le TP 2 de David Bouchet" },
         {
-          "type": "exemple", "id": "atari-ch03-ex-boucles", "titre": "Compter les caractères d'un texte", "aRelire": true,
+          "type": "exemple", "id": "atari-ch03-ex-boucles", "titre": "Compter les caractères d'un texte",
           "introduction": "Une boucle qui parcourt une chaîne jusqu'à son 0 final. Avance pas à pas pendant un ou deux tours, puis utilise « Jusqu'au bout ».",
           "code": "@code.s#boucles-exemple",
           "explications": [
@@ -186,7 +186,7 @@
           "conclusion": "Une boucle « tant que » : on teste **avant** de traiter. Le pointeur postincrémenté fait le travail d'avancer dans le texte."
         },
         {
-          "type": "prediction", "id": "atari-ch03-pred-boucles", "titre": "Combien de tours ?", "aRelire": true,
+          "type": "prediction", "id": "atari-ch03-pred-boucles", "titre": "Combien de tours ?",
           "introduction": "Le grand classique des boucles en assembleur : compter exactement les tours.",
           "code": "@code.s#boucles-dbra",
           "questions": [
@@ -197,7 +197,7 @@
         },
         { "type": "exercice", "ref": "general-l4-e1", "id": "general-l4-e1", "titre": "Somme avec DBRA", "variante": "completer", "niveau": 1, "solution": "@code.s#sol-l4-e1" },
         {
-          "type": "exercice", "id": "atari-ch03-exo-ordonner-boucle", "titre": "Remets la boucle dans l'ordre", "variante": "ordonner", "niveau": 1, "aRelire": true,
+          "type": "exercice", "id": "atari-ch03-exo-ordonner-boucle", "titre": "Remets la boucle dans l'ordre", "variante": "ordonner", "niveau": 1,
           "enonce": "Remets les lignes dans l'ordre pour que la boucle ajoute 2 à D0 **cinq fois** (D0 = 10).",
           "indices": ["Les initialisations viennent avant l'étiquette de la boucle.", "Le corps de la boucle est entre l'étiquette et DBRA."],
           "codeDepart": "", "entete": "@code.s#ordonner-boucle-entete", "pied": "", "solution": "",
@@ -205,7 +205,7 @@
           "check": { "type": "registers", "maxSteps": 100, "terminer": true, "expected": { "D0": "$0000000A" } }
         },
         { "type": "exercice", "ref": "general-l4-e2", "id": "general-l4-e2", "titre": "Compter les valeurs positives", "variante": "completer", "niveau": 2, "solution": "@code.s#sol-l4-e2" },
-        { "type": "exercice", "id": "atari-ch03-exo-espaces", "titre": "Compter les espaces", "variante": "ecrire", "niveau": 3, "aRelire": true,
+        { "type": "exercice", "id": "atari-ch03-exo-espaces", "titre": "Compter les espaces", "variante": "ecrire", "niveau": 3,
           "enonce": "Range dans D0 le **nombre d'espaces** du texte `'IL ETAIT UNE FOIS'` (A0 pointe déjà dessus).",
           "indices": ["Parcours le texte avec `MOVE.B (A0)+,D1` jusqu'au 0 final.", "Le code ASCII de l'espace s'écrit `#' '` : `CMP.B #' ',D1`."],
           "codeDepart": "@code.s#espaces-depart", "solution": "@code.s#espaces-solution",
@@ -216,9 +216,9 @@
       "id": "atari-ch03-n6",
       "titre": "Les sous-programmes",
       "contenus": [
-        { "type": "cours", "id": "atari-ch03-cours-sousprog", "titre": "BSR, RTS, paramètres et MOVEM", "fichier": "06-sousprogrammes.md", "aRelire": true, "source": "Reformulé d'après le cours EPITA (VI-VII), le manuel Atari ST v1 (§ 1.5, 2.2) et le TP 3 de David Bouchet" },
+        { "type": "cours", "id": "atari-ch03-cours-sousprog", "titre": "BSR, RTS, paramètres et MOVEM", "fichier": "06-sousprogrammes.md", "source": "Reformulé d'après le cours EPITA (VI-VII), le manuel Atari ST v1 (§ 1.5, 2.2) et le TP 3 de David Bouchet" },
         {
-          "type": "exemple", "id": "atari-ch03-ex-sousprog", "titre": "Un sous-programme propre", "aRelire": true,
+          "type": "exemple", "id": "atari-ch03-ex-sousprog", "titre": "Un sous-programme propre",
           "introduction": "Observe la **pile** pendant l'appel : l'adresse de retour y est déposée par `BSR`, puis D1 y est sauvegardé.",
           "code": "@code.s#sousprog-exemple",
           "explications": [
@@ -234,7 +234,7 @@
           "conclusion": "Un sous-programme bien écrit documente ses entrées et sorties, sauvegarde les registres qu'il utilise, et laisse la pile exactement comme il l'a trouvée."
         },
         {
-          "type": "prediction", "id": "atari-ch03-pred-sousprog", "titre": "Ce que BSR dépose sur la pile", "aRelire": true,
+          "type": "prediction", "id": "atari-ch03-pred-sousprog", "titre": "Ce que BSR dépose sur la pile",
           "introduction": "D6 mémorise SP avant l'appel ; dans le sous-programme, on calcule de combien SP a bougé.",
           "code": "@code.s#sousprog-prediction",
           "questions": [
@@ -242,10 +242,10 @@
           ]
         },
         { "type": "exercice", "ref": "general-l5-e1", "id": "general-l5-e1", "titre": "Premier sous-programme", "variante": "completer", "niveau": 1, "solution": "@code.s#sol-l5-e1" },
-        { "type": "exercice", "ref": "general-l5-e2", "id": "general-l5-e2", "titre": "Sauvegarder un registre sur la pile", "variante": "completer", "niveau": 2, "solution": "@code.s#sol-l5-e2", "codeDepart": "@code.s#l5e2-depart", "aRelire": true,
+        { "type": "exercice", "ref": "general-l5-e2", "id": "general-l5-e2", "titre": "Sauvegarder un registre sur la pile", "variante": "completer", "niveau": 2, "solution": "@code.s#sol-l5-e2", "codeDepart": "@code.s#l5e2-depart",
           "enonce": "D1 vaut `$12345678` avant l'appel. Le sous-programme MODIFIE se sert de D1 pour ses calculs (il le met à 0). Complète-le pour qu'il **sauvegarde D1 sur la pile** en entrée et le **restaure** en sortie : après l'appel, D1 doit valoir de nouveau `$12345678`." },
         { "type": "exercice", "ref": "general-l5-e3", "id": "general-l5-e3", "titre": "Passer des paramètres par la pile", "variante": "completer", "niveau": 3, "solution": "@code.s#sol-l5-e3" },
-        { "type": "exercice", "id": "atari-ch03-exo-abs", "titre": "Le sous-programme VALABS", "variante": "completer", "niveau": 3, "aRelire": true,
+        { "type": "exercice", "id": "atari-ch03-exo-abs", "titre": "Le sous-programme VALABS", "variante": "completer", "niveau": 3,
           "enonce": "Écris le corps du sous-programme **VALABS**, qui remplace D0.L par sa valeur absolue. Le programme principal l'appelle avec −42 et range le résultat dans D5.",
           "indices": ["Si D0 est déjà positif, il n'y a rien à faire : `TST.L D0` puis `BPL`.", "Sinon, `NEG.L D0` change son signe."],
           "codeDepart": "@code.s#abs-depart", "solution": "@code.s#abs-solution",
@@ -256,17 +256,17 @@
       "id": "atari-ch03-n7",
       "titre": "Bilan du chapitre",
       "contenus": [
-        { "type": "exercice", "id": "atari-ch03-exo-bilan-syntaxe", "titre": "Deux erreurs de syntaxe", "variante": "corriger", "niveau": 1, "aRelire": true,
+        { "type": "exercice", "id": "atari-ch03-exo-bilan-syntaxe", "titre": "Deux erreurs de syntaxe", "variante": "corriger", "niveau": 1,
           "enonce": "Ce programme doit additionner les 4 mots de `TABLE` (D0 = 100). Il contient **deux** erreurs de syntaxe : corrige-les une par une, en lisant les messages.",
           "indices": ["Le mode postincrémenté s'écrit `(A0)+` : le `+` est **après** la parenthèse.", "Vérifie l'orthographe de l'étiquette dans `DBRA`."],
           "codeDepart": "@code.s#bilan-syntaxe-depart", "solution": "@code.s#bilan-syntaxe-solution",
           "check": { "type": "registers", "maxSteps": 100, "terminer": true, "expected": { "D0": "$00000064" } } },
-        { "type": "exercice", "id": "atari-ch03-exo-bilan-logique", "titre": "L'erreur « à un près »", "variante": "corriger", "niveau": 2, "aRelire": true,
+        { "type": "exercice", "id": "atari-ch03-exo-bilan-logique", "titre": "L'erreur « à un près »", "variante": "corriger", "niveau": 2,
           "enonce": "Ce programme s'assemble et ne plante pas, mais il trouve **1100** au lieu de **100**. Utilise le pas à pas en comptant les tours de boucle, puis corrige.",
           "indices": ["Combien de tours fait `DBRA` quand le compteur part de 4 ?", "Pour 4 tours, le compteur doit partir de 3."],
           "codeDepart": "@code.s#bilan-logique-depart", "solution": "@code.s#bilan-logique-solution",
           "check": { "type": "registers", "maxSteps": 100, "terminer": true, "expected": { "D0": "$00000064" } } },
-        { "type": "exercice", "id": "atari-ch03-exo-bilan-max", "titre": "Le maximum d'une table", "variante": "ecrire", "niveau": 3, "aRelire": true,
+        { "type": "exercice", "id": "atari-ch03-exo-bilan-max", "titre": "Le maximum d'une table", "variante": "ecrire", "niveau": 3,
           "enonce": "Écris un programme qui range dans **D0.W** la plus grande valeur (signée) de `TABLE`, qui contient 6 mots. Tout ce chapitre te sert : pointeur, boucle, comparaison.",
           "indices": ["Prends le premier élément comme maximum provisoire, puis compare-lui chacun des 5 suivants.", "Comparaison signée : `CMP.W D0,D2` puis `BLE` pour ignorer les valeurs plus petites."],
           "codeDepart": "@code.s#bilan-max-depart", "solution": "@code.s#bilan-max-solution",
@@ -293,12 +293,12 @@
     ]
   },
   "bonus": [
-    { "type": "exercice", "id": "atari-ch03-bonus-bits", "titre": "Compter les bits à 1", "variante": "ecrire", "niveau": 3, "aRelire": true,
+    { "type": "exercice", "id": "atari-ch03-bonus-bits", "titre": "Compter les bits à 1", "variante": "ecrire", "niveau": 3,
       "enonce": "Range dans D0 le nombre de bits à 1 du mot D1 (`$F0F1`). Idée : fais sortir les bits un par un dans le flag C.",
       "indices": ["`LSR.W #1,D1` fait sortir le bit 0 dans C.", "16 tours de boucle, et `BCC` pour sauter quand le bit sorti vaut 0."],
       "codeDepart": "@code.s#bonus-bits-depart", "solution": "@code.s#bonus-bits-solution",
       "check": { "type": "registers", "maxSteps": 200, "terminer": true, "expected": { "D0": "$00000009" } } },
-    { "type": "exercice", "id": "atari-ch03-bonus-fibo", "titre": "La suite de Fibonacci", "variante": "ecrire", "niveau": 3, "aRelire": true,
+    { "type": "exercice", "id": "atari-ch03-bonus-fibo", "titre": "La suite de Fibonacci", "variante": "ecrire", "niveau": 3,
       "enonce": "Calcule dans D0 le **20ᵉ terme** de la suite de Fibonacci : F(1) = 1, F(2) = 1, et chaque terme est la somme des deux précédents (1, 1, 2, 3, 5, 8…).",
       "indices": ["Garde les deux derniers termes dans deux registres.", "F(20) = 6765 : vérifie ton nombre de tours de boucle !"],
       "codeDepart": "@code.s#bonus-fibo-depart", "solution": "@code.s#bonus-fibo-solution",

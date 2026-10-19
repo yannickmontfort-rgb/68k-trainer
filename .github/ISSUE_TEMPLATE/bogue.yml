@@ -1,0 +1,21 @@
+name: Bogue de l'application
+description: Plantage, mauvais résultat de l'émulateur, problème d'affichage…
+title: "[Bogue] "
+labels: ["bogue"]
+body:
+  - type: textarea
+    id: quoi
+    attributes:
+      label: Que s'est-il passé ?
+      description: Et qu'attendais-tu ? Si possible, colle le programme 68000 concerné.
+    validations:
+      required: true
+  - type: textarea
+    id: etapes
+    attributes:
+      label: Comment le reproduire ?
+  - type: input
+    id: systeme
+    attributes:
+      label: Système et version
+      placeholder: "Windows 11, 68k Trainer 0.2.1"
