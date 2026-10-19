@@ -49,4 +49,11 @@ export interface Platform {
    * matériel...
    */
   isBusError?(cpu: Cpu, address: number, write: boolean): boolean
+
+  /**
+   * Appelé après chaque pas du processeur (instruction, prise d'interruption ou attente après
+   * STOP) : le matériel de la machine regarde `cpu.cycles` et demande ses interruptions (VBL,
+   * timers...).
+   */
+  afterStep?(cpu: Cpu): void
 }

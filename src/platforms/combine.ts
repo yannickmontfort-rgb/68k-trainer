@@ -4,7 +4,7 @@ import type { Size } from '../cpu/types'
 
 /**
  * Assemble plusieurs blocs de plateforme en une seule `Platform`. Pour les hooks qui renvoient un
- * booléen, le premier bloc qui répond `true` gagne ; `onMemoryWrite` et `onReset` sont appelés sur
+ * booléen, le premier bloc qui répond `true` gagne ; `onMemoryWrite`, `onReset` et `afterStep` sont appelés sur
  * tous les blocs, dans l'ordre.
  */
 export function combinePlatforms(...blocks: Platform[]): Platform {
@@ -19,6 +19,9 @@ export function combinePlatforms(...blocks: Platform[]): Platform {
     },
     onReset: (cpu: Cpu) => {
       for (const b of blocks) b.onReset?.(cpu)
+    },
+    afterStep: (cpu: Cpu) => {
+      for (const b of blocks) b.afterStep?.(cpu)
     }
   }
 }

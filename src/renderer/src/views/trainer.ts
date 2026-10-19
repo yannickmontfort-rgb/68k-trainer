@@ -61,7 +61,6 @@ export function renderTrainer(container: HTMLElement, initialProgram?: string): 
   const debogueur = new Debogueur({ ecran: true })
   container.querySelector('#dbg')!.appendChild(debogueur.element)
   const exec = new Execution(editor, debogueur, () => platformFor('atari', { modeUtilisateur: optUtilisateur.checked }))
-  let running = false
 
   function activer(actif: boolean): void {
     btnStep.disabled = !actif
@@ -99,28 +98,18 @@ export function renderTrainer(container: HTMLElement, initialProgram?: string): 
     afficherFin(effects?.error)
   }
 
-  async function doRun(): Promise<void> {
-    const cpu = exec.cpu
-    if (!cpu) return
-    running = true
+  /** Exécution à la vitesse d'un vrai ST : l'écran s'anime à 50 images par seconde. */
+  function doRun(): void {
+    if (!exec.cpu || exec.cpu.halted) return
     btnRun.textContent = 'Arrêter'
-    statusEl.textContent = 'Exécution…'
-    let error: string | undefined
-    let iterations = 0
-    // Par tranches, pour que l'écran s'anime et que le bouton Arrêter reste utilisable
-    while (running && !cpu.halted && iterations < 5_000_000) {
-      const last = exec.toutExecuter(20_000)
-      iterations += 20_000
-      if (last?.error) {
-        error = last.error
-        break
-      }
-      await new Promise((r) => setTimeout(r, 0))
-    }
-    running = false
-    btnRun.textContent = 'Exécuter'
-    if (!error && !cpu.halted) statusEl.textContent = 'Arrêté'
-    afficherFin(error)
+    btnStep.disabled = true
+    statusEl.textContent = 'Exécution en temps réel (8 MHz, 50 images/s)…'
+    exec.tempsReel((raison, effects) => {
+      btnRun.textContent = 'Exécuter'
+      btnStep.disabled = false
+      if (raison === 'arret') statusEl.textContent = 'Arrêté : tu peux continuer pas à pas'
+      afficherFin(effects?.error)
+    })
   }
 
   container.querySelector('#btn-prg')!.addEventListener('click', () => {
@@ -136,13 +125,7 @@ export function renderTrainer(container: HTMLElement, initialProgram?: string): 
     errorsEl.textContent = ''
     statusEl.textContent = 'Réinitialisé'
   })
-  btnRun.addEventListener('click', () => {
-    if (running) {
-      running = false
-      return
-    }
-    void doRun()
-  })
+  btnRun.addEventListener('click', () => (exec.enTempsReel ? exec.arreter() : doRun()))
   optUtilisateur.addEventListener('change', () => {
     ecrire(CLE_MODE, optUtilisateur.checked ? '1' : '0')
     exec.reinitialiser()
@@ -152,7 +135,7 @@ export function renderTrainer(container: HTMLElement, initialProgram?: string): 
   void onAssemble()
 
   return () => {
-    running = false
+    exec.arreter()
     editor.dispose()
   }
 }

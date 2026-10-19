@@ -203,10 +203,6 @@ export function createTos(options: TosOptions = {}): Platform {
       case 34: // Kbdvbase
         cpu.d[0] = KBDVBASE
         return true
-      case 37: // Vsync : attend la prochaine trame
-        cpu.memory.writeU32(SYSVAR.vblclock, cpu.memory.readU32(SYSVAR.vblclock) + 1)
-        cpu.memory.writeU32(SYSVAR.frclock, cpu.memory.readU32(SYSVAR.frclock) + 1)
-        return true
       case 38: {
         // Supexec(routine) : exécute la routine en superviseur, puis revient en mode d'origine
         const routine = argL(cpu, 2)

@@ -40,11 +40,19 @@ export class Cpu {
   stopped = false
   halted = false
   output = ''
+  /**
+   * Cycles d'horloge écoulés depuis le RESET (approximation : 4 cycles par accès au bus, plus le
+   * temps de calcul des multiplications, divisions, décalages et exceptions). Sert à cadencer la
+   * VBL et les timers de la machine simulée.
+   */
+  cycles = 0
 
   readonly memory = new Memory(MEMORY_SIZE)
   private inactiveSp = 0
   private stepWrites: MemoryWrite[] = []
-  private pendingInterrupt: { level: number; vector?: number } | null = null
+  /** Interruptions demandées par le matériel, par niveau (bit n = niveau n), et leur vecteur. */
+  private pendingLevels = 0
+  private readonly pendingVectors: (number | undefined)[] = new Array(8)
   /** Adresse de l'instruction en cours d'exécution (PC empilé pour les fautes). */
   private instrPc = 0
   private currentOpcode = 0
@@ -65,7 +73,8 @@ export class Cpu {
     this.flags = { x: false, n: false, z: false, v: false, c: false }
     this.halted = false
     this.output = ''
-    this.pendingInterrupt = null
+    this.pendingLevels = 0
+    this.cycles = 0
     this.platform?.onReset?.(this)
   }
 
@@ -132,9 +141,21 @@ export class Cpu {
     this.setSupervisor(false)
   }
 
-  /** Demande une interruption (niveau 1-7). Prise en compte au prochain pas si le masque le permet. */
+  /**
+   * Demande une interruption (niveau 1-7), avec son vecteur (sinon : auto-vecteur du niveau). Elle
+   * reste en attente jusqu'à ce que le masque la laisse passer, comme une ligne IPL tenue par le
+   * matériel.
+   */
   requestInterrupt(level: number, vector?: number): void {
-    this.pendingInterrupt = { level: level & 7, vector }
+    const l = level & 7
+    if (l === 0) return
+    this.pendingLevels |= 1 << l
+    this.pendingVectors[l] = vector
+  }
+
+  /** Retire une demande d'interruption pas encore prise en compte. */
+  cancelInterrupt(level: number): void {
+    this.pendingLevels &= ~(1 << (level & 7))
   }
 
   getSnapshot(): CpuSnapshot {
@@ -154,18 +175,34 @@ export class Cpu {
   }
 
   step(): StepEffects {
+    const effects = this.stepInner()
+    this.platform?.afterStep?.(this)
+    return effects
+  }
+
+  /** Niveau de l'interruption à prendre maintenant (0 = aucune). */
+  private acceptedLevel(): number {
+    if (this.pendingLevels === 0) return 0
+    const level = 31 - Math.clz32(this.pendingLevels)
+    return level === 7 || level > this.intMask ? level : 0
+  }
+
+  private stepInner(): StepEffects {
     this.stepWrites = []
     if (this.halted) return { writes: [], halted: true }
 
-    const pending = this.pendingInterrupt
-    if (pending && (pending.level === 7 || pending.level > this.intMask)) {
-      this.pendingInterrupt = null
+    const level = this.acceptedLevel()
+    if (level) {
+      this.pendingLevels &= ~(1 << level)
       this.stopped = false
-      const vector = pending.vector ?? VECTOR.autovector1 + pending.level - 1
-      const exception = this.processException(vector, this.pc, undefined, pending.level)
+      const vector = this.pendingVectors[level] ?? VECTOR.autovector1 + level - 1
+      const exception = this.processException(vector, this.pc, undefined, level)
       return { writes: this.stepWrites, halted: this.halted, exception, error: this.unhandledMessage(exception) }
     }
-    if (this.stopped) return { writes: [], halted: false }
+    if (this.stopped) {
+      this.cycles += 4
+      return { writes: [], halted: false }
+    }
 
     this.instrPc = this.pc
     try {
@@ -215,6 +252,8 @@ export class Cpu {
       accessAddress: access?.address
     }
     const handler = this.memory.readU32(vector * 4)
+    // Lecture du vecteur et temps interne (les empilements sont comptés par writeMem)
+    this.cycles += interruptLevel !== undefined ? 32 : 22
     if (handler === 0) {
       this.halted = true
       this.pc = info.pc
@@ -264,6 +303,7 @@ export class Cpu {
   readMem(address: number, size: Size): number {
     const addr = this.maskAddr(address)
     this.checkAccess(addr, size, false)
+    this.cycles += size === 4 ? 8 : 4
     return this.memory.read(addr, size)
   }
 
@@ -271,6 +311,7 @@ export class Cpu {
   writeMem(address: number, size: Size, value: number): void {
     const addr = this.maskAddr(address)
     this.checkAccess(addr, size, true)
+    this.cycles += size === 4 ? 8 : 4
     this.memory.write(addr, size, value)
     this.stepWrites.push({ address: addr, size })
     this.platform?.onMemoryWrite?.(this, addr, size, value)
@@ -279,6 +320,7 @@ export class Cpu {
   private fetchWord(): number {
     this.checkAccess(this.pc, 2, false, true)
     const value = this.memory.readU16(this.pc)
+    this.cycles += 4
     this.pc = this.maskAddr(this.pc + 2)
     return value
   }
@@ -764,6 +806,7 @@ export class Cpu {
     const word = this.d[reg] & 0xffff
     const newWord = (word - 1) & 0xffff
     this.d[reg] = (this.d[reg] & 0xffff0000) | newWord
+    this.cycles += 2
     if (newWord !== 0xffff) this.pc = this.maskAddr(dispBase + disp)
   }
 
@@ -790,6 +833,7 @@ export class Cpu {
       count = (opcode >> 9) & 0x7
       if (count === 0) count = 8
     }
+    this.cycles += (size === 4 ? 4 : 2) + 2 * count
     const value = this.shiftValue(maskToSize(this.d[reg], size), size, type, left, count)
     this.d[reg] = (this.d[reg] & (size === 4 ? 0 : size === 2 ? 0xffff0000 : 0xffffff00)) | value
   }
@@ -856,6 +900,7 @@ export class Cpu {
       const rawDivisor = this.readEA(ea, 2)
       if (rawDivisor === 0) throw new M68kException(VECTOR.zeroDivide, 'trap')
       const signed = ooo === 7
+      this.cycles += signed ? 150 : 132
       const divisor = signed ? signExtend(rawDivisor, 2) : rawDivisor & 0xffff
       const dividend = signed ? this.d[dReg] | 0 : this.d[dReg] >>> 0
       const quotient = Math.trunc(dividend / divisor)
@@ -926,6 +971,7 @@ export class Cpu {
     if (ooo === 3 || ooo === 7) {
       const ea = this.decodeEA(eaMode, eaReg, 2)
       const src = this.readEA(ea, 2)
+      this.cycles += 66
       const result =
         ooo === 7
           ? (signExtend(src, 2) * signExtend(this.d[dReg] & 0xffff, 2)) >>> 0

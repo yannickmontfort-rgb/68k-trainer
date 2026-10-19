@@ -3,7 +3,13 @@ import { Cpu } from '../../../cpu/cpu'
 import type { Platform } from '../../../cpu/platform'
 import type { StepEffects } from '../../../cpu/types'
 import type { AssembleError, AssembleResult } from '../../../shared/ipc'
+import { CPU_HZ, ROM_END, ROM_START } from '../../../platforms/atari-st/machine'
 import type { Debogueur } from './debogueur'
+
+/** Code système en ROM (routine VBL, retour de Supexec...) : le pas à pas le traverse d'un coup. */
+const enRom = (pc: number): boolean => pc >= ROM_START && pc < ROM_END
+
+export type FinTempsReel = 'fin' | 'erreur' | 'arret'
 
 /**
  * Lie un éditeur Monaco, un processeur et un débogueur : assemblage, pas à pas avec surlignage de
@@ -13,6 +19,7 @@ export class Execution {
   cpu: Cpu | null = null
   assemblage: AssembleResult | null = null
   private decorations: string[] = []
+  private tempsReelActif = false
 
   constructor(
     private readonly editor: monaco.editor.IStandaloneCodeEditor,
@@ -51,6 +58,7 @@ export class Execution {
   }
 
   reinitialiser(): void {
+    this.tempsReelActif = false
     const asm = this.assemblage
     if (!asm?.success) return
     const cpu = new Cpu(this.creerPlateforme())
@@ -70,7 +78,14 @@ export class Execution {
   pas(): StepEffects | null {
     const cpu = this.cpu
     if (!cpu || cpu.halted) return null
-    const effects = cpu.step()
+    let effects = cpu.step()
+    const writes = [...effects.writes]
+    // Interruption prise ou retour vers le système : on traverse le code en ROM jusqu'au programme
+    for (let i = 0; i < 100000 && enRom(cpu.pc) && !cpu.halted && !effects.error; i++) {
+      effects = cpu.step()
+      writes.push(...effects.writes)
+    }
+    effects = { ...effects, writes }
     this.debogueur.rafraichir(effects.writes)
     this.surligner(this.ligneCourante())
     return effects
@@ -88,6 +103,51 @@ export class Execution {
     this.debogueur.rafraichir(last?.writes ?? [])
     this.surligner(this.ligneCourante())
     return last
+  }
+
+  get enTempsReel(): boolean {
+    return this.tempsReelActif
+  }
+
+  /**
+   * Exécute à la vitesse d'un vrai ST (8 MHz, 50 trames par seconde) : l'écran et les registres
+   * sont redessinés à chaque image, jusqu'à la fin du programme, une exception ou `arreter()`.
+   */
+  tempsReel(fin: (raison: FinTempsReel, effects: StepEffects | null) => void): void {
+    const cpu = this.cpu
+    if (!cpu || cpu.halted || this.tempsReelActif) return
+    this.tempsReelActif = true
+    this.surligner(undefined)
+    let precedent = performance.now()
+    // Cible cumulée : un Vsync qui fait sauter le temps jusqu'à la VBL est « rendu » ensuite
+    let cible = cpu.cycles
+    let last: StepEffects | null = null
+    const image = (maintenant: number): void => {
+      if (!this.tempsReelActif) return fin('arret', last)
+      // Au plus 3 trames de retard (onglet en arrière-plan, machine lente)
+      const ecoule = Math.max(0, Math.min(maintenant - precedent, 60))
+      precedent = maintenant
+      cible = Math.max(cible + (ecoule * CPU_HZ) / 1000, cpu.cycles - 3 * 160256)
+      while (cpu.cycles < cible && !cpu.halted) {
+        last = cpu.step()
+        if (last.error) break
+      }
+      this.debogueur.rafraichir([])
+      if (last?.error || cpu.halted) {
+        this.tempsReelActif = false
+        this.surligner(this.ligneCourante())
+        return fin(last?.error ? 'erreur' : 'fin', last)
+      }
+      requestAnimationFrame(image)
+    }
+    requestAnimationFrame(image)
+  }
+
+  /** Interrompt le temps réel (le programme reste où il en est : on peut continuer pas à pas). */
+  arreter(): void {
+    if (!this.tempsReelActif) return
+    this.tempsReelActif = false
+    this.surligner(this.ligneCourante())
   }
 
   surligner(line: number | undefined): void {

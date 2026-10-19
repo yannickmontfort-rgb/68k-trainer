@@ -103,7 +103,9 @@ export class Debogueur {
             : `<span class="dbg-flag${on ? ' actif' : ''}" title="${title}">${n}</span>`
         )
         .join('') +
-      `<span class="dbg-mode">${snap.supervisor ? 'superviseur' : 'utilisateur'}${snap.stopped ? ' · STOP' : ''}</span>`
+      `<span class="dbg-mode">${snap.supervisor ? 'superviseur' : 'utilisateur'}${snap.stopped ? ' · STOP' : ''}</span>` +
+      `<div class="dbg-temps" title="Approximation : 4 cycles par accès mémoire, plus les calculs longs (MUL, DIV, décalages). Un ST tourne à 8 MHz et affiche 50 images par seconde (160 256 cycles par image).">` +
+      `${cpu.cycles.toLocaleString('fr-FR')} cycles · ${(cpu.cycles / 8010.612).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} ms · image n° ${Math.floor(cpu.cycles / 160256)}</div>`
 
     const lignesPile: string[] = []
     for (let i = 0; i < 6; i++) {

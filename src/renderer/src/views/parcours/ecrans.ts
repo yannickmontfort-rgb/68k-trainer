@@ -117,6 +117,7 @@ export function ecranExemple(el: HTMLElement, ex: ContenuExemple, ctx: ContexteE
           <div class="toolbar-mini">
             <button id="btn-pas" class="btn-principal" disabled>▶ Pas suivant</button>
             <button id="btn-tout" disabled>⏭ Jusqu'au bout</button>
+            ${ex.machine?.ecran ? '<button id="btn-temps-reel" disabled title="Exécute à la vitesse d’un vrai ST : l’écran s’anime à 50 images par seconde">🎬 Temps réel</button>' : ''}
             <button id="btn-reset">↺ Recommencer</button>
             <span class="statut" id="statut"></span>
           </div>
@@ -169,6 +170,7 @@ export function ecranExemple(el: HTMLElement, ex: ContenuExemple, ctx: ContexteE
     const res = await exec.assembler(ex.code)
     btnPas.disabled = !res.success
     btnTout.disabled = !res.success
+    if (btnTempsReel) btnTempsReel.disabled = !res.success
     conclusionEl.hidden = true
     statut.textContent = res.success ? '' : 'Erreur d’assemblage (contenu à corriger)'
     expliquer(undefined)
@@ -185,17 +187,38 @@ export function ecranExemple(el: HTMLElement, ex: ContenuExemple, ctx: ContexteE
     expliquer(undefined)
     fin(effects?.error)
   })
+  const btnTempsReel = el.querySelector<HTMLButtonElement>('#btn-temps-reel')
+  btnTempsReel?.addEventListener('click', () => {
+    if (exec.enTempsReel) return exec.arreter()
+    btnTempsReel.textContent = '⏸ Arrêter'
+    btnPas.disabled = true
+    btnTout.disabled = true
+    statut.textContent = 'Temps réel…'
+    exec.tempsReel((raison, effects) => {
+      btnTempsReel.textContent = '🎬 Temps réel'
+      if (raison === 'arret') {
+        btnPas.disabled = false
+        btnTout.disabled = false
+        statut.textContent = 'Arrêté'
+        expliquer(undefined)
+      } else fin(effects?.error)
+    })
+  })
   el.querySelector('#btn-reset')!.addEventListener('click', () => {
     exec.reinitialiser()
     btnPas.disabled = false
     btnTout.disabled = false
+    if (btnTempsReel) btnTempsReel.disabled = false
     statut.textContent = ''
     conclusionEl.hidden = true
     expliquer(undefined)
   })
   el.querySelector('#btn-suivant')!.addEventListener('click', () => ctx.suivant())
   void demarrer()
-  return () => editor.dispose()
+  return () => {
+    exec.arreter()
+    editor.dispose()
+  }
 }
 
 // --- Exercice (et défi bonus) ---------------------------------------------------------
@@ -250,6 +273,7 @@ export function ecranExercice(el: HTMLElement, ex: ContenuExercice, ctx: Context
           <div class="toolbar-mini">
             <button id="dbg-pas" class="btn-principal">▶ Pas</button>
             <button id="dbg-tout">⏭ Jusqu'au bout</button>
+            ${ex.machine?.ecran ? '<button id="dbg-temps-reel" title="Exécute à la vitesse d’un vrai ST : l’écran s’anime à 50 images par seconde">🎬 Temps réel</button>' : ''}
             <button id="dbg-reset">↺</button>
             <button id="dbg-fermer" title="Fermer le pas à pas">✕</button>
             <span class="statut" id="dbg-statut"></span>
@@ -397,6 +421,18 @@ export function ecranExercice(el: HTMLElement, ex: ContenuExercice, ctx: Context
   }
   el.querySelector('#dbg-pas')!.addEventListener('click', () => apres(exec?.pas() ?? null))
   el.querySelector('#dbg-tout')!.addEventListener('click', () => apres(exec?.toutExecuter(ex.check.maxSteps) ?? null))
+  const dbgTempsReel = el.querySelector<HTMLButtonElement>('#dbg-temps-reel')
+  dbgTempsReel?.addEventListener('click', () => {
+    if (!exec) return
+    if (exec.enTempsReel) return exec.arreter()
+    dbgTempsReel.textContent = '⏸ Arrêter'
+    dbgStatut.textContent = 'Temps réel…'
+    exec.tempsReel((raison, effects) => {
+      dbgTempsReel.textContent = '🎬 Temps réel'
+      if (raison === 'arret') dbgStatut.textContent = 'Arrêté'
+      else apres(effects)
+    })
+  })
   el.querySelector('#dbg-reset')!.addEventListener('click', () => {
     exec?.reinitialiser()
     dbgStatut.textContent = 'Recommencé'
@@ -411,6 +447,7 @@ export function ecranExercice(el: HTMLElement, ex: ContenuExercice, ctx: Context
   el.querySelector('#btn-suivant')!.addEventListener('click', () => ctx.suivant())
 
   return () => {
+    exec?.arreter()
     editor?.dispose()
     editeurPasAPas?.dispose()
   }
