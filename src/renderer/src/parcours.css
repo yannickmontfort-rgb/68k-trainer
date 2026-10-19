@@ -75,8 +75,20 @@
 }
 
 .parcours-fini {
+  max-width: 420px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.parcours-fini strong {
   color: var(--vert);
-  font-weight: 600;
+  font-size: 15px;
+}
+
+.btn-certificat {
+  margin-top: 8px;
+  font-size: 12px;
+  padding: 3px 10px;
 }
 
 /* --- Barres de progression ---------------------------------------------------- */

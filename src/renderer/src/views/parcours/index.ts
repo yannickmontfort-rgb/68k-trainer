@@ -13,6 +13,8 @@ import {
 import { getContent } from '../../content'
 import { chargerProgression, memoriserPosition } from '../../progressionStore'
 import { echapper } from './markdown'
+import { htmlCertificat } from '../../../../shared/certificat'
+import { profilActif } from '../../profilActif'
 import {
   ecranChapitre,
   ecranCours,
@@ -121,10 +123,22 @@ export function renderParcours(container: HTMLElement): () => void {
           <div class="entete-chiffres"><strong>${d.pourcentage} %</strong> du parcours · ${d.chapitresTermines}/${d.chapitresTotal} chapitres terminés</div>
           ${barre(d.pourcentage, 'barre-globale')}
           <div class="entete-bonus" title="Les défis bonus ne comptent pas dans le pourcentage">★ Défis bonus : ${d.bonusFaits}/${d.bonusTotal}</div>
+          ${d.chapitresTermines > 0 ? `<button class="btn-certificat" id="btn-certificat" title="Un PDF à imprimer : nom, date, chapitres validés">📜 ${d.chapitresTermines === d.chapitresTotal ? 'Mon certificat' : 'Attestation de progression'}</button>` : ''}
         </div>
-        ${reprise ? `<button class="btn-principal btn-reprendre" id="btn-reprendre" title="${echapper(titreReprise)}">${!p.derniere ? 'Commencer' : reprise === p.derniere.etapeId ? 'Reprendre' : 'Continuer'} : ${echapper(titreReprise)}</button>` : '<div class="parcours-fini">Parcours terminé, bravo ! 🎉</div>'}
+        ${
+          reprise
+            ? `<button class="btn-principal btn-reprendre" id="btn-reprendre" title="${echapper(titreReprise)}">${!p.derniere ? 'Commencer' : reprise === p.derniere.etapeId ? 'Reprendre' : 'Continuer'} : ${echapper(titreReprise)}</button>`
+            : `<div class="parcours-fini"><strong>Parcours terminé, bravo ! 🎉</strong><br>Tu sais maintenant programmer le ST en assembleur : écran, animation, clavier, joystick, son, et de vrais .PRG. Il reste ${d.bonusTotal - d.bonusFaits} défi${d.bonusTotal - d.bonusFaits > 1 ? 's' : ''} bonus à relever, et le bac à sable t'attend pour tes propres démos.</div>`
+        }
       `
       enteteEl.querySelector('#btn-reprendre')?.addEventListener('click', () => reprise && ouvrir(reprise))
+      enteteEl.querySelector('#btn-certificat')?.addEventListener('click', () => {
+        void window.api.getBuildInfo().then((info) => {
+          const nom = profilActif()?.nom ?? 'Apprenant'
+          const html = htmlCertificat(parcours!, p, { nom, version: info.version })
+          return window.api.exporterPdf(html, `Certificat 68k Trainer - ${nom}`)
+        })
+      })
     }
 
     function ligneContenu(c: Contenu | ContenuExercice, genre: string): string {

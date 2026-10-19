@@ -86,6 +86,26 @@ app.whenReady().then(() => {
     return { ok: true, chemin: choix.filePath }
   })
   ipcMain.handle(IPC.fabriquerPrg, (_event, source: string) => fabriquerPrg(source))
+  // Certificat : page HTML rendue dans une fenêtre invisible, imprimée en PDF (A4 paysage)
+  ipcMain.handle(IPC.exporterPdf, async (event, html: string, nom: string) => {
+    const fenetre = BrowserWindow.fromWebContents(event.sender)!
+    const choix = await dialog.showSaveDialog(fenetre, {
+      title: 'Enregistrer le certificat',
+      defaultPath: `${nom}.pdf`,
+      filters: [{ name: 'Document PDF', extensions: ['pdf'] }]
+    })
+    if (choix.canceled || !choix.filePath) return { ok: false }
+    const invisible = new BrowserWindow({ show: false, webPreferences: { javascript: false } })
+    try {
+      await invisible.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html))
+      const pdf = await invisible.webContents.printToPDF({ landscape: true, pageSize: 'A4', printBackground: true })
+      await writeFile(choix.filePath, pdf)
+    } finally {
+      invisible.destroy()
+    }
+    void shell.openPath(choix.filePath)
+    return { ok: true, chemin: choix.filePath }
+  })
   ipcMain.handle(IPC.loadContent, () => loadContent())
   ipcMain.handle(IPC.getBuildInfo, () => getBuildInfo())
 

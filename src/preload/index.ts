@@ -37,7 +37,9 @@ const api = {
   enregistrerPrg: (octets: Uint8Array, nom: string): Promise<{ ok: boolean; chemin?: string }> =>
     ipcRenderer.invoke(IPC.enregistrerPrg, octets, nom),
   fabriquerPrg: (source: string): Promise<{ octets?: Uint8Array; raison?: string }> =>
-    ipcRenderer.invoke(IPC.fabriquerPrg, source)
+    ipcRenderer.invoke(IPC.fabriquerPrg, source),
+  exporterPdf: (html: string, nom: string): Promise<{ ok: boolean; chemin?: string }> =>
+    ipcRenderer.invoke(IPC.exporterPdf, html, nom)
 }
 
 contextBridge.exposeInMainWorld('api', api)
