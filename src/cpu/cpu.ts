@@ -46,6 +46,11 @@ export class Cpu {
    * VBL et les timers de la machine simulée.
    */
   cycles = 0
+  /**
+   * Vrai quand la dernière instruction était un appel système qui attend (Vsync, touche) et sera
+   * réexécuté : le pas à pas de l'interface continue alors jusqu'à la fin de l'attente.
+   */
+  waiting = false
 
   readonly memory = new Memory(MEMORY_SIZE)
   private inactiveSp = 0
@@ -57,7 +62,12 @@ export class Cpu {
   private instrPc = 0
   private currentOpcode = 0
 
-  constructor(private readonly platform?: Platform) {}
+  /** Début des registres matériels lus par `platform.readIo` (au-delà : simple RAM). */
+  private readonly ioStart: number
+
+  constructor(private readonly platform?: Platform) {
+    this.ioStart = platform?.readIo ? (platform.ioStart ?? 0) : Infinity
+  }
 
   reset(baseAddress: number): void {
     this.memory.reset()
@@ -189,13 +199,16 @@ export class Cpu {
 
   private stepInner(): StepEffects {
     this.stepWrites = []
+    this.waiting = false
     if (this.halted) return { writes: [], halted: true }
 
     const level = this.acceptedLevel()
     if (level) {
       this.pendingLevels &= ~(1 << level)
       this.stopped = false
-      const vector = this.pendingVectors[level] ?? VECTOR.autovector1 + level - 1
+      // Cycle d'acquittement : le périphérique (MFP...) peut fournir son propre vecteur
+      const vector =
+        this.platform?.acknowledgeInterrupt?.(this, level) ?? this.pendingVectors[level] ?? VECTOR.autovector1 + level - 1
       const exception = this.processException(vector, this.pc, undefined, level)
       return { writes: this.stepWrites, halted: this.halted, exception, error: this.unhandledMessage(exception) }
     }
@@ -304,6 +317,10 @@ export class Cpu {
     const addr = this.maskAddr(address)
     this.checkAccess(addr, size, false)
     this.cycles += size === 4 ? 8 : 4
+    if (addr >= this.ioStart) {
+      const io = this.platform!.readIo!(this, addr, size)
+      if (io !== undefined) return io
+    }
     return this.memory.read(addr, size)
   }
 

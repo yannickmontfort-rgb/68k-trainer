@@ -7,7 +7,12 @@ import type { MachineOptions, Plateforme } from './parcours'
 /** Plateforme simulée pour un contenu du parcours (Amiga : 68000 nu pour l'instant). */
 export function platformFor(plateforme: Plateforme, machine?: MachineOptions): Platform | undefined {
   if (plateforme === 'atari' || plateforme === 'commun') {
-    return createAtariSt({ userMode: machine?.modeUtilisateur ?? false, keys: machine?.touches })
+    return createAtariSt({
+      userMode: machine?.modeUtilisateur ?? false,
+      keys: machine?.touches,
+      clavierInteractif: machine?.interactif,
+      evenements: machine?.evenements
+    })
   }
   return undefined
 }

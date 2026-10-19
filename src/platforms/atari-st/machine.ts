@@ -28,7 +28,7 @@ export const SYSVAR = {
   frclock: 0x466, // compteur de trames
   conterm: 0x484, // bits : 0 = clic clavier, 1 = répétition, 2 = sonnerie Ctrl+G
   v_bas_ad: 0x44e, // adresse de l'écran logique
-  hz_200: 0x4ba // compteur 200 Hz
+  hz_200: 0x4ba // compteur 200 Hz (timer C)
 } as const
 
 /** Fin de la zone protégée en mode utilisateur (vecteurs + variables système). */
@@ -55,6 +55,9 @@ export const BASEPAGE = 0x0d00
 /** File des routines VBL (8 pointeurs, pointée par _vblqueue). */
 export const VBLQUEUE_TABLE = 0x0e00
 export const VBLQUEUE_SLOTS = 8
+/** Tampons des paquets du clavier : état/souris/horloge (8 octets) et joysticks (3 octets). */
+export const KBDBUF = 0x0e40
+export const JOYBUF = 0x0e50
 
 /**
  * Durée d'une trame en cycles : un ST PAL tourne à 8,0106 MHz et affiche 50,05 images par
@@ -72,6 +75,10 @@ export const ROM_RTS = ROM_START // un simple RTS : vecteurs clavier par défaut
 export const ROM_PROGRAM_EXIT = ROM_START + 0x10 // retour du programme principal par RTS
 export const ROM_SUPEXEC_RETURN = ROM_START + 0x20 // fin d'une routine appelée par Supexec
 export const ROM_VBL = ROM_START + 0x100 // routine VBL du TOS (vecteur $70)
+export const ROM_TIMER_C = ROM_START + 0x200 // timer C du MFP, 200 Hz (vecteur $114)
+export const ROM_ACIA = ROM_START + 0x240 // interruption clavier/MIDI (vecteur $118)
+export const ROM_IKBDSYS = ROM_START + 0x300 // traitement d'un octet du clavier (Kbdvbase+32)
+export const OP_IKBDSYS = 0xa0fb
 export const OP_PROGRAM_EXIT = 0xa0fd
 export const OP_SUPEXEC_RETURN = 0xa0fe
 

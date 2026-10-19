@@ -56,4 +56,19 @@ export interface Platform {
    * timers...).
    */
   afterStep?(cpu: Cpu): void
+
+  /**
+   * Lecture d'un registre matériel qui a un effet de bord ou une valeur calculée (registre de
+   * données de l'ACIA, compteur d'un timer...). Appelé seulement pour les adresses ≥ `ioStart`.
+   * Renvoyer `undefined` : lecture normale de la mémoire.
+   */
+  readIo?(cpu: Cpu, address: number, size: Size): number | undefined
+  /** Première adresse confiée à `readIo` (par défaut 0). */
+  ioStart?: number
+
+  /**
+   * Cycle d'acquittement d'une interruption de niveau `level` acceptée par le processeur : le
+   * périphérique renvoie son numéro de vecteur (MFP du ST), ou `undefined` pour l'auto-vecteur.
+   */
+  acknowledgeInterrupt?(cpu: Cpu, level: number): number | undefined
 }

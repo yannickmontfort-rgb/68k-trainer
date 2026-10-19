@@ -4,16 +4,22 @@ import {
   BASEPAGE,
   DEFAULT_PALETTE,
   HARDWARE_START,
+  JOYBUF,
+  KBDBUF,
   KBDVBASE,
+  OP_IKBDSYS,
   OP_PROGRAM_EXIT,
   OP_SUPEXEC_RETURN,
   PALETTE_BASE,
   PROTECTED_LOW_END,
+  ROM_ACIA,
   ROM_END,
+  ROM_IKBDSYS,
   ROM_PROGRAM_EXIT,
   ROM_RTS,
   ROM_START,
   ROM_SUPEXEC_RETURN,
+  ROM_TIMER_C,
   SCREEN_BASE,
   SUPERVISOR_STACK,
   SYSVAR,
@@ -24,6 +30,8 @@ import {
   VIDEO_BASE_MID
 } from './machine'
 import { screenAddress } from './screen'
+import { routinesRom } from './rom'
+import { CODE, traduire } from './clavier'
 
 export interface AtariKey {
   ascii: number
@@ -39,7 +47,23 @@ export interface TosOptions {
   userMode?: boolean
   /** Touches « tapées » à l'avance, lues par Cnecin/Crawcin/Cconin/Bconin. */
   keys?: AtariKey[]
+  /**
+   * Vrai : quand aucune touche n'est disponible, Cnecin & co attendent qu'on en tape une (clavier
+   * de l'interface). Faux : erreur « aucune touche prévue » (exercices vérifiés automatiquement).
+   */
+  clavierInteractif?: boolean
 }
+
+/** Longueur des paquets de l'IKBD (en-tête compris), selon l'en-tête $F6-$FF. */
+const LONGUEUR_PAQUET: Record<number, number> = { 0xf6: 8, 0xf7: 6, 0xf8: 3, 0xf9: 3, 0xfa: 3, 0xfb: 3, 0xfc: 7, 0xfd: 3, 0xfe: 2, 0xff: 2 }
+/** Bits de Kbshift. */
+const SHIFT_DROIT = 0x01
+const SHIFT_GAUCHE = 0x02
+const CONTROL = 0x04
+const ALTERNATE = 0x08
+const CAPS = 0x10
+/** Taille du tampon clavier du TOS (en touches). */
+const TAMPON_CLAVIER = 64
 
 /** Mot à l'offset `offset` de la pile active (paramètres d'un appel TOS). */
 function argW(cpu: Cpu, offset: number): number {
@@ -61,12 +85,99 @@ export function createTos(options: TosOptions = {}): Platform {
   let keys: AtariKey[] = []
   let randomSeed = 0
   const supexecStack: { sr: number; pc: number }[] = []
+  let kbshift = 0
+  let paquet: number[] | null = null
 
-  function nextKey(cpu: Cpu, echo: boolean): void {
+  /** Lit une touche ; le programme attend si le clavier est interactif et le tampon vide. */
+  function nextKey(cpu: Cpu, echo: boolean): boolean {
     const key = keys.shift()
-    if (!key) throw new Error("Le programme attend une touche, mais aucune touche n'a été prévue pour cet exercice.")
+    if (!key) {
+      if (options.clavierInteractif) return attendreTouche(cpu)
+      throw new Error("Le programme attend une touche, mais aucune touche n'a été prévue pour cet exercice.")
+    }
     if (echo) cpu.output += String.fromCharCode(key.ascii)
     cpu.d[0] = ((key.scancode & 0xff) << 16) | (key.ascii & 0xff)
+    return true
+  }
+
+  /**
+   * Comme le vrai TOS qui boucle en attendant une touche (interruptions autorisées) : le TRAP sera
+   * réexécuté, et le temps passe pendant ce temps.
+   */
+  function attendreTouche(cpu: Cpu): boolean {
+    cpu.pc = (cpu.pc - 2) & 0xffffff
+    cpu.cycles += 100
+    cpu.waiting = true
+    return true
+  }
+
+  /** Code clavier reçu de l'IKBD (bit 7 = touche relâchée) : touches mortes ou caractère. */
+  function codeClavier(cpu: Cpu, octet: number): void {
+    const code = octet & 0x7f
+    const enfoncee = (octet & 0x80) === 0
+    const bit =
+      code === CODE.shiftDroit
+        ? SHIFT_DROIT
+        : code === CODE.shiftGauche
+          ? SHIFT_GAUCHE
+          : code === CODE.control
+            ? CONTROL
+            : code === CODE.alternate
+              ? ALTERNATE
+              : 0
+    if (bit) {
+      kbshift = enfoncee ? kbshift | bit : kbshift & ~bit
+      return
+    }
+    if (!enfoncee) return
+    if (code === CODE.capsLock) {
+      kbshift ^= CAPS
+      return
+    }
+    let ascii = traduire(cpu, code, (kbshift & (SHIFT_DROIT | SHIFT_GAUCHE)) !== 0, (kbshift & CONTROL) !== 0)
+    if (kbshift & CAPS && ascii >= 0x61 && ascii <= 0x7a) ascii -= 0x20
+    if (keys.length < TAMPON_CLAVIER) keys.push({ ascii, scancode: code })
+  }
+
+  /**
+   * ikbdsys (ROM) a lu l'octet D0 : touche, ou morceau d'un paquet. Un paquet complet est rangé
+   * comme le fait le TOS (EmuTOS, aciavecs.S) et A1 reçoit le vecteur à appeler, A0 le paquet.
+   */
+  function octetIkbd(cpu: Cpu): void {
+    const octet = cpu.d[0] & 0xff
+    const mem = cpu.memory
+    cpu.a[1] = 0
+    if (!paquet) {
+      if (octet < 0xf6) return codeClavier(cpu, octet)
+      paquet = [octet]
+      return
+    }
+    paquet.push(octet)
+    const entete = paquet[0]
+    if (paquet.length < LONGUEUR_PAQUET[entete]) return
+    const p = paquet
+    paquet = null
+    let vecteur: number
+    let a0 = KBDBUF
+    if (entete >= 0xfd) {
+      // Joysticks : tampon de 3 octets. $FD : joy0, joy1 ; $FE : en-tête, joy0 ; $FF : en-tête, -, joy1
+      if (entete === 0xfd) {
+        mem.writeU8(JOYBUF, p[1])
+        mem.writeU8(JOYBUF + 1, p[2])
+      } else {
+        mem.writeU8(JOYBUF, entete)
+        mem.writeU8(JOYBUF + (entete === 0xfe ? 1 : 2), p[1])
+      }
+      a0 = JOYBUF
+      vecteur = KBDVBASE + 24
+    } else {
+      // Souris relative : en-tête compris ; état, souris absolue, horloge : sans l'en-tête
+      const donnees = entete >= 0xf8 && entete <= 0xfb ? p : p.slice(1)
+      donnees.forEach((o, i) => mem.writeU8(KBDBUF + i, o))
+      vecteur = KBDVBASE + (entete === 0xf6 ? 12 : entete === 0xfc ? 20 : 16)
+    }
+    cpu.a[0] = a0
+    cpu.a[1] = mem.readU32(vecteur)
   }
 
   function setVideoBase(cpu: Cpu, address: number): void {
@@ -81,15 +192,13 @@ export function createTos(options: TosOptions = {}): Platform {
         cpu.halted = true
         return true
       case 0x01: // Cconin : lit une touche avec écho
-        nextKey(cpu, true)
-        return true
+        return nextKey(cpu, true)
       case 0x02: // Cconout(car)
         cpu.output += String.fromCharCode(argW(cpu, 2) & 0xff)
         return true
       case 0x07: // Crawcin
       case 0x08: // Cnecin
-        nextKey(cpu, false)
-        return true
+        return nextKey(cpu, false)
       case 0x09: // Cconws(chaîne)
         cpu.output += cpu.memory.readCString(argL(cpu, 2))
         cpu.d[0] = 0
@@ -135,8 +244,7 @@ export function createTos(options: TosOptions = {}): Platform {
         cpu.d[0] = keys.length > 0 ? 0xffffffff : 0
         return true
       case 2: // Bconin(périph)
-        nextKey(cpu, false)
-        return true
+        return nextKey(cpu, false)
       case 3: {
         // Bconout(périph, car) : 2 = console, 5 = console brute
         const device = argW(cpu, 2)
@@ -151,9 +259,13 @@ export function createTos(options: TosOptions = {}): Platform {
         if (address !== 0xffffffff) cpu.memory.writeU32(number * 4, address)
         return true
       }
-      case 11: // Kbshift : aucune touche de contrôle enfoncée
-        cpu.d[0] = 0
+      case 11: {
+        // Kbshift(mode) : état des touches Shift, Control, Alternate, CapsLock ; mode ≥ 0 le modifie
+        const mode = argW(cpu, 2)
+        cpu.d[0] = kbshift
+        if (mode !== 0xffff) kbshift = mode & 0xff
         return true
+      }
       default:
         throw new Error(`Fonction BIOS ${fn} non simulée.`)
     }
@@ -222,7 +334,13 @@ export function createTos(options: TosOptions = {}): Platform {
       keys = [...(options.keys ?? [])]
       randomSeed = 0x12345678
       supexecStack.length = 0
+      kbshift = 0
+      paquet = null
       const mem = cpu.memory
+      for (const [adresse, octets] of routinesRom()) mem.loadBytes(adresse, octets)
+      mem.writeU32(0x114, ROM_TIMER_C)
+      mem.writeU32(0x118, ROM_ACIA)
+      for (let i = 0; i < 16; i++) mem.writeU8(KBDBUF + i, 0)
       // Code « en ROM »
       mem.writeU16(ROM_RTS, 0x4e75)
       mem.writeU16(ROM_PROGRAM_EXIT, OP_PROGRAM_EXIT)
@@ -233,7 +351,8 @@ export function createTos(options: TosOptions = {}): Platform {
       mem.writeU8(SYSVAR.conterm, 0x07)
       DEFAULT_PALETTE.forEach((color, i) => mem.writeU16(PALETTE_BASE + i * 2, color))
       // Table Kbdvbase : 9 vecteurs (MIDI, erreurs, statut, souris, horloge, joystick...) → RTS
-      for (let i = 0; i < 9; i++) mem.writeU32(KBDVBASE + i * 4, ROM_RTS)
+      for (let i = 0; i < 8; i++) mem.writeU32(KBDVBASE + i * 4, ROM_RTS)
+      mem.writeU32(KBDVBASE + 32, ROM_IKBDSYS)
       // Piles en RAM. Comme sous le TOS, la pile du programme contient l'adresse de retour (un RTS
       // final termine proprement le programme) puis l'adresse de la page de base.
       // Le TOS fait tourner les programmes avec le masque d'interruption à 3 (SR = $0300 / $2300)
@@ -260,6 +379,10 @@ export function createTos(options: TosOptions = {}): Platform {
       const at = (cpu.pc - 2) & 0xffffff
       if (opcode === OP_PROGRAM_EXIT && at === ROM_PROGRAM_EXIT) {
         cpu.halted = true
+        return true
+      }
+      if (opcode === OP_IKBDSYS && at >= ROM_IKBDSYS && at < ROM_IKBDSYS + 0x40) {
+        octetIkbd(cpu)
         return true
       }
       if (opcode === OP_SUPEXEC_RETURN && at === ROM_SUPEXEC_RETURN) {

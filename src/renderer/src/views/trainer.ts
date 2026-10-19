@@ -60,7 +60,7 @@ export function renderTrainer(container: HTMLElement, initialProgram?: string): 
 
   const debogueur = new Debogueur({ ecran: true })
   container.querySelector('#dbg')!.appendChild(debogueur.element)
-  const exec = new Execution(editor, debogueur, () => platformFor('atari', { modeUtilisateur: optUtilisateur.checked }))
+  const exec = new Execution(editor, debogueur, () => platformFor('atari', { modeUtilisateur: optUtilisateur.checked, interactif: true }))
 
   function activer(actif: boolean): void {
     btnStep.disabled = !actif

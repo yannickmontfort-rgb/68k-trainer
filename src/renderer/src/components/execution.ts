@@ -80,8 +80,9 @@ export class Execution {
     if (!cpu || cpu.halted) return null
     let effects = cpu.step()
     const writes = [...effects.writes]
-    // Interruption prise ou retour vers le système : on traverse le code en ROM jusqu'au programme
-    for (let i = 0; i < 100000 && enRom(cpu.pc) && !cpu.halted && !effects.error; i++) {
+    // Interruption prise, retour vers le système ou appel qui attend (Vsync) : on va d'un coup
+    // jusqu'à la prochaine instruction du programme
+    for (let i = 0; i < 200000 && (enRom(cpu.pc) || cpu.waiting) && !cpu.halted && !effects.error; i++) {
       effects = cpu.step()
       writes.push(...effects.writes)
     }

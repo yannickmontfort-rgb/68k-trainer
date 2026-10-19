@@ -22,6 +22,26 @@ export function combinePlatforms(...blocks: Platform[]): Platform {
     },
     afterStep: (cpu: Cpu) => {
       for (const b of blocks) b.afterStep?.(cpu)
+    },
+    ...(blocks.some((b) => b.readIo)
+      ? {
+          ioStart: Math.min(...blocks.filter((b) => b.readIo).map((b) => b.ioStart ?? 0)),
+          readIo: (cpu: Cpu, address: number, size: Size) => {
+            for (const b of blocks) {
+              if (!b.readIo || address < (b.ioStart ?? 0)) continue
+              const v = b.readIo(cpu, address, size)
+              if (v !== undefined) return v
+            }
+            return undefined
+          }
+        }
+      : {}),
+    acknowledgeInterrupt: (cpu: Cpu, level: number) => {
+      for (const b of blocks) {
+        const v = b.acknowledgeInterrupt?.(cpu, level)
+        if (v !== undefined) return v
+      }
+      return undefined
     }
   }
 }

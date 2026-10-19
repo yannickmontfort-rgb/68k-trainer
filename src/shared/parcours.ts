@@ -17,6 +17,25 @@ export interface MachineOptions {
   ecran?: boolean
   /** Adresse affichée au départ dans la vue mémoire du débogueur (sinon : début du programme). */
   memoire?: number
+  /**
+   * Clavier et joystick de l'interface branchés sur le ST simulé : Cnecin attend une vraie
+   * touche au lieu de s'arrêter quand les touches prévues sont épuisées.
+   */
+  interactif?: boolean
+  /** Événements joués pendant l'exécution (exercices vérifiés automatiquement). */
+  evenements?: EvenementMachine[]
+}
+
+/** Action sur le clavier ou le joystick, à l'image (VBL) n° `image` depuis le lancement. */
+export interface EvenementMachine {
+  image: number
+  /** Code clavier du ST enfoncé (puis relâché aussitôt, sauf `maintenue`). */
+  touche?: number
+  /** Caractère de la touche (sinon : clavier QWERTY). */
+  caractere?: string
+  maintenue?: boolean
+  /** Nouvel état du joystick 1 (bits : 1 haut, 2 bas, 4 gauche, 8 droite, $80 bouton). */
+  joystick?: number
 }
 
 interface ContenuBase {

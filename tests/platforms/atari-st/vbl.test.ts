@@ -109,9 +109,19 @@ COMPTEUR: DC.W 0`
     expect(cpu.memory.readU32(0x45e)).toBe(0)
   })
 
-  it('STOP attend la VBL', () => {
-    const { cpu, error } = run(`    STOP #$2300\n    MOVE.L $466.W,D5\n${PTERM0}`, { userMode: false })
+  it('STOP attend la première interruption : le timer C (200 Hz) arrive avant la VBL', () => {
+    const { cpu, error } = run(`    STOP #$2300\n    MOVE.L $4BA.W,D5\n    MOVE.L $466.W,D6\n${PTERM0}`, { userMode: false })
     expect(error).toBeUndefined()
     expect(cpu.d[5]).toBe(1)
+    expect(cpu.d[6]).toBe(0)
+  })
+
+  it('masque à 5 : la VBL (niveau 4) est retenue, le MFP (niveau 6) passe toujours', () => {
+    const { cpu } = run(
+      `    MOVE.W #$2500,SR\n    MOVE.L #100000,D0\n.attente:\n    SUBQ.L #1,D0\n    BNE.S .attente\n${PTERM0}`,
+      { userMode: false }
+    )
+    expect(cpu.memory.readU32(SYSVAR.frclock)).toBe(0)
+    expect(cpu.memory.readU32(SYSVAR.hz_200)).toBe(Math.floor(cpu.cycles / ((192 * 64 * 8010612) / 2457600)))
   })
 })

@@ -82,12 +82,15 @@ export interface Vbl extends Platform {
  */
 export function createVbl(options: VblOptions = {}): Vbl {
   let prochaine = CYCLES_PER_VBL
+  /** Vsync en cours : la VBL attendue (null = pas d'attente). */
+  let attendue: number | null = null
 
   return {
     prochaine: () => prochaine,
 
     onReset(cpu: Cpu): void {
       prochaine = CYCLES_PER_VBL
+      attendue = null
       const mem = cpu.memory
       mem.loadBytes(ROM_VBL, romVbl())
       mem.writeU32(0x70, ROM_VBL)
@@ -100,10 +103,16 @@ export function createVbl(options: VblOptions = {}): Vbl {
     },
 
     onTrap(cpu: Cpu, n: number): boolean {
-      // Vsync : le programme attend la fin du balayage en cours. Le temps saute jusqu'à la VBL,
-      // dont la routine s'exécute juste après le retour du TRAP (comme sous le vrai TOS).
+      // Vsync : comme le vrai TOS, attend en boucle (interruptions servies) que la VBL suivante
+      // soit passée. Le TRAP est réexécuté jusque-là.
       if (n !== 14 || cpu.memory.readU16(cpu.a[7] & 0xffffff) !== 37) return false
-      if (cpu.cycles < prochaine) cpu.cycles = prochaine
+      if (attendue === null) attendue = prochaine
+      if (prochaine === attendue) {
+        cpu.pc = (cpu.pc - 2) & 0xffffff
+        // ≈ un tour de la boucle « CMP.L _frclock,D0 / BEQ » du TOS
+        cpu.cycles += Math.min(28, Math.max(4, prochaine - cpu.cycles))
+        cpu.waiting = true
+      } else attendue = null
       return true
     },
 
