@@ -15,7 +15,7 @@ chapitre précédent.
 
 ## Multiplier
 
-```asm
+```text
     MULU    src,Dn      ; non signé : Dn.L ← Dn.W × src.W
     MULS    src,Dn      ; signé
 ```
@@ -27,7 +27,7 @@ mots comme non signés, `MULS` (*signed*) comme signés : `$FFFF × 2` vaut 131 
 
 ## Diviser
 
-```asm
+```text
     DIVU    src,Dn      ; Dn.L ÷ src.W, non signé
     DIVS    src,Dn      ; signé
 ```

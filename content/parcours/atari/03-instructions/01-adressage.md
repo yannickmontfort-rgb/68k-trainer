@@ -3,7 +3,7 @@
 La moitié d'un programme en assembleur consiste à **déplacer des données** : d'un registre à un
 autre, de la mémoire vers un registre, d'une adresse à une autre. C'est le travail de `MOVE` :
 
-```asm
+```text
     MOVE.taille  source,destination
 ```
 

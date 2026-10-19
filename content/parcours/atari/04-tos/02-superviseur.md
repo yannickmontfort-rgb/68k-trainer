@@ -23,7 +23,7 @@ puis revient en mode utilisateur. La routine se termine par un simple `RTS`.
     MOVE.W  #38,-(SP)       ; XBIOS 38 : Supexec
     TRAP    #14
     ADDQ.L  #6,SP           ; 4 + 2 octets
-    ...
+    ; ...
 ROUTINE:                    ; ici, tout est permis
     BCLR    #0,$484         ; plus de clic clavier
     RTS
@@ -42,7 +42,7 @@ La fonction **GEMDOS 32, `Super`**, fait basculer tout le programme :
     TRAP    #1
     ADDQ.L  #6,SP
     MOVE.L  D0,ANCIENNE_PILE ; Super renvoie l'ancienne pile superviseur : on la garde
-    ...                     ; ici, mode superviseur
+    ; ... ici, mode superviseur
     MOVE.L  ANCIENNE_PILE,-(SP)
     MOVE.W  #32,-(SP)       ; même appel, avec l'ancienne pile : retour en utilisateur
     TRAP    #1
