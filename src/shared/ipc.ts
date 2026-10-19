@@ -109,7 +109,42 @@ export interface BuildInfo {
   builtAt: string | null
 }
 
+/** Profil tel que vu par l'interface : jamais le mot de passe ni son hachage. */
+export interface ProfilPublic {
+  id: string
+  nom: string
+  protege: boolean
+  creeLe: string
+}
+
+export interface ResultatProfil {
+  ok: boolean
+  erreur?: string
+  profil?: ProfilPublic
+}
+
+/** Fichier d'export d'un profil (.68kprofil). */
+export interface ExportProfil {
+  format: '68k-trainer-profil'
+  version: 1
+  nom: string
+  exporteLe: string
+  progression: ProgressState
+  /** Brouillons de code (exercices, bac à sable). */
+  brouillons: Record<string, string>
+}
+
 export const IPC = {
+  listerProfils: '68k:listerProfils',
+  creerProfil: '68k:creerProfil',
+  ouvrirProfil: '68k:ouvrirProfil',
+  fermerProfil: '68k:fermerProfil',
+  renommerProfil: '68k:renommerProfil',
+  motDePasseProfil: '68k:motDePasseProfil',
+  supprimerProfil: '68k:supprimerProfil',
+  exporterProfil: '68k:exporterProfil',
+  importerProfil: '68k:importerProfil',
+  tableauProfils: '68k:tableauProfils',
   assemble: '68k:assemble',
   loadProgress: '68k:loadProgress',
   saveProgress: '68k:saveProgress',

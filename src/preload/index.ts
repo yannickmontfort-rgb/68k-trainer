@@ -5,7 +5,10 @@ import {
   type AssembleResult,
   type BuildInfo,
   type ContentBundle,
-  type ProgressState
+  type ExportProfil,
+  type ProfilPublic,
+  type ProgressState,
+  type ResultatProfil
 } from '../shared/ipc'
 
 const api = {
@@ -14,7 +17,23 @@ const api = {
   loadProgress: (): Promise<ProgressState> => ipcRenderer.invoke(IPC.loadProgress),
   saveProgress: (state: ProgressState): Promise<void> => ipcRenderer.invoke(IPC.saveProgress, state),
   loadContent: (): Promise<ContentBundle> => ipcRenderer.invoke(IPC.loadContent),
-  getBuildInfo: (): Promise<BuildInfo> => ipcRenderer.invoke(IPC.getBuildInfo)
+  getBuildInfo: (): Promise<BuildInfo> => ipcRenderer.invoke(IPC.getBuildInfo),
+  listerProfils: (): Promise<{ profils: ProfilPublic[]; dernier?: string }> => ipcRenderer.invoke(IPC.listerProfils),
+  creerProfil: (nom: string, motDePasse?: string): Promise<ResultatProfil> =>
+    ipcRenderer.invoke(IPC.creerProfil, nom, motDePasse),
+  ouvrirProfil: (id: string, motDePasse?: string): Promise<ResultatProfil> =>
+    ipcRenderer.invoke(IPC.ouvrirProfil, id, motDePasse),
+  fermerProfil: (): Promise<void> => ipcRenderer.invoke(IPC.fermerProfil),
+  renommerProfil: (nom: string): Promise<ResultatProfil> => ipcRenderer.invoke(IPC.renommerProfil, nom),
+  motDePasseProfil: (actuel?: string, nouveau?: string): Promise<ResultatProfil> =>
+    ipcRenderer.invoke(IPC.motDePasseProfil, actuel, nouveau),
+  supprimerProfil: (actuel?: string): Promise<ResultatProfil> => ipcRenderer.invoke(IPC.supprimerProfil, actuel),
+  exporterProfil: (brouillons: Record<string, string>): Promise<{ ok: boolean; chemin?: string }> =>
+    ipcRenderer.invoke(IPC.exporterProfil, brouillons),
+  importerProfil: (motDePasse?: string): Promise<ResultatProfil & { brouillons?: ExportProfil['brouillons'] }> =>
+    ipcRenderer.invoke(IPC.importerProfil, motDePasse),
+  tableauProfils: (): Promise<{ profil: ProfilPublic; progression: ProgressState }[]> =>
+    ipcRenderer.invoke(IPC.tableauProfils)
 }
 
 contextBridge.exposeInMainWorld('api', api)

@@ -2,6 +2,7 @@ import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 import { platformFor } from '../../../shared/runProgram'
 import { Debogueur } from '../components/debogueur'
 import { Execution } from '../components/execution'
+import { ecrireLocal as ecrire, lireLocal as lire } from '../profilActif'
 
 const DEFAULT_PROGRAM = `; Bac à sable : écris ici ce que tu veux, puis Assembler et Pas / Exécuter.
 ; La machine simulée est un Atari 1040 STF (écran en $F8000).
@@ -15,22 +16,6 @@ START:
 
 const CLE_PROGRAMME = 'bac-a-sable:programme'
 const CLE_MODE = 'bac-a-sable:mode-utilisateur'
-
-function lire(cle: string): string | null {
-  try {
-    return localStorage.getItem(cle)
-  } catch {
-    return null
-  }
-}
-
-function ecrire(cle: string, valeur: string): void {
-  try {
-    localStorage.setItem(cle, valeur)
-  } catch {
-    /* stockage indisponible */
-  }
-}
 
 /** Rend le bac à sable : éditeur libre + débogueur complet. Retourne une fonction de nettoyage. */
 export function renderTrainer(container: HTMLElement, initialProgram?: string): () => void {

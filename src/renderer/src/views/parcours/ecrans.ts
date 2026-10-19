@@ -15,6 +15,7 @@ import { platformFor } from '../../../../shared/runProgram'
 import { Debogueur } from '../../components/debogueur'
 import { Execution } from '../../components/execution'
 import { enregistrerQcm, marquerExerciceReussi, marquerVu } from '../../progressionStore'
+import { ecrireLocal, lireLocal } from '../../profilActif'
 import { sourceOrdonne, verifierExercice } from '../../verifier'
 import { blocCode, echapper, renderMarkdown } from './markdown'
 
@@ -289,20 +290,9 @@ export function ecranExercice(el: HTMLElement, ex: ContenuExercice, ctx: Context
     ordre = melanger(ex.lignes ?? [], ex.id)
     renderOrdonner()
   } else {
-    let brouillon: string | null = null
-    try {
-      brouillon = localStorage.getItem(CLE_BROUILLON + ex.id)
-    } catch {
-      brouillon = null
-    }
+    const brouillon = lireLocal(CLE_BROUILLON + ex.id)
     editor = creerEditeur(el.querySelector('#editeur')!, brouillon ?? ex.codeDepart, false)
-    editor.onDidChangeModelContent(() => {
-      try {
-        localStorage.setItem(CLE_BROUILLON + ex.id, editor!.getValue())
-      } catch {
-        /* stockage indisponible : pas de brouillon */
-      }
-    })
+    editor.onDidChangeModelContent(() => ecrireLocal(CLE_BROUILLON + ex.id, editor!.getValue()))
   }
 
   const sourceActuel = (): string => (editor ? editor.getValue() : sourceOrdonne(ex, ordre))

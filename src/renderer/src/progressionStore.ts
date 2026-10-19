@@ -52,6 +52,12 @@ export function memoriserPosition(parcoursId: string, chapitreId: string, etapeI
   enregistrer()
 }
 
+/** Oublie la progression en mémoire (changement de profil) : elle sera relue au prochain accès. */
+export function oublierProgression(): void {
+  state = null
+  loading = null
+}
+
 /** Remet la progression à zéro (bouton dans « À propos »). */
 export function reinitialiserProgression(): void {
   state = normaliserProgression(null)

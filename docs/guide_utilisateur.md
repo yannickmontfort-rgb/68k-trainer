@@ -75,7 +75,24 @@ Ton code est gardé automatiquement : si tu quittes un exercice, tu le retrouves
   chargé en `$1000` ; les directives `TEXT`, `DATA` et `BSS` sont acceptées (les sections sont mises
   bout à bout). L'alignement n'est **pas** automatique, comme sous Devpac : pense à `EVEN`.
 
-## Ta progression
+## Les profils
 
-Elle est enregistrée sur ton ordinateur seulement (fichier `progress.json` dans
-`%APPDATA%\trainer-68k`). L'onglet **À propos** permet de la remettre à zéro.
+Au lancement, l'écran **« Qui es-tu ? »** liste les profils de l'ordinateur. Chacun a sa propre
+progression et ses propres brouillons de code. S'il n'y a qu'un profil sans mot de passe, il
+s'ouvre directement.
+
+- **Nouveau profil** : un prénom ou un pseudo, et un **mot de passe facultatif**. Le mot de passe
+  empêche les autres d'ouvrir ton profil dans l'application ; il n'est jamais enregistré en clair.
+  Ce n'est pas un coffre-fort : les fichiers restent sur le disque.
+- **Changer de profil** : bouton en haut à droite.
+- **Mon profil** (onglet À propos) : renommer, ajouter, changer ou retirer le mot de passe,
+  remettre la progression à zéro, supprimer le profil.
+- **Exporter mon profil** (onglet À propos) crée un fichier `.68kprofil` ; **Importer un profil**
+  (écran « Qui es-tu ? ») le recrée sur un autre ordinateur, avec sa progression et ses brouillons.
+  C'est la façon de passer de la maison au lycée.
+- **Tableau de suivi** (écran « Qui es-tu ? », dès qu'il y a plusieurs profils) : la progression de
+  chaque profil, chapitre par chapitre. Il ne montre ni le code ni les mots de passe.
+
+Tout reste sur l'ordinateur : aucun compte en ligne, aucun serveur. Les données sont dans
+`%APPDATA%	rainer-68k` (un dossier par profil). La progression d'une version précédente est
+reprise automatiquement dans un profil nommé « Moi ».

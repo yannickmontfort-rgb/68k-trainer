@@ -173,7 +173,7 @@ Ce qui mérite le plus ton œil d'enseignant :
   page À propos). vasm garde sa licence propre (non commerciale, redistribution sans
   modification autorisée) : voir `THIRD_PARTY.md`.
 
-## 8. Amélioration future validée (19/10/2026) : profils d'utilisateurs
+## 8. Profils d'utilisateurs — FAIT le 19/10/2026 (non encore dans les binaires 0.2.0)
 
 - **Plusieurs profils** sur un même poste : écran « Qui es-tu ? » au lancement, un fichier de
   progression par profil (cours, exercices, QCM, dernière position, brouillons), nom affiché en
@@ -185,3 +185,11 @@ Ce qui mérite le plus ton œil d'enseignant :
 - **Exclu, volontairement** : synchronisation par serveur ou comptes en ligne. L'application doit
   rester légère et 100 % locale.
 - Estimation : environ une journée, tests compris.
+
+**Réalisé** (`src/main/profils.ts`, `src/renderer/src/views/profils.ts`) : tout ce qui est listé
+ci-dessus. Mot de passe haché avec scrypt et un sel. Les brouillons sont rangés par profil. La
+progression de la v0.1/0.2 est migrée dans un profil « Moi », et l'ancien fichier est gardé.
+10 tests unitaires, plus un essai complet dans l'application (création, mauvais mot de passe,
+changement de profil, tableau, suppression, migration). L'export et l'import passent par des
+boîtes de dialogue Windows, que l'automate de test ne peut pas piloter : la logique est testée
+unitairement, le clic sur « Exporter » / « Importer » reste à essayer à la main.
