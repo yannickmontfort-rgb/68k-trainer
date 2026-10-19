@@ -7,7 +7,7 @@ Session menée en autonomie sur **DARTHVADER**, d'après la roadmap V3 privée
 |---|---|
 | Branche | `v3` (19 commits) ; `main` reste en 0.2.1, `version-0.2` garde la 0.2.x avec vasm |
 | Version | **1.0.0** (pas encore taguée) |
-| Tests | **431 tests verts** sur Windows, plus le typecheck ; comparaison complète avec vasm verte |
+| Tests | **433 tests** (431 verts + 2 Hatari facultatifs) et le typecheck ; comparaison complète avec vasm verte |
 | Binaires Windows | `Nextcloud/Logiciels_Projets/68k-Trainer_binaires/` |
 
 ## 1. Ce qui a été fait, phase par phase
@@ -57,6 +57,19 @@ GitHub Actions (tests sur les trois systèmes ; paquets à chaque tag).
 ### Phase 3 — SignPath
 Le point bloquant (vasm, non libre) est levé. Le dossier `docs/signpath/DOSSIER_CANDIDATURE.md`
 est à jour ; il reste les étapes qui te reviennent (ci-dessous).
+
+### Retours d'utilisation de la 0.2 (`Retour utilisation.txt`), corrigés en 1.0.0
+- **La solution ne se fermait pas** : bouton « Masquer la solution ».
+- **Pas à pas qui « déconne »** : chaque clic sur « Pas à pas » créait une nouvelle exécution sur
+  le même éditeur ; l'ancienne laissait sa ligne surlignée (deux surlignages) et les points
+  d'arrêt basculaient en double. Une seule exécution désormais ; modifier le code pendant le pas à
+  pas relance l'assemblage. Le « retour » qui partait dans la ROM (après `RTS` ou `Supexec`) est
+  traversé d'un coup. Les soulignements rouges et jaunes des erreurs, bloqués par la politique de
+  sécurité de la page, s'affichent de nouveau.
+- **Plus moyen d'écrire dans l'exercice** : pas reproduit par navigation ; la cause la plus
+  probable est un bug connu d'Electron sous Windows (après une boîte native `confirm`/`alert`,
+  comme celle du bouton ↺, la saisie ne marche plus jusqu'au redémarrage). Les boîtes natives sont
+  remplacées par des boîtes dans la page. **À revérifier de ton côté** avec la 1.0.0.
 
 ## 2. Erreurs du manuel trouvées et corrigées (voir `docs/errata_manuel_atari_v2.md`)
 - **Routine 7.3** (sprite au pixel près) : alignement `$FFFE`, mot fort de D0 jamais remis à zéro,
