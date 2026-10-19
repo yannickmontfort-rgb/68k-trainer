@@ -2,6 +2,7 @@ import type { ProfilPublic } from '../../../shared/ipc'
 import { brouillonsDuProfil, effacerBrouillons, profilActif } from '../profilActif'
 import { chargerProgression, reinitialiserProgression } from '../progressionStore'
 import { echapper } from './parcours/markdown'
+import { confirmer } from '../components/dialogue'
 
 function signalerProfil(profil: ProfilPublic | null): void {
   window.dispatchEvent(new CustomEvent('profil-modifie', { detail: profil }))
@@ -94,14 +95,16 @@ export function renderApropos(container: HTMLElement): () => void {
     })
 
     root.querySelector('#btn-reset-progression')!.addEventListener('click', () => {
-      if (!confirm('Effacer toute ta progression (cours lus, exercices réussis, QCM) ? Cette action est définitive.')) return
-      reinitialiserProgression()
-      message('Progression effacée.')
+      void confirmer('Effacer toute ta progression (cours lus, exercices réussis, QCM) ? Cette action est définitive.', 'Effacer').then((oui) => {
+        if (!oui) return
+        reinitialiserProgression()
+        message('Progression effacée.')
+      })
     })
 
     root.querySelector('#btn-supprimer')!.addEventListener('click', () => {
       void (async () => {
-        if (!confirm(`Supprimer définitivement le profil « ${profil.nom} », sa progression et ses brouillons ?`)) return
+        if (!(await confirmer(`Supprimer définitivement le profil « ${profil.nom} », sa progression et ses brouillons ?`, 'Supprimer'))) return
         const mdp = root.querySelector<HTMLInputElement>('#mdp-suppr')?.value
         const res = await window.api.supprimerProfil(mdp)
         if (!res.ok) return message(res.erreur ?? 'Suppression impossible.', true)

@@ -19,6 +19,7 @@ import { enregistrerQcm, marquerExerciceReussi, marquerVu } from '../../progress
 import { ecrireLocal, lireLocal } from '../../profilActif'
 import { sourceOrdonne, verifierExercice } from '../../verifier'
 import { blocCode, echapper, renderMarkdown } from './markdown'
+import { confirmer, informer } from '../../components/dialogue'
 
 export interface ContexteEcran {
   plateforme: Plateforme
@@ -345,13 +346,25 @@ export function ecranExercice(el: HTMLElement, ex: ContenuExercice, ctx: Context
     majSolution()
   })
   majSolution()
+  // La solution s'ouvre et se referme (« lis-la, puis ferme-la »)
+  let blocSolution: HTMLDivElement | null = null
   btnSolution.addEventListener('click', () => {
-    const bloc = document.createElement('div')
-    bloc.className = 'solution'
-    bloc.innerHTML = '<h4>Une solution possible</h4><p>Lis-la, puis ferme-la et réécris le programme toi-même : c’est comme ça qu’on retient.</p>'
-    bloc.appendChild(blocCode(ex.solution || '(solution non fournie)'))
-    indicesEl.after(bloc)
-    btnSolution.disabled = true
+    if (blocSolution) {
+      blocSolution.remove()
+      blocSolution = null
+      btnSolution.textContent = 'Voir la solution'
+      return
+    }
+    blocSolution = document.createElement('div')
+    blocSolution.className = 'solution'
+    blocSolution.innerHTML = '<h4>Une solution possible</h4><p>Lis-la, puis ferme-la et réécris le programme toi-même : c’est comme ça qu’on retient.</p>'
+    blocSolution.appendChild(blocCode(ex.solution || '(solution non fournie)'))
+    const fermer = document.createElement('button')
+    fermer.textContent = 'Masquer la solution'
+    fermer.addEventListener('click', () => btnSolution.click())
+    blocSolution.appendChild(fermer)
+    indicesEl.after(blocSolution)
+    btnSolution.textContent = 'Masquer la solution'
   })
 
   // Vérification
@@ -394,38 +407,60 @@ export function ecranExercice(el: HTMLElement, ex: ContenuExercice, ctx: Context
   const dbgStatut = el.querySelector<HTMLSpanElement>('#dbg-statut')!
   const dbg = new Debogueur({ ecran: ex.machine?.ecran })
   el.querySelector('#dbg')!.appendChild(dbg.element)
+  // Une seule exécution par éditeur : en recréer une à chaque clic laissait l'ancienne surligner
+  // sa ligne et basculer les points d'arrêt en double.
   let exec: Execution | null = null
   let editeurPasAPas: monaco.editor.IStandaloneCodeEditor | null = null
-  el.querySelector('#btn-pas-a-pas')!.addEventListener('click', () => {
-    void (async () => {
-      panneau.hidden = false
-      let cible = editor
-      if (!cible) {
-        // « Ordonner » : un petit éditeur en lecture seule montre le programme reconstitué
-        if (!editeurPasAPas) {
-          const zone = document.createElement('div')
-          zone.className = 'editeur-pas-a-pas'
-          panneau.insertBefore(zone, el.querySelector('#dbg'))
-          editeurPasAPas = creerEditeur(zone, '', true)
-        }
-        editeurPasAPas.setValue(sourceActuel())
-        cible = editeurPasAPas
+  /** Faux quand le code a changé depuis le dernier assemblage du pas à pas. */
+  let aJour = false
+  async function preparerPasAPas(): Promise<void> {
+    panneau.hidden = false
+    let cible = editor
+    if (!cible) {
+      // « Ordonner » : un petit éditeur en lecture seule montre le programme reconstitué
+      if (!editeurPasAPas) {
+        const zone = document.createElement('div')
+        zone.className = 'editeur-pas-a-pas'
+        panneau.insertBefore(zone, el.querySelector('#dbg'))
+        editeurPasAPas = creerEditeur(zone, '', true)
       }
-      exec = new Execution(cible, dbg, () => platformFor(ctx.plateforme, ex.machine), ex.machine?.memoire)
-      const res = await exec.assembler(sourceActuel())
-      dbgStatut.textContent = res.success ? 'Prêt : avance pas à pas' : 'Erreur d’assemblage : voir les lignes soulignées'
-    })()
+      editeurPasAPas.setValue(sourceActuel())
+      cible = editeurPasAPas
+    }
+    exec ??= new Execution(cible, dbg, () => platformFor(ctx.plateforme, ex.machine), ex.machine?.memoire)
+    exec.arreter()
+    const res = await exec.assembler(sourceActuel())
+    aJour = true
+    dbgStatut.textContent = res.success ? 'Prêt : avance pas à pas' : 'Erreur d’assemblage : voir les lignes soulignées'
+  }
+  editor?.onDidChangeModelContent(() => {
+    if (!exec || !aJour) return
+    aJour = false
+    exec.arreter()
+    exec.surligner(undefined)
+    dbgStatut.textContent = 'Code modifié : le prochain pas repart du début avec ton nouveau code'
   })
+  el.querySelector('#btn-pas-a-pas')!.addEventListener('click', () => void preparerPasAPas())
+  /** Lance une action du débogueur, après avoir réassemblé si le code a changé. */
+  const agir = (action: (e: Execution) => ReturnType<Execution['pas']>): void => {
+    void (async () => {
+      if (!exec || !aJour) {
+        await preparerPasAPas()
+        return
+      }
+      apres(action(exec))
+    })()
+  }
   const apres = (effects: ReturnType<Execution['pas']>): void => {
     if (effects?.error) dbgStatut.textContent = effects.error
     else if (exec?.arreteSurPoint) dbgStatut.textContent = "Point d'arrêt"
     else if (effects?.halted) dbgStatut.textContent = 'Programme terminé'
   }
-  el.querySelector('#dbg-pas')!.addEventListener('click', () => apres(exec?.pas() ?? null))
-  el.querySelector('#dbg-tout')!.addEventListener('click', () => apres(exec?.toutExecuter(ex.check.maxSteps) ?? null))
+  el.querySelector('#dbg-pas')!.addEventListener('click', () => agir((e) => e.pas()))
+  el.querySelector('#dbg-tout')!.addEventListener('click', () => agir((e) => e.toutExecuter(ex.check.maxSteps)))
   const dbgTempsReel = el.querySelector<HTMLButtonElement>('#dbg-temps-reel')
   dbgTempsReel?.addEventListener('click', () => {
-    if (!exec) return
+    if (!exec || !aJour) return void preparerPasAPas()
     if (exec.enTempsReel) return exec.arreter()
     dbgTempsReel.textContent = '⏸ Arrêter'
     dbgStatut.textContent = 'Temps réel…'
@@ -445,7 +480,10 @@ export function ecranExercice(el: HTMLElement, ex: ContenuExercice, ctx: Context
     exec?.surligner(undefined)
   })
   el.querySelector('#btn-reinit')?.addEventListener('click', () => {
-    if (editor && confirm('Revenir au code de départ ? Ton code actuel sera perdu.')) editor.setValue(ex.codeDepart)
+    if (!editor) return
+    void confirmer('Revenir au code de départ ? Ton code actuel sera perdu.', 'Revenir au départ').then((oui) => {
+      if (oui) editor!.setValue(ex.codeDepart)
+    })
   })
   el.querySelector('#btn-suivant')!.addEventListener('click', () => ctx.suivant())
 
@@ -533,7 +571,7 @@ export function ecranPrediction(el: HTMLElement, pred: ContenuPrediction, ctx: C
   el.querySelector('#btn-valider')!.addEventListener('click', () => {
     const reponses = lireReponses(questionsEl, pred.questions, pred.id)
     if (reponses.some((r) => r === undefined)) {
-      alert('Réponds à toutes les questions avant de valider : il faut d’abord prédire, sans exécuter.')
+      void informer('Réponds à toutes les questions avant de valider : il faut d’abord prédire, sans exécuter.')
       return
     }
     corrigerQuestions(questionsEl, pred.questions, reponses)
@@ -541,13 +579,14 @@ export function ecranPrediction(el: HTMLElement, pred: ContenuPrediction, ctx: C
     if (marquerVu(pred.id)) ctx.progressionChangee()
   })
   const dbgEl = el.querySelector<HTMLDivElement>('#dbg')!
+  // Créés une seule fois : un second clic réutilise le même débogueur et la même exécution
+  const dbg = new Debogueur({ ecran: pred.machine?.ecran })
+  const exec = new Execution(editor, dbg, () => platformFor(ctx.plateforme, pred.machine), pred.machine?.memoire)
   btnExecuter.addEventListener('click', () => {
     void (async () => {
       dbgEl.hidden = false
       dbgEl.innerHTML = ''
-      const dbg = new Debogueur({ ecran: pred.machine?.ecran })
       dbgEl.appendChild(dbg.element)
-      const exec = new Execution(editor, dbg, () => platformFor(ctx.plateforme, pred.machine), pred.machine?.memoire)
       const res = await exec.assembler(pred.code)
       if (!res.success) return
       const effects = exec.toutExecuter(100000)
@@ -558,7 +597,10 @@ export function ecranPrediction(el: HTMLElement, pred: ContenuPrediction, ctx: C
     })()
   })
   el.querySelector('#btn-suivant')!.addEventListener('click', () => ctx.suivant())
-  return () => editor.dispose()
+  return () => {
+    exec.arreter()
+    editor.dispose()
+  }
 }
 
 export function ecranQcm(el: HTMLElement, chapitre: Chapitre, ctx: ContexteEcran): Nettoyage {

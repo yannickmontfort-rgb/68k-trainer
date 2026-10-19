@@ -17,7 +17,9 @@ const ORG_RE = /^(?:\S+:?)?\s+ORG\b/i
  * (vasm -Fbin l'exige) et les directives de section sont neutralisées.
  */
 export function prepareSource(source: string): { source: string; lineOffset: number } {
-  const lines = source.split(/\r?\n/).map((l) => (SECTION_RE.test(l) ? '; ' + l : l))
+  // Les sections sont mises bout à bout pour vasm ; comme sous TOS (et dans notre assembleur),
+  // chacune commence à une adresse paire : la directive devient un EVEN (même nombre de lignes)
+  const lines = source.split(/\r?\n/).map((l) => (SECTION_RE.test(l) ? '    EVEN ; ' + l.trim() : l))
   if (lines.some((l) => ORG_RE.test(l))) return { source: lines.join('\n'), lineOffset: 0 }
   return { source: '    ORG $1000\n' + lines.join('\n'), lineOffset: 1 }
 }

@@ -525,3 +525,35 @@ html, body, #app {
   font-size: 12px;
   margin: 10px 0 0;
 }
+
+/* --- Boîtes de dialogue (à la place de confirm/alert) ------------------------- */
+
+.dialogue-fond {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dialogue {
+  background: #252526;
+  border: 1px solid #454545;
+  border-radius: 6px;
+  padding: 18px 20px;
+  max-width: 460px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+}
+
+.dialogue p {
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+
+.dialogue-boutons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
