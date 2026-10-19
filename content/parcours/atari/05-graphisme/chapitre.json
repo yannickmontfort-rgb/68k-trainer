@@ -1,0 +1,130 @@
+{
+  "id": "atari-ch05",
+  "titre": "Graphisme : l'écran, les plans de bits et la palette",
+  "plateforme": "atari",
+  "resume": "Le chapitre le plus visuel : l'écran de l'Atari est de la mémoire, et chaque bit est un morceau de pixel. Tu vas calculer l'adresse d'un pixel, comprendre les **4 plans de bits entrelacés** de la basse résolution, corriger la routine PSET du manuel (qui contient deux erreurs !) et jouer avec la palette. Correspond au module 3 du manuel et aux exercices 7.1-1 et 7.2 de son module 7.",
+  "notions": [
+    {
+      "id": "atari-ch05-n1",
+      "titre": "L'écran et les plans de bits",
+      "contenus": [
+        { "type": "cours", "id": "atari-ch05-cours-ecran", "titre": "Framebuffer, résolutions et plans entrelacés", "fichier": "01-ecran.md", "aRelire": true, "source": "Reformulé d'après le manuel Atari ST v1 (§ 3.1-3.3) et v2 (§ 3.1-3.3), formules corrigées (voir l'errata du manuel v2)" },
+        {
+          "type": "exemple", "id": "atari-ch05-ex-pixel", "titre": "Allumer un pixel, pas à pas", "aRelire": true,
+          "introduction": "On allume le pixel (37, 100) en couleur 1. Suis le calcul de l'adresse dans A0, puis regarde l'**écran** dans le panneau de droite : un petit point rouge apparaît au milieu, à gauche.",
+          "code": "@code.s#pixel-exemple",
+          "machine": { "modeUtilisateur": true, "ecran": true, "memoire": 1015808 },
+          "explications": [
+            { "ligne": 4, "texte": "Physbase a renvoyé l'adresse de l'écran dans D0 : `$000F8000`." },
+            { "ligne": 5, "texte": "A0 pointe sur le premier octet de l'écran (en haut à gauche)." },
+            { "ligne": 7, "texte": "100 × 160 = 16 000 octets : c'est le décalage du début de la ligne 100." },
+            { "ligne": 8, "texte": "A0 pointe sur le début de la ligne 100 : `$FBE80`." },
+            { "ligne": 11, "texte": "37 ÷ 16 = 2 (division entière) : le pixel est dans le 3ᵉ groupe de 16 pixels." },
+            { "ligne": 12, "texte": "× 8 octets par groupe : 16 octets." },
+            { "ligne": 13, "texte": "A0 pointe sur le **plan 0** du groupe qui contient les pixels 32 à 47." },
+            { "ligne": 14, "texte": "37 mod 16 = 5 : c'est le 6ᵉ pixel du groupe." },
+            { "ligne": 16, "texte": "Le pixel de gauche est le bit 15 : le 6ᵉ est le bit 15 − 5 = **10**." },
+            { "ligne": 18, "texte": "D5 = `%0000 0100 0000 0000` : un masque avec seulement le bit 10 à 1." },
+            { "ligne": 19, "texte": "OR allume ce bit dans le plan 0 sans toucher aux 15 autres pixels du mot. Couleur %0001 = 1 : rouge avec la palette par défaut. Regarde l'écran !" }
+          ],
+          "conclusion": "Écran + Y × 160 + (X ÷ 16) × 8, puis le bit 15 − (X mod 16) : retiens cette recette, toutes les routines graphiques du ST en dépendent."
+        },
+        {
+          "type": "prediction", "id": "atari-ch05-pred-adresse", "titre": "L'exercice 1 du manuel", "aRelire": true,
+          "introduction": "L'exercice 1 du module 7 du manuel, avec l'écran d'un 1040 ST en `$F8000` : où est le groupe qui contient le pixel (160, 100) ? Devpac (et vasm) savent calculer l'expression à l'assemblage.",
+          "code": "@code.s#prediction-adresse",
+          "machine": { "modeUtilisateur": true },
+          "questions": [
+            { "id": "q1", "enonce": "Que vaut A0 ?", "choix": ["$000FBED0", "$000FBE80", "$000FBF20"], "bonne": 0, "explication": "100 × 160 = 16 000 = $3E80 ; (160 ÷ 16) × 8 = 80 = $50 ; $F8000 + $3E80 + $50 = $FBED0.", "verification": { "A0": "$000FBED0" } },
+            { "id": "q2", "enonce": "Et D2, le numéro du bit du pixel dans son mot ?", "choix": ["0", "15", "10"], "bonne": 1, "explication": "160 mod 16 = 0 : c'est le premier pixel du groupe, donc le bit 15.", "verification": { "D2": "$0000000F" } }
+          ]
+        },
+        { "type": "exercice", "id": "atari-ch05-exo-couleur3", "titre": "Un pixel de couleur 3", "variante": "completer", "niveau": 1, "aRelire": true,
+          "enonce": "Le programme allume le pixel (0, 0) dans le plan 0. Ajoute **une** instruction pour qu'il prenne la couleur **3** (`%0011`).",
+          "indices": ["Couleur 3 = bit 0 et bit 1 à 1 : plans 0 et 1.", "Le plan 1 est le mot suivant : `OR.W #$8000,2(A0)`."],
+          "codeDepart": "@code.s#couleur3-depart", "solution": "@code.s#couleur3-solution",
+          "check": { "type": "pixels", "maxSteps": 100, "terminer": true, "expected": { "0,0": "3", "1,0": "0" } },
+          "machine": { "modeUtilisateur": true, "ecran": true } },
+        { "type": "exercice", "id": "atari-ch05-exo-ligne", "titre": "Un trait de 32 pixels", "variante": "ecrire", "niveau": 2, "aRelire": true,
+          "enonce": "Sur la ligne **Y = 10**, trace un trait de **32 pixels** (X de 0 à 31) en couleur 1.",
+          "indices": ["Le début de la ligne 10 est à écran + 10 × 160 (`LEA 10*160(A0),A0`).", "32 pixels = 2 groupes : le plan 0 du 2ᵉ groupe est 8 octets plus loin."],
+          "codeDepart": "@code.s#ligne-depart", "solution": "@code.s#ligne-solution",
+          "check": { "type": "pixels", "maxSteps": 100, "terminer": true, "expected": { "0,10": "1", "31,10": "1", "32,10": "0", "0,9": "0" } },
+          "machine": { "modeUtilisateur": true, "ecran": true } },
+        { "type": "exercice", "id": "atari-ch05-exo-pset", "titre": "Les deux erreurs de PSET", "variante": "corriger", "niveau": 3, "aRelire": true,
+          "enonce": "Voici la routine **PSET** du manuel (module 7.2), qui doit dessiner le pixel (37, 10) en couleur 5. Elle s'assemble, elle ne plante pas… mais le pixel n'apparaît pas. Elle contient **deux erreurs**. Avance pas à pas dans PSET en surveillant A0 et compare avec la recette du cours.",
+          "indices": ["Regarde A0 après `ADDA.L D0,A0` : que contenait le mot fort de D0 ?", "(X ÷ 16) × 8 n'est pas X ÷ 2 : il faut aligner sur 8 octets (`$FFF8`), pas sur 2. Et n'ajoute que le mot faible de D0 (`ADDA.W`)."],
+          "codeDepart": "@code.s#pset-depart", "solution": "@code.s#pset-solution",
+          "check": { "type": "pixels", "maxSteps": 200, "terminer": true, "expected": { "37,10": "5", "36,10": "0", "38,10": "0" } },
+          "machine": { "modeUtilisateur": true, "ecran": true },
+          "source": "Routine PSET du manuel Atari ST v2, module 7.2, reproduite avec ses erreurs" }
+      ]
+    },
+    {
+      "id": "atari-ch05-n2",
+      "titre": "La palette",
+      "contenus": [
+        { "type": "cours", "id": "atari-ch05-cours-palette", "titre": "Numéros de couleur et palette", "fichier": "02-palette.md", "aRelire": true, "source": "Reformulé d'après le manuel Atari ST v1 (§ 3.4) et la fiche « graphisme bas niveau » de la v0.1" },
+        {
+          "type": "exemple", "id": "atari-ch05-ex-palette", "titre": "Changer tout l'écran sans le redessiner", "aRelire": true,
+          "introduction": "On remplit tout l'écran avec la couleur n° 2 (vert par défaut), puis on change seulement la **palette**. Utilise « Jusqu'au bout » pour la boucle de remplissage (4 000 tours !), ou avance pas à pas pour en voir un ou deux.",
+          "code": "@code.s#palette-exemple",
+          "machine": { "modeUtilisateur": true, "ecran": true },
+          "explications": [
+            { "ligne": 6, "texte": "32 000 octets ÷ 8 octets par groupe = 4 000 groupes ; DBRA fera 3 999 + 1 tours." },
+            { "ligne": 8, "texte": "Plan 0 du groupe : 16 bits à 0." },
+            { "ligne": 9, "texte": "Plan 1 : 16 bits à 1." },
+            { "ligne": 10, "texte": "Plans 2 et 3 d'un coup, avec un mot long à 0. Les 16 pixels du groupe ont la couleur %0010 = 2." },
+            { "ligne": 11, "texte": "Groupe suivant. Le haut de l'écran se remplit de vert." },
+            { "ligne": 15, "texte": "**Setcolor(2, $007)** : la couleur 2 devient bleue. Tout l'écran change de couleur d'un coup, sans qu'un seul octet de l'écran ait été modifié." }
+          ],
+          "conclusion": "Remplir l'écran a demandé 16 000 instructions ; changer sa couleur, un seul appel. C'est tout l'intérêt de la palette."
+        },
+        {
+          "type": "prediction", "id": "atari-ch05-pred-palette", "titre": "Quelle couleur à l'écran ?", "aRelire": true,
+          "introduction": "Même remplissage en couleur 2, puis un autre Setcolor.",
+          "code": "@code.s#palette-prediction",
+          "machine": { "modeUtilisateur": true, "ecran": true },
+          "questions": [
+            { "id": "q1", "enonce": "De quelle couleur est l'écran à la fin ?", "choix": ["Vert", "Rouge", "Noir"], "bonne": 1, "explication": "Les pixels portent le numéro 2, et Setcolor a mis $700 (rouge) dans la couleur 2.", "verification": { "$FF8244.W": "$0700" } },
+            { "id": "q2", "enonce": "Combien d'octets de la mémoire écran le Setcolor a-t-il modifiés ?", "choix": ["32 000", "16", "Aucun"], "bonne": 2, "explication": "Setcolor ne touche qu'à un registre de palette, pas à la mémoire écran." }
+          ]
+        },
+        { "type": "exercice", "id": "atari-ch05-exo-rouge15", "titre": "Une couleur de la palette", "variante": "ecrire", "niveau": 1, "aRelire": true,
+          "enonce": "Avec **Setcolor**, donne à la couleur **15** la valeur rouge vif (`$700`).",
+          "indices": ["Paramètres empilés : la couleur, puis le numéro (15), puis la fonction 7.", "Nettoyage : 6 octets."],
+          "codeDepart": "@code.s#rouge15-depart", "solution": "@code.s#rouge15-solution",
+          "check": { "type": "memory", "maxSteps": 100, "terminer": true, "expected": { "$FF825E": "$0700" } },
+          "machine": { "modeUtilisateur": true } },
+        { "type": "exercice", "id": "atari-ch05-exo-remplir", "titre": "Tout l'écran en couleur 15", "variante": "ecrire", "niveau": 2, "aRelire": true,
+          "enonce": "Remplis **tout l'écran** avec la couleur **15** (`%1111`).",
+          "indices": ["Couleur 15 : tous les bits de tous les plans à 1.", "32 000 octets = 8 000 mots longs : `MOVE.L #-1,(A0)+` dans une boucle de 7 999 + 1 tours."],
+          "codeDepart": "@code.s#remplir15-depart", "solution": "@code.s#remplir15-solution",
+          "check": { "type": "pixels", "maxSteps": 50000, "terminer": true, "expected": { "0,0": "15", "160,100": "15", "319,199": "15" } },
+          "machine": { "modeUtilisateur": true, "ecran": true } }
+      ]
+    }
+  ],
+  "qcm": {
+    "id": "atari-ch05-qcm",
+    "seuil": 0.7,
+    "questions": [
+      { "id": "q1", "enonce": "Combien d'octets occupe l'écran du ST ?", "choix": ["16 000", "32 000", "64 000"], "bonne": 1, "explication": "320 × 200 pixels × 4 bits = 32 000 octets (de même en moyenne et haute résolution)." },
+      { "id": "q2", "enonce": "En basse résolution, combien d'octets fait une ligne ?", "choix": ["80", "160", "320"], "bonne": 1, "explication": "20 groupes de 16 pixels × 8 octets." },
+      { "id": "q3", "enonce": "Dans un mot d'un plan, quel bit correspond au pixel le plus à gauche ?", "choix": ["Le bit 0", "Le bit 15", "Le bit 7"], "bonne": 1, "explication": "Le bit de poids fort est à gauche." },
+      { "id": "q4", "enonce": "Un pixel de couleur 6 (`%0110`) a son bit à 1 dans les plans…", "choix": ["0 et 1", "1 et 2", "2 et 3"], "bonne": 1, "explication": "%0110 : bit 1 et bit 2 à 1." },
+      { "id": "q5", "enonce": "Quelle expression donne le décalage du groupe qui contient le pixel X ?", "choix": ["X ÷ 2", "(X ÷ 16) × 8", "X × 8"], "bonne": 1, "explication": "Division entière par 16 d'abord, puis × 8. X ÷ 2 ne tombe juste que si X est un multiple de 16." },
+      { "id": "q6", "enonce": "Combien de couleurs différentes un ST (STF) peut-il produire ?", "choix": ["16", "512", "4 096"], "bonne": 1, "explication": "3 bits par composante : 8 × 8 × 8 = 512 (dont 16 à l'écran). 4 096, c'est le STE." },
+      { "id": "q7", "enonce": "Quelle couleur donne la valeur de palette `$770` ?", "choix": ["Jaune", "Cyan", "Violet"], "bonne": 0, "explication": "Rouge 7 + vert 7 + bleu 0 = jaune." },
+      { "id": "q8", "enonce": "Pourquoi changer la palette est-il si rapide ?", "choix": ["Parce que le Shifter redessine l'écran tout seul", "Parce qu'on modifie un seul registre au lieu de milliers d'octets", "Parce que la palette est en ROM"], "bonne": 1, "explication": "Tous les pixels d'un même numéro changent de couleur en même temps." }
+    ]
+  },
+  "bonus": [
+    { "type": "exercice", "id": "atari-ch05-bonus-carre", "titre": "Un carré de couleur", "variante": "ecrire", "niveau": 3, "aRelire": true,
+      "enonce": "Dessine en haut à gauche de l'écran un **carré plein de 16 × 16 pixels** en couleur **4**.",
+      "indices": ["Un groupe = 16 pixels de large : un seul mot par ligne, dans le bon plan.", "Couleur 4 = `%0100` : plan 2, à l'offset 4 du groupe. Ligne suivante : +160 octets."],
+      "codeDepart": "@code.s#bonus-carre-depart", "solution": "@code.s#bonus-carre-solution",
+      "check": { "type": "pixels", "maxSteps": 200, "terminer": true, "expected": { "0,0": "4", "15,15": "4", "16,0": "0", "0,16": "0" } },
+      "machine": { "modeUtilisateur": true, "ecran": true } }
+  ]
+}

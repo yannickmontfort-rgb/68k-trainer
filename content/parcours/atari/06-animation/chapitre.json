@@ -1,0 +1,7 @@
+{
+  "id": "atari-ch06",
+  "titre": "Animation, sprites et décalage au pixel",
+  "plateforme": "atari",
+  "esquisse": true,
+  "resume": "**Plan prévu** (module 4 du manuel et routine 7.3) :\n\n1. **Copier un bloc graphique** (*blitting* logiciel) : ligne par ligne, saut de ligne = 160 − largeur du bloc.\n2. **Effacer et redessiner** : le double tampon (deux écrans et `Setscreen`), synchronisation sur la VBL avec `Vsync`.\n3. **Déplacement au pixel près** : décaler les bits du sprite sur deux groupes de 16 pixels, avec un masque (AND) puis le sprite (OR). La routine 7.3 du manuel est fausse (débordement perdu, voir l'errata) : elle deviendra un exercice « à corriger ».\n4. **Découpage** (*clipping*) aux bords de l'écran.\n5. **Effet miroir** avec une table de correspondance de 256 octets.\n\nDéfi bonus prévu : afficher et déplacer un sprite.\n\nPrérequis techniques déjà en place dans le simulateur : écran, palette, Setscreen, Vsync. Restent à ajouter : un affichage animé pendant l'exécution (rafraîchissement de l'écran à chaque Vsync)."
+}
