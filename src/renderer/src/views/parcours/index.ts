@@ -87,8 +87,22 @@ export function renderParcours(container: HTMLElement): () => void {
       return undefined
     }
 
+    function etapeFaite(id: string): boolean {
+      const t = trouver(id)
+      if (!t) return false
+      if (t.genre === 'qcm') return qcmReussi(t.chapitre, p)
+      return t.contenu ? contenuTermine(t.contenu, p) : false
+    }
+
+    /** Dernière étape visitée ; si elle est déjà faite, la prochaine étape obligatoire non faite. */
     function etapeDeReprise(): string | undefined {
-      if (p.derniere?.parcoursId === parcours!.id && trouver(p.derniere.etapeId)) return p.derniere.etapeId
+      const derniere = p.derniere?.parcoursId === parcours!.id ? p.derniere.etapeId : undefined
+      if (derniere && trouver(derniere) && !etapeFaite(derniere)) return derniere
+      if (derniere) {
+        const index = etapes.findIndex((e) => e.id === derniere)
+        const suivante = etapes.slice(index + 1).find((e) => e.genre !== 'bonus' && !etapeFaite(e.id))
+        if (suivante) return suivante.id
+      }
       return premiereEtapeAFaire(parcours!, p)?.id
     }
 
@@ -108,7 +122,7 @@ export function renderParcours(container: HTMLElement): () => void {
           ${barre(d.pourcentage, 'barre-globale')}
           <div class="entete-bonus" title="Les défis bonus ne comptent pas dans le pourcentage">★ Défis bonus : ${d.bonusFaits}/${d.bonusTotal}</div>
         </div>
-        ${reprise ? `<button class="btn-principal btn-reprendre" id="btn-reprendre" title="${echapper(titreReprise)}">${p.derniere ? 'Reprendre' : 'Commencer'} : ${echapper(titreReprise)}</button>` : '<div class="parcours-fini">Parcours terminé, bravo ! 🎉</div>'}
+        ${reprise ? `<button class="btn-principal btn-reprendre" id="btn-reprendre" title="${echapper(titreReprise)}">${!p.derniere ? 'Commencer' : reprise === p.derniere.etapeId ? 'Reprendre' : 'Continuer'} : ${echapper(titreReprise)}</button>` : '<div class="parcours-fini">Parcours terminé, bravo ! 🎉</div>'}
       `
       enteteEl.querySelector('#btn-reprendre')?.addEventListener('click', () => reprise && ouvrir(reprise))
     }
