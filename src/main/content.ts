@@ -116,6 +116,7 @@ async function resoudreFichiers(dir: string, objet: Record<string, unknown>): Pr
 async function loadChapitre(dir: string, legacy: Map<string, Exercise>): Promise<Chapitre> {
   const chapitre = JSON.parse(await readFile(join(dir, 'chapitre.json'), 'utf-8')) as Chapitre
   chapitre.plateforme ??= 'atari'
+  chapitre.notions ??= [] // chapitre esquissé : pas encore de contenu
   for (const b of chapitre.bonus ?? []) await resoudreFichiers(dir, b as unknown as Record<string, unknown>)
   if (chapitre.qcm) await resoudreFichiers(dir, chapitre.qcm as unknown as Record<string, unknown>)
   for (const notion of chapitre.notions) {
