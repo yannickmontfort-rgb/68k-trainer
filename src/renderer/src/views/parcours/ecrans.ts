@@ -185,7 +185,8 @@ export function ecranExemple(el: HTMLElement, ex: ContenuExemple, ctx: ContexteE
   btnTout.addEventListener('click', () => {
     const effects = exec.toutExecuter()
     expliquer(undefined)
-    fin(effects?.error)
+    if (exec.arreteSurPoint && !effects?.error) statut.textContent = "Point d'arrêt"
+    else fin(effects?.error)
   })
   const btnTempsReel = el.querySelector<HTMLButtonElement>('#btn-temps-reel')
   btnTempsReel?.addEventListener('click', () => {
@@ -196,10 +197,10 @@ export function ecranExemple(el: HTMLElement, ex: ContenuExemple, ctx: ContexteE
     statut.textContent = 'Temps réel…'
     exec.tempsReel((raison, effects) => {
       btnTempsReel.textContent = '🎬 Temps réel'
-      if (raison === 'arret') {
+      if (raison === 'arret' || raison === 'point') {
         btnPas.disabled = false
         btnTout.disabled = false
-        statut.textContent = 'Arrêté'
+        statut.textContent = raison === 'point' ? "Point d'arrêt" : 'Arrêté'
         expliquer(undefined)
       } else fin(effects?.error)
     })
@@ -417,6 +418,7 @@ export function ecranExercice(el: HTMLElement, ex: ContenuExercice, ctx: Context
   })
   const apres = (effects: ReturnType<Execution['pas']>): void => {
     if (effects?.error) dbgStatut.textContent = effects.error
+    else if (exec?.arreteSurPoint) dbgStatut.textContent = "Point d'arrêt"
     else if (effects?.halted) dbgStatut.textContent = 'Programme terminé'
   }
   el.querySelector('#dbg-pas')!.addEventListener('click', () => apres(exec?.pas() ?? null))
@@ -431,6 +433,7 @@ export function ecranExercice(el: HTMLElement, ex: ContenuExercice, ctx: Context
       dbgTempsReel.textContent = '🎬 Temps réel'
       if (raison === 'arret') dbgStatut.textContent = 'Arrêté'
       else apres(effects)
+      if (raison === 'point') dbgStatut.textContent = "Point d'arrêt"
     })
   })
   el.querySelector('#dbg-reset')!.addEventListener('click', () => {

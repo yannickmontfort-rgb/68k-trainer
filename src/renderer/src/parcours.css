@@ -767,6 +767,47 @@
   color: var(--texte-doux);
 }
 
+.dbg-desasm-ligne {
+  display: flex;
+  gap: 10px;
+  font-family: Consolas, monospace;
+  color: #aaa;
+}
+
+.dbg-desasm-ligne.courante {
+  color: #fff;
+  background: rgba(255, 210, 80, 0.15);
+}
+
+.dbg-materiel summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--texte-doux);
+}
+
+.dbg-materiel h5 {
+  margin: 8px 0 2px;
+  font-size: 12px;
+  color: var(--texte-doux);
+}
+
+.dbg-grille {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  column-gap: 12px;
+}
+
+.point-arret {
+  background: #e05252;
+  border-radius: 50%;
+  width: 10px !important;
+  height: 10px !important;
+  margin-left: 5px;
+  margin-top: 5px;
+}
+
 .dbg-pile-ligne {
   display: flex;
   gap: 10px;

@@ -10,7 +10,7 @@ import { SortieSon } from './son'
 /** Code système en ROM (routine VBL, retour de Supexec...) : le pas à pas le traverse d'un coup. */
 const enRom = (pc: number): boolean => pc >= ROM_START && pc < ROM_END
 
-export type FinTempsReel = 'fin' | 'erreur' | 'arret'
+export type FinTempsReel = 'fin' | 'erreur' | 'arret' | 'point'
 
 /**
  * Lie un éditeur Monaco, un processeur et un débogueur : assemblage, pas à pas avec surlignage de
@@ -21,6 +21,11 @@ export class Execution {
   assemblage: AssembleResult | null = null
   private decorations: string[] = []
   private tempsReelActif = false
+  /** Lignes portant un point d'arrêt (clic dans la marge de l'éditeur). */
+  private readonly pointsArret = new Set<number>()
+  private readonly decorationsArret: monaco.editor.IEditorDecorationsCollection
+  /** Vrai si la dernière exécution s'est arrêtée sur un point d'arrêt. */
+  arreteSurPoint = false
   private readonly son = new SortieSon()
 
   constructor(
@@ -29,7 +34,33 @@ export class Execution {
     private readonly creerPlateforme: () => Platform | undefined,
     /** Adresse affichée dans la vue mémoire (sinon : début du programme). */
     private readonly adresseMemoire?: number
-  ) {}
+  ) {
+    editor.updateOptions({ glyphMargin: true })
+    this.decorationsArret = editor.createDecorationsCollection()
+    editor.onMouseDown((e) => {
+      if (e.target.type !== monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN) return
+      const ligne = e.target.position?.lineNumber
+      if (!ligne) return
+      if (this.pointsArret.has(ligne)) this.pointsArret.delete(ligne)
+      else this.pointsArret.add(ligne)
+      this.decorationsArret.set(
+        [...this.pointsArret].map((l) => ({
+          range: new monaco.Range(l, 1, l, 1),
+          options: { glyphMarginClassName: 'point-arret', glyphMarginHoverMessage: { value: "Point d'arrêt : l'exécution s'arrêtera avant cette ligne" } }
+        }))
+      )
+    })
+  }
+
+  /** Adresses des instructions qui portent un point d'arrêt. */
+  private adressesArret(): Set<number> {
+    const r = new Set<number>()
+    if (!this.pointsArret.size) return r
+    for (const [adresse, ligne] of Object.entries(this.assemblage?.addressToLine ?? {})) {
+      if (this.pointsArret.has(ligne)) r.add(Number(adresse))
+    }
+    return r
+  }
 
   /** Assemble le source ; renvoie le résultat (erreurs reformulées comprises). */
   async assembler(source: string): Promise<AssembleResult> {
@@ -98,10 +129,16 @@ export class Execution {
   toutExecuter(maxSteps = 200000): StepEffects | null {
     const cpu = this.cpu
     if (!cpu) return null
+    const points = this.adressesArret()
+    this.arreteSurPoint = false
     let last: StepEffects | null = null
     for (let i = 0; i < maxSteps && !cpu.halted; i++) {
       last = cpu.step()
       if (last.error) break
+      if (points.has(cpu.pc) && !cpu.waiting) {
+        this.arreteSurPoint = true
+        break
+      }
     }
     this.debogueur.rafraichir(last?.writes ?? [])
     this.surligner(this.ligneCourante())
@@ -126,6 +163,8 @@ export class Execution {
     // Cible cumulée : un Vsync qui fait sauter le temps jusqu'à la VBL est « rendu » ensuite
     let cible = cpu.cycles
     let last: StepEffects | null = null
+    const points = this.adressesArret()
+    this.arreteSurPoint = false
     const image = (maintenant: number): void => {
       if (!this.tempsReelActif) {
         this.son.arreter()
@@ -138,9 +177,19 @@ export class Execution {
       while (cpu.cycles < cible && !cpu.halted) {
         last = cpu.step()
         if (last.error) break
+        if (points.has(cpu.pc) && !cpu.waiting) {
+          this.arreteSurPoint = true
+          break
+        }
       }
       this.son.alimenter(cpu)
       this.debogueur.rafraichir([])
+      if (this.arreteSurPoint) {
+        this.tempsReelActif = false
+        this.son.arreter()
+        this.surligner(this.ligneCourante())
+        return fin('point', last)
+      }
       if (last?.error || cpu.halted) {
         this.tempsReelActif = false
         // Laisser finir le son déjà prévu (quelques dizaines de ms)

@@ -108,6 +108,7 @@ export function renderTrainer(container: HTMLElement, initialProgram?: string): 
       btnRun.textContent = 'Exécuter'
       btnStep.disabled = false
       if (raison === 'arret') statusEl.textContent = 'Arrêté : tu peux continuer pas à pas'
+      else if (raison === 'point') statusEl.textContent = "Point d'arrêt : continue pas à pas ou relance"
       afficherFin(effects?.error)
     })
   }
