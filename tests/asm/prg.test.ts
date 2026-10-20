@@ -96,6 +96,9 @@ describe.skipIf(!vasmDisponible)('export .PRG = vasm -Ftos -devpac', () => {
           for (const bloc of blocs) {
             const nom = `${f}#${bloc.split('\n')[0].trim()}`
             const code = bloc.split('\n').slice(1).join('\n')
+            // Texte accentué entre apostrophes : vasm range l'UTF-8 du fichier (2 octets pour « é »),
+            // nous un octet ISO-8859-1, le jeu de caractères de l'Amiga : pas comparable
+            if (/'[^'\n]*[^\x00-\x7f][^'\n]*'/.test(code)) continue
             const ref = vasm(code, 'tos')
             const nous = assembler(code, { prg: true })
             if (!ref.ok || empechementPrg(nous)) {

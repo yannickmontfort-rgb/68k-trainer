@@ -32,10 +32,10 @@ combinée aux autres, détermine la couleur de chaque pixel. *n* bitplanes → 2
 | Registre | Rôle |
 |---|---|
 | `$DFF180`, `$DFF182`, ... | couleurs de la palette (écriture seule), 32 couleurs choisies parmi 4096 |
-| `$DFF080`-`086` (BPLxPTH/L) | adresses des bitplanes en Chip RAM |
-| `$DFF08E` (BPLCON0) | nombre de bitplanes, résolution, mode Halfbrite |
-| `$DFF090` (BPLCON1) | décalage horizontal des bitplanes (scrolling matériel) |
-| `$DFF09A`/`$DFF09E` (DIWSTRT/DIWSTOP) | début/fin de la fenêtre d'affichage (overscan) |
+| `$DFF0E0`-`0F6` (BPLxPTH/L) | adresses des bitplanes en Chip RAM |
+| `$DFF100` (BPLCON0) | nombre de bitplanes, résolution, HAM, double playfield |
+| `$DFF102` (BPLCON1) | décalage horizontal des bitplanes (scrolling matériel) |
+| `$DFF08E`/`$DFF090` (DIWSTRT/DIWSTOP) | début/fin de la fenêtre d'affichage (overscan) |
 
 ## Le Copper : coprocesseur synchronisé au raster
 
@@ -47,16 +47,17 @@ scrolling différentiel.
 
 | Registre | Rôle |
 |---|---|
-| `$DFF088`/`$DFF08A` (COP1LCH/L) | pointeur vers la liste Copper principale |
-| `$DFF09C` (DMACON) | active/désactive les canaux DMA (Copper, Bitplanes, ...) |
+| `$DFF080`/`$DFF082` (COP1LCH/L) | pointeur vers la liste Copper principale (`$DFF088`, COPJMP1, la relance) |
+| `$DFF096` (DMACON) | active/désactive les canaux DMA (Copper, Bitplanes, ...) ; relecture dans DMACONR (`$DFF002`) |
 
 ## Le Blitter : opérations rapides sur les bits
 
 Combine jusqu'à 3 sources (A, B, C) via des opérations logiques (AND/OR/XOR) vers une destination
 (D), bien plus vite que le 68000 seul — utilisé pour le scrolling, le tracé de lignes, le
 remplissage et les effets 3D. Voir [systeme-et-hardware.md](systeme-et-hardware.md#le-blitter-et-le-tracé-de-lignes)
-pour le mode "Single Bit" et le fill inclusif/exclusif. Registres clés : `BLTADAT`-`BLTDDAT`
-(`$DFF040`-`046`, données), `BLTSIZE` (`$DFF050`), `BLTCON0`/`BLTCON1` (`$DFF064`/`066`, contrôle).
+pour le mode "Single Bit" et le fill inclusif/exclusif. Registres clés : `BLTCON0`/`BLTCON1`
+(`$DFF040`/`042`, contrôle), pointeurs `BLTxPT` (`$DFF048`-`056`), modulos (`$DFF060`-`066`), données
+`BLTCDAT`/`BLTBDAT`/`BLTADAT` (`$DFF070`-`074`), `BLTSIZE` (`$DFF058`, qui lance le travail).
 
 ## Sprites
 
@@ -90,8 +91,8 @@ attente active.
 
 ## Les puces CIA (Complex Interface Adapter)
 
-Deux puces CIA gèrent souris, clavier, timers et lecteur de disquette : **CIA A** (`$BFD000`) et
-**CIA B** (`$BFE000`). Leurs registres sont sur 8 bits, souvent **actifs à l'état bas** (1 par
+Deux puces CIA gèrent souris, clavier, timers et lecteur de disquette : **CIA A** (`$BFE001`) et
+**CIA B** (`$BFD000`). Leurs registres sont sur 8 bits, souvent **actifs à l'état bas** (1 par
 défaut, passent à 0 quand l'événement survient — ex: bouton souris pressé). Registres notables :
 `PA`/`PB` (E/S parallèles), `SDR` (registre série, utilisé pour le clavier sur CIA A), `ICR`
 (contrôle des interruptions), `TA`/`TB` (timers).
@@ -103,3 +104,6 @@ Section culturelle, pas technique : l'essor des disquettes vierges bon marché �
 (illisibles par les copieurs standards). Les intros ajoutées par les groupes de crack pour
 revendiquer leur travail (les "cracktros") ont progressivement évolué en démos autonomes de plus en
 plus sophistiquées — c'est l'origine de la scène démo Amiga.
+
+> Fiche corrigée le 20/10/2026 : adresses des registres vérifiées dans Amiga Intern (Abacus) et le
+> Hardware Reference Manual (voir docs/errata_manuel_amiga.md). Le parcours guidé Amiga va plus loin.
