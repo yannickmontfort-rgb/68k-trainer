@@ -38,7 +38,10 @@ données, puis zone vide), en Chip RAM dès qu'une section l'a demandé.
   avec un code de retour dans D0 (0 = tout va bien, 5 = avertissement, 10 = erreur, 20 = échec) ;
 - depuis une **icône** du Workbench, un programme doit d'abord récupérer le message que le
   Workbench lui envoie (`WaitPort` puis `GetMsg` sur son port de processus) et le lui rendre
-  (`ReplyMsg`) avant de finir. Nos programmes ne le font pas : lance-les depuis le Shell.
+  (`ReplyMsg`) avant de finir, et il n'a pas de fenêtre de Shell où écrire. Le bouton **Exporter
+  pour l'Amiga** ajoute devant ton programme un petit **code de démarrage** qui s'en charge : lancé
+  par une icône, il ouvre une fenêtre console (que `Output()` renvoie), attend Entrée à la fin,
+  puis répond au Workbench. Lancé depuis le Shell, il ne change rien.
 
 ## L'essayer
 

@@ -14,6 +14,7 @@ import { dirname, join, parse } from 'path'
 import { assembler } from '../assembleur'
 import { creerPrg, empechementPrg } from '../prg'
 import { creerHunk, empechementHunk } from '../hunk'
+import { avecDemarrageAmiga } from '../demarrageAmiga'
 
 function aide(): never {
   console.error('Usage : asm <source.s> [-o sortie] [--bin | --amiga] [--base $adresse] [--symboles]')
@@ -58,7 +59,13 @@ if (amiga) {
     console.error(raison)
     process.exit(2)
   }
-  const exe = creerHunk(r, symboles ? { symboles: true } : {})
+  // Le code de démarrage (Shell ou icône du Workbench) est ajouté devant le programme
+  const complet = assembler(avecDemarrageAmiga(readFileSync(fichier, 'utf-8')), {
+    prg: true,
+    lireTexte: (nom) => (existsSync(chemin(nom)) ? readFileSync(chemin(nom), 'utf-8') : null),
+    lireBinaire: (nom) => (existsSync(chemin(nom)) ? new Uint8Array(readFileSync(chemin(nom))) : null)
+  })
+  const exe = creerHunk(complet, symboles ? { symboles: true } : {})
   writeFileSync(cible, exe)
   console.error(`${cible} : ${exe.length} octets (exécutable AmigaDOS, ${r.relocs.length} relocations${r.chip.TEXT || r.chip.DATA || r.chip.BSS ? ', Chip RAM' : ''})`)
 } else if (binaire) {

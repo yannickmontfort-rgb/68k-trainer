@@ -8,6 +8,7 @@ import { chargerHunks, creerHunk, empechementHunk, lireHunk } from '../../src/as
 import { Cpu } from '../../src/cpu/cpu'
 import { createAmiga } from '../../src/platforms/amiga'
 import { vasm, vasmDisponible } from '../helpers/vasm'
+import { avecDemarrageAmiga } from '../../src/asm/demarrageAmiga'
 
 const hex = (b: Uint8Array): string => Buffer.from(b).toString('hex')
 
@@ -91,6 +92,18 @@ describe('Exécutable AmigaDOS (hunks)', () => {
     cpu.loadProgram(adresses[0], image)
     for (let i = 0; i < 100000 && !cpu.halted; i++) cpu.step()
     expect(cpu.output).toBe('Salut\n')
+  })
+
+  it('avec le code de démarrage (Shell ou Workbench) : lancé depuis le Shell, rien ne change', () => {
+    const r = assembler(avecDemarrageAmiga(AVEC_SECTIONS), { prg: true })
+    expect(r.erreurs).toEqual([])
+    const { image, adresses } = chargerHunks(lireHunk(creerHunk(r)), 0x30000)
+    const cpu = new Cpu(createAmiga())
+    cpu.reset(adresses[0])
+    cpu.loadProgram(adresses[0], image)
+    for (let i = 0; i < 100000 && !cpu.halted; i++) cpu.step()
+    expect(cpu.output).toBe('Salut\n')
+    expect(cpu.d[0]).toBe(0)
   })
 
   it('refuse un programme avec ORG', () => {

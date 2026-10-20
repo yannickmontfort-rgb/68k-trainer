@@ -50,7 +50,7 @@ async function exporterAmiga(source: string, nom: string): Promise<ResultatExpor
   if (!exe.octets) return { ok: false, message: exe.raison ?? 'Export impossible.' }
   const enregistre = await window.api.enregistrerPrg(exe.octets, nomAmiga(nom), 'hunk')
   if (!enregistre.ok) return { ok: false, message: 'Export annulé.' }
-  const conseils = ['\nLance-le depuis le Shell (CLI) : un programme lancé par une icône doit d’abord répondre au message du Workbench.']
+  const conseils = ['\nOn peut le lancer depuis le Shell (CLI) ou par une icône : sa sortie s’affiche alors dans une fenêtre console.']
   // Les données lues par les puces doivent être en Chip RAM sur une machine qui a de la Fast RAM
   if (/\$?dff[0-9a-f]{3}|\$dff000/i.test(source) && !/_C\b/i.test(source)) {
     conseils.push('Astuce : sur un Amiga avec de la Fast RAM, mets les listes Copper, images et sons dans une « SECTION nom,DATA_C » (Chip RAM).')

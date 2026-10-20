@@ -5,6 +5,7 @@ import { assemblerSource } from '../shared/assemblage'
 import { assembler } from '../asm/assembleur'
 import { creerPrg, empechementPrg } from '../asm/prg'
 import { creerHunk, empechementHunk } from '../asm/hunk'
+import { avecDemarrageAmiga } from '../asm/demarrageAmiga'
 import type { AssembleResult } from '../shared/ipc'
 
 /**
@@ -48,5 +49,9 @@ export function fabriquerPrg(source: string, format: 'prg' | 'hunk' = 'prg'): { 
     const premiere = r.erreurs[0]
     return { raison: premiere ? `${raison}\nLigne ${premiere.ligne} : ${premiere.message}` : raison }
   }
-  return { octets: format === 'hunk' ? creerHunk(r) : creerPrg(r) }
+  if (format === 'prg') return { octets: creerPrg(r) }
+  // Amiga : le code de démarrage (Shell ou icône du Workbench) est ajouté devant le programme
+  const exe = assembler(avecDemarrageAmiga(source), { ...lecteurs, prg: true })
+  if (!exe.ok) return { raison: 'Export impossible : ' + (exe.erreurs[0]?.message ?? 'erreur inconnue') }
+  return { octets: creerHunk(exe) }
 }
