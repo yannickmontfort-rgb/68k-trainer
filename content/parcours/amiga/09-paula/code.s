@@ -85,6 +85,7 @@ START:
     BEQ.S   .demarre
     MOVEQ   #1,D7
     MOVE.W  #$0001,$96(A5)
+    MOVEQ   #0,D0           ; code de retour pour le Shell : tout va bien
     RTS
 
     SECTION son,DATA_C
@@ -105,6 +106,7 @@ START:
     BEQ.S   .demarre
     MOVEQ   #1,D7
     MOVE.W  #$0001,$96(A5)
+    MOVEQ   #0,D0           ; code de retour pour le Shell : tout va bien
     RTS
 
     SECTION son,DATA_C
@@ -257,6 +259,7 @@ silence: DC.W   0
 START:
     LEA     $DFF000,A5
 
+    MOVEQ   #0,D0           ; code de retour pour le Shell : tout va bien
     RTS
 
     SECTION son,DATA_C
@@ -283,6 +286,7 @@ START:
     BNE.S   .demarre
     MOVEQ   #3,D7
     MOVE.W  #$0003,$96(A5)
+    MOVEQ   #0,D0           ; code de retour pour le Shell : tout va bien
     RTS
 
     SECTION son,DATA_C

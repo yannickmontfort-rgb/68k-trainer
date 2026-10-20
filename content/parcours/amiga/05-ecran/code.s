@@ -14,6 +14,7 @@ START:
     MOVE.W  #$005A,$180(A5) ; COLOR00 = le bleu du Workbench
     BTST    #6,$BFE001      ; bouton gauche de la souris enfoncé ?
     BNE.S   .image          ; non : image suivante
+    MOVEQ   #0,D0           ; code de retour pour le Shell : tout va bien
     RTS
 
 ;=== setclr-prediction
@@ -40,6 +41,7 @@ START:
     MOVE.W  #$005A,$180(A5)
     BTST    #6,$BFE001
     BNE.S   .image
+    MOVEQ   #0,D0           ; code de retour pour le Shell : tout va bien
     RTS
 
 ;=== verte-solution
@@ -55,6 +57,7 @@ START:
     MOVE.W  #$005A,$180(A5)
     BTST    #6,$BFE001
     BNE.S   .image
+    MOVEQ   #0,D0           ; code de retour pour le Shell : tout va bien
     RTS
 
 ;=== fin-bande-depart
@@ -70,6 +73,7 @@ START:
     MOVE.W  #$0FF0,$180(A5)
     BTST    #6,$BFE001
     BNE.S   .image
+    MOVEQ   #0,D0           ; code de retour pour le Shell : tout va bien
     RTS
 
 ;=== fin-bande-solution
@@ -85,6 +89,7 @@ START:
     MOVE.W  #$005A,$180(A5) ; fin de la bande : le bleu revient
     BTST    #6,$BFE001
     BNE.S   .image
+    MOVEQ   #0,D0           ; code de retour pour le Shell : tout va bien
     RTS
 
 ;=== deux-bandes-depart
@@ -93,6 +98,7 @@ START:
 START:
     LEA     $DFF000,A5
 
+    MOVEQ   #0,D0           ; code de retour pour le Shell : tout va bien
     RTS
 
 ;=== deux-bandes-solution
@@ -116,6 +122,7 @@ START:
     MOVE.W  #$005A,$180(A5)
     BTST    #6,$BFE001
     BNE.S   .image
+    MOVEQ   #0,D0           ; code de retour pour le Shell : tout va bien
     RTS
 
 ;=== prendre-exemple

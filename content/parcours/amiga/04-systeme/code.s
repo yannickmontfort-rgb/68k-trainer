@@ -28,6 +28,7 @@ START:
     JSR     -6(A6)          ; <- remplace -6 par le décalage de Forbid
     MOVE.B  295(A6),D7      ; TDNestCnt
     JSR     -6(A6)          ; <- remplace -6 par le décalage de Permit
+    MOVEQ   #0,D0           ; code de retour pour le Shell : tout va bien
     RTS
 
 ;=== forbid-solution
@@ -36,6 +37,7 @@ START:
     JSR     -132(A6)        ; Forbid
     MOVE.B  295(A6),D7      ; TDNestCnt
     JSR     -138(A6)        ; Permit
+    MOVEQ   #0,D0           ; code de retour pour le Shell : tout va bien
     RTS
 
 ;=== permit-depart
@@ -70,6 +72,7 @@ START:
 START:
     MOVEA.L 4.W,A6
 
+    MOVEQ   #0,D0           ; code de retour pour le Shell : tout va bien
     RTS
 
 ;=== disable-solution
@@ -83,6 +86,7 @@ START:
     MOVE.B  294(A6),D6
     JSR     -126(A6)        ; Enable : -1, elles reviennent
     MOVE.B  294(A6),D7
+    MOVEQ   #0,D0           ; code de retour pour le Shell : tout va bien
     RTS
 
 ;=== bonjour-exemple
@@ -321,6 +325,7 @@ START:
     MOVEA.L A2,A1
     MOVE.L  #512,D0
     JSR     -210(A6)
+    MOVEQ   #0,D0           ; code de retour pour le Shell : tout va bien
     RTS
 
 ;=== drapeaux-solution
@@ -336,6 +341,7 @@ START:
     MOVEA.L A2,A1
     MOVE.L  #512,D0
     JSR     -210(A6)
+    MOVEQ   #0,D0           ; code de retour pour le Shell : tout va bien
     RTS
 
 ;=== freemem-depart
@@ -371,6 +377,7 @@ START:
 ; puis rends le bloc.
 START:
 
+    MOVEQ   #0,D0           ; code de retour pour le Shell : tout va bien
     RTS
 
 ;=== table-solution
@@ -401,6 +408,7 @@ START:
     MOVE.L  #256,D0
     JSR     -210(A6)
 .fin:
+    MOVEQ   #0,D0           ; code de retour pour le Shell : tout va bien
     RTS
 
 ;=== decompte-exemple

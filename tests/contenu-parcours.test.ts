@@ -85,6 +85,8 @@ function verifierParcours(parcours: Parcours): void {
               const { cpu, last } = executer(c.code, parcours.plateforme, machine, parcours.plateforme === 'amiga' ? 2000000 : 100000)
               expect(last.error, last.error).toBeUndefined()
               expect(cpu.halted).toBe(true)
+              // Sur un vrai Amiga, le Shell lit D0 comme code de retour : au-delà de 20, un script s'arrête
+              if (chapitre.plateforme === 'amiga') expect(cpu.d[0], 'code de retour (D0) à la fin').toBe(0)
               const nbLignes = c.code.split('\n').length
               for (const e of c.explications) expect(e.ligne).toBeLessThanOrEqual(nbLignes)
             })
@@ -110,6 +112,9 @@ function verifierParcours(parcours: Parcours): void {
               const verdict = evaluateCheck(cpu, c.check)
               expect(verdict.success, `${verdict.message}\n${last.error ?? ''}`).toBe(true)
               expect(last.error, 'la solution ne doit pas planter').toBeUndefined()
+              if (chapitre.plateforme === 'amiga' && cpu.halted && !(c.check.type === 'registers' && 'D0' in c.check.expected)) {
+                expect(cpu.d[0], 'code de retour (D0) à la fin : MOVEQ #0,D0 avant le RTS').toBe(0)
+              }
             })
             if (c.variante === 'completer' || c.variante === 'corriger') {
               it(`exercice « ${c.titre} » : le code de départ n'est pas déjà juste`, () => {

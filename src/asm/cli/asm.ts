@@ -4,6 +4,7 @@
  *   npm run asm -- programme.s                   → programme.prg (exécutable TOS)
  *   npm run asm -- programme.s -o JEU.PRG
  *   npm run asm -- programme.s --bin -o code.bin  → binaire à plat (avec ORG, ou en --base)
+ *   npm run asm -- programme.s --amiga            → programme (exécutable AmigaDOS, format hunk)
  *
  * INCLUDE et INCBIN sont cherchés à côté du source. Les erreurs sont affichées en français,
  * au format « fichier:ligne:colonne: message », que comprennent les éditeurs de code.
@@ -12,9 +13,10 @@ import { existsSync, readFileSync, writeFileSync } from 'fs'
 import { dirname, join, parse } from 'path'
 import { assembler } from '../assembleur'
 import { creerPrg, empechementPrg } from '../prg'
+import { creerHunk, empechementHunk } from '../hunk'
 
 function aide(): never {
-  console.error('Usage : asm <source.s> [-o sortie] [--bin] [--base $adresse] [--symboles]')
+  console.error('Usage : asm <source.s> [-o sortie] [--bin | --amiga] [--base $adresse] [--symboles]')
   process.exit(1)
 }
 
@@ -25,12 +27,14 @@ let sortie = ''
 let binaire = false
 let base: number | undefined
 let symboles = false
+let amiga = false
 for (let i = 0; i < args.length; i++) {
   const a = args[i]
   if (a === '-o') sortie = args[++i] ?? aide()
   else if (a === '--bin') binaire = true
   else if (a === '--base') base = parseInt((args[++i] ?? aide()).replace(/^\$/, ''), 16)
   else if (a === '--symboles') symboles = true
+  else if (a === '--amiga') amiga = true
   else fichier = a
 }
 if (!fichier) aide()
@@ -47,8 +51,17 @@ for (const a of r.avertissements) console.error(`${fichier}:${a.ligne}:${a.colon
 for (const e of r.erreurs) console.error(`${fichier}:${e.ligne}:${e.colonne ?? 1}: erreur : ${e.message}`)
 if (!r.ok) process.exit(2)
 
-const cible = sortie || join(dossier, parse(fichier).name + (binaire ? '.bin' : '.prg'))
-if (binaire) {
+const cible = sortie || join(dossier, parse(fichier).name + (binaire ? '.bin' : amiga ? '' : '.prg'))
+if (amiga) {
+  const raison = empechementHunk(r)
+  if (raison) {
+    console.error(raison)
+    process.exit(2)
+  }
+  const exe = creerHunk(r, symboles ? { symboles: true } : {})
+  writeFileSync(cible, exe)
+  console.error(`${cible} : ${exe.length} octets (exécutable AmigaDOS, ${r.relocs.length} relocations${r.chip.TEXT || r.chip.DATA || r.chip.BSS ? ', Chip RAM' : ''})`)
+} else if (binaire) {
   writeFileSync(cible, r.binaire)
   console.error(`${cible} : ${r.binaire.length} octets, chargé en $${r.base.toString(16).toUpperCase()}`)
 } else {

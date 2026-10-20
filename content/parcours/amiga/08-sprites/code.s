@@ -772,6 +772,7 @@ START:
     BTST    #6,$BFE001      ; <- le bit du bouton du joystick
     BNE.S   .attente
     MOVEQ   #1,D7
+    MOVEQ   #0,D0           ; code de retour pour le Shell : tout va bien
     RTS
 
 ;=== feu-solution
@@ -780,6 +781,7 @@ START:
     BTST    #7,$BFE001      ; bit 7 : le bouton du joystick (port 2)
     BNE.S   .attente
     MOVEQ   #1,D7
+    MOVEQ   #0,D0           ; code de retour pour le Shell : tout va bien
     RTS
 
 ;=== souris-depart
@@ -787,6 +789,7 @@ START:
 ; (octet faible de JOY0DAT, $DFF00A), en nombre signé, dans D7.
 START:
 
+    MOVEQ   #0,D0           ; code de retour pour le Shell : tout va bien
     RTS
     INCLUDE "amiga-systeme.s"
 
@@ -801,6 +804,7 @@ START:
     SUB.B   D6,D7           ; la différence, sur 8 bits
     EXT.W   D7
     EXT.L   D7              ; signée, sur 32 bits
+    MOVEQ   #0,D0           ; code de retour pour le Shell : tout va bien
     RTS
     INCLUDE "amiga-systeme.s"
 
@@ -811,6 +815,7 @@ START:
     BSR     prendre
 
     BSR     rendre
+    MOVEQ   #0,D0           ; code de retour pour le Shell : tout va bien
     RTS
     INCLUDE "amiga-systeme.s"
 
@@ -832,6 +837,7 @@ START:
     DBF     D1,.pause
     BCLR    #6,$BFEE01      ; ... puis en entrée
     BSR     rendre
+    MOVEQ   #0,D0           ; code de retour pour le Shell : tout va bien
     RTS
     INCLUDE "amiga-systeme.s"
 

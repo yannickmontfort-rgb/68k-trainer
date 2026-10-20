@@ -61,7 +61,7 @@
         { "type": "cours", "id": "amiga-ch05-cours-prendre", "titre": "Couper le système proprement, et le rétablir", "fichier": "02-prendre-main.md", "aRelire": true, "source": "Rédigé pour 68k Trainer d'après Amiga Intern (Abacus), les startups de démos (Stash of Code) et le manuel Amiga (chap. 5, corrigé)" },
         {
           "type": "exemple", "id": "amiga-ch05-ex-prendre", "titre": "Le squelette complet", "aRelire": true,
-          "introduction": "Voici, en entier, ce que contient `amiga-systeme.s` : un programme qui prend la main, affiche sa propre liste Copper (orange en haut, bleu nuit en bas), attend un clic, puis rend tout. Avance pas à pas dans `prendre`, puis lance **🎬 Temps réel** et clique sur l'écran.",
+          "introduction": "Voici l'essentiel de `amiga-systeme.s` (le fichier gère en plus la table des vecteurs des 68010 et plus, voir le chapitre 6) : un programme qui prend la main, affiche sa propre liste Copper (orange en haut, bleu nuit en bas), attend un clic, puis rend tout. Avance pas à pas dans `prendre`, puis lance **🎬 Temps réel** et clique sur l'écran.",
           "code": "@code.s#prendre-exemple",
           "machine": { "ecran": true, "interactif": true },
           "explications": [

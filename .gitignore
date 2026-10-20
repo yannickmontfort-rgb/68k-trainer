@@ -7,3 +7,6 @@ build/
 *.tsbuildinfo
 build-meta.json
 tools/
+
+# Disque dur partagé avec WinUAE (essais des exécutables Amiga)
+winuae-partage/

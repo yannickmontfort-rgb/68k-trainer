@@ -457,6 +457,7 @@ START:
     BLO.S   .attente
     MOVE.W  compteur,D7
     BSR     rendre
+    MOVEQ   #0,D0           ; code de retour pour le Shell : tout va bien
     RTS
 
 vbl:
@@ -476,6 +477,7 @@ START:
     BLO.S   .attente
     MOVE.W  compteur,D7
     BSR     rendre
+    MOVEQ   #0,D0           ; code de retour pour le Shell : tout va bien
     RTS
 
 vbl:
@@ -561,6 +563,7 @@ START:
     BSR     prendre
 
     BSR     rendre
+    MOVEQ   #0,D0           ; code de retour pour le Shell : tout va bien
     RTS
 compteur: DC.W  0
     INCLUDE "amiga-systeme.s"
@@ -576,6 +579,7 @@ START:
     MOVEQ   #0,D7
     MOVE.W  compteur,D7
     BSR     rendre
+    MOVEQ   #0,D0           ; code de retour pour le Shell : tout va bien
     RTS
 
 vbl:

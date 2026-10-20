@@ -41,6 +41,13 @@ Sur les Amiga plus rapides (68020 et plus), on écrit souvent deux fois dans `IN
 
 `rendre` remet le vecteur `$6C` du système : c'est pour cela que `prendre` l'avait noté.
 
+**Sur un Amiga 1200 ou 4000.** À partir du 68010, le processeur a un registre **VBR** qui dit où
+se trouve la table des vecteurs ; le système la range souvent en Fast RAM, et écrire en `$6C` ne
+sert alors plus à rien : la routine n'est jamais appelée. `prendre` s'en occupe pour toi : sur un
+68010 ou plus, il ramène la table en `$0` le temps du programme, et `rendre` la remet en place.
+Sur un A500 (68000), le problème n'existe pas. (Vérifié dans WinUAE avec le Kickstart AROS en
+68020.)
+
 ## Le Copper déclenche une interruption
 
 Le Copper peut écrire dans `INTREQ` (`$09C`), qui est au-dessus de `$80` : `DC.W $009C,$8010`
