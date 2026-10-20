@@ -1,12 +1,26 @@
 import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from 'electron'
 import { is } from '@electron-toolkit/utils'
+import { mkdirSync } from 'fs'
 import { readFile, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { IPC, type AssembleRequest, type ProgressState } from '../shared/ipc'
 import { assemblerDansApplication, fabriquerPrg } from './assemblage'
+import * as emulateurs from './emulateurs/installation'
 import { GestionProfils } from './profils'
 import { loadContent } from './content'
 import { getBuildInfo } from './buildInfo'
+
+/** Installe un émulateur ; la progression est envoyée à toutes les fenêtres (onglet « Émulateurs »). */
+async function installerEmulateur(id: 'hatari' | 'winuae'): Promise<{ ok: boolean; erreur?: string }> {
+  try {
+    await emulateurs.installer(id, (fait, total, etape) => {
+      for (const w of BrowserWindow.getAllWindows()) w.webContents.send(IPC.emulateurProgression, { id, fait, total, etape })
+    })
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, erreur: (e as Error).message }
+  }
+}
 
 function createWindow(): void {
   const window = new BrowserWindow({
@@ -98,6 +112,31 @@ app.whenReady().then(() => {
     await writeFile(choix.filePath, Buffer.from(octets))
     return { ok: true, chemin: choix.filePath }
   })
+  ipcMain.handle(IPC.emulateursEtat, () => emulateurs.etatEmulateurs())
+  ipcMain.handle(IPC.emulateurInstaller, (_e, id: 'hatari' | 'winuae') => installerEmulateur(id))
+  ipcMain.handle(IPC.emulateurDesinstaller, (_e, id: 'hatari' | 'winuae') => emulateurs.desinstaller(id))
+  ipcMain.handle(IPC.emulateurLancer, (_e, id: 'hatari' | 'winuae') => {
+    try {
+      emulateurs.lancer(id)
+      return { ok: true }
+    } catch (e) {
+      return { ok: false, erreur: (e as Error).message }
+    }
+  })
+  ipcMain.handle(IPC.emulateurEssayer, (_e, id: 'hatari' | 'winuae', source: string, nom: string) => {
+    const exe = fabriquerPrg(source, id === 'winuae' ? 'hunk' : 'prg')
+    if (!exe.octets) return { ok: false, erreur: exe.raison }
+    try {
+      return { ok: true, chemin: emulateurs.essayer(id, exe.octets, nom) }
+    } catch (e) {
+      return { ok: false, erreur: (e as Error).message }
+    }
+  })
+  ipcMain.handle(IPC.ouvrirPartage, (_e, machine: 'atari' | 'amiga') => {
+    const d = emulateurs.dossierPartage(machine)
+    mkdirSync(d, { recursive: true })
+    return shell.openPath(d)
+  })
   ipcMain.handle(IPC.fabriquerPrg, (_event, source: string, format?: 'prg' | 'hunk') => fabriquerPrg(source, format))
   // Certificat : page HTML rendue dans une fenêtre invisible, imprimée en PDF (A4 paysage)
   ipcMain.handle(IPC.exporterPdf, async (event, html: string, nom: string) => {
@@ -130,6 +169,10 @@ app.whenReady().then(() => {
   }
 
   createWindow()
+  // Émulateurs cochés dans l'installateur : installés en arrière-plan au premier lancement
+  void (async () => {
+    for (const id of emulateurs.installationsDemandees()) await installerEmulateur(id)
+  })()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

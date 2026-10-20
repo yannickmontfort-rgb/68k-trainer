@@ -10,12 +10,13 @@ import { renderTrainer } from './views/trainer'
 import { renderCours } from './views/cours'
 import { renderExercices } from './views/exercices'
 import { renderApropos } from './views/apropos'
+import { renderEmulateurs } from './views/emulateurs'
 import { renderChoixProfil } from './views/profils'
 import { echapper } from './views/parcours/markdown'
 
 registerM68kLanguage()
 
-type ViewId = 'parcours' | 'trainer' | 'cours' | 'exercices' | 'apropos'
+type ViewId = 'parcours' | 'trainer' | 'cours' | 'exercices' | 'emulateurs' | 'apropos'
 
 // « Fiches » et « Exercices libres » sont les écrans de la version 0.1, conservés tels quels.
 const VIEWS: { id: ViewId; label: string; title: string; render: (el: HTMLElement) => () => void }[] = [
@@ -23,6 +24,7 @@ const VIEWS: { id: ViewId; label: string; title: string; render: (el: HTMLElemen
   { id: 'trainer', label: 'Bac à sable', title: 'Écris et exécute librement ton propre code', render: renderTrainer },
   { id: 'cours', label: 'Fiches', title: 'Fiches de référence (version 0.1)', render: renderCours },
   { id: 'exercices', label: 'Exercices libres', title: 'Exercices de la version 0.1', render: renderExercices },
+  { id: 'emulateurs', label: 'Émulateurs', title: 'Installer et lancer Hatari (Atari ST) et WinUAE (Amiga)', render: renderEmulateurs },
   { id: 'apropos', label: 'À propos', title: 'Version, crédits et gestion de ton profil', render: renderApropos }
 ]
 

@@ -15,7 +15,7 @@ import { platformFor } from '../../../../shared/runProgram'
 import { machineDe } from '../../../../shared/machines'
 import { Debogueur } from '../../components/debogueur'
 import { Execution } from '../../components/execution'
-import { exporterPrg } from '../../exportPrg'
+import { essayerDansEmulateur, exporterPrg } from '../../exportPrg'
 import { enregistrerQcm, marquerExerciceReussi, marquerVu } from '../../progressionStore'
 import { ecrireLocal, lireLocal } from '../../profilActif'
 import { sourceOrdonne, verifierExercice } from '../../verifier'
@@ -267,6 +267,7 @@ export function ecranExercice(el: HTMLElement, ex: ContenuExercice, ctx: Context
             <button id="btn-solution" disabled title="Disponible après avoir vu les indices ou après 3 essais">Voir la solution</button>
             ${ordonner ? '' : '<button id="btn-reinit" title="Revenir au code de départ">↺</button>'}
             <button id="btn-prg" ${reussi ? '' : 'hidden'} title="${machineDe(ctx.plateforme).export.titre}">${machineDe(ctx.plateforme).export.bouton}</button>
+            <button id="btn-essayer" ${reussi ? '' : 'hidden'} title="Lancer ton programme dans un vrai émulateur (onglet « Émulateurs » pour l'installer)">Essayer dans ${ctx.plateforme === 'amiga' ? 'WinUAE' : 'Hatari'}</button>
           </div>
           <p class="export-prg" id="export-prg" hidden></p>
           <ul class="indices" id="indices"></ul>
@@ -379,6 +380,13 @@ export function ecranExercice(el: HTMLElement, ex: ContenuExercice, ctx: Context
       exportEl.textContent = r.message
     })
   })
+  const btnEssayer = el.querySelector<HTMLButtonElement>('#btn-essayer')!
+  btnEssayer.addEventListener('click', () => {
+    void essayerDansEmulateur(sourceActuel(), ex.id.split('-').pop() ?? ex.id, ctx.plateforme).then((r) => {
+      exportEl.hidden = false
+      exportEl.textContent = r.message
+    })
+  })
   const btnVerifier = el.querySelector<HTMLButtonElement>('#btn-verifier')!
   btnVerifier.addEventListener('click', () => {
     void (async () => {
@@ -394,7 +402,7 @@ export function ecranExercice(el: HTMLElement, ex: ContenuExercice, ctx: Context
           `<p class="verdict-titre">${v.success ? (ex.bonus ? '★ Défi relevé !' : '✓ Réussi !') : '✗ Pas encore…'}</p>` +
           `<pre>${echapper(v.message)}</pre>` +
           (v.pistes.length ? `<div class="pistes"><strong>Pour déboguer :</strong><ul>${v.pistes.map((p) => `<li>${echapper(p)}</li>`).join('')}</ul></div>` : '')
-        if (v.success) btnPrg.hidden = false
+        if (v.success) btnPrg.hidden = btnEssayer.hidden = false
         if (v.success && marquerExerciceReussi(ex.id)) ctx.progressionChangee()
         majSolution()
       } finally {

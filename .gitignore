@@ -10,3 +10,6 @@ tools/
 
 # Disque dur partagé avec WinUAE (essais des exécutables Amiga)
 winuae-partage/
+
+# Paquets des émulateurs (téléchargés et vérifiés par scripts/preparer-emulateurs.mjs)
+build/emulateurs/

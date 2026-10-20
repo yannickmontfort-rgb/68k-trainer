@@ -15,6 +15,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "version:bump": "node scripts/bump-version.mjs",
     "dist:win": "npm run build:meta && electron-vite build && electron-builder --win",
+    "dist:win:complet": "npm run build:meta && node scripts/preparer-emulateurs.mjs && electron-vite build && electron-builder --win --config electron-builder.complet.cjs",
+    "emulateurs:preparer": "node scripts/preparer-emulateurs.mjs",
     "asm": "vite-node src/asm/cli/asm.ts --",
     "desasm": "vite-node src/asm/cli/desasm.ts --",
     "build:meta": "node scripts/build-meta.mjs",

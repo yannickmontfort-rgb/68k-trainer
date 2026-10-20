@@ -2,7 +2,7 @@ import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 import { platformFor } from '../../../shared/runProgram'
 import { Debogueur } from '../components/debogueur'
 import { Execution } from '../components/execution'
-import { exporterPrg } from '../exportPrg'
+import { essayerDansEmulateur, exporterPrg } from '../exportPrg'
 import { ecrireLocal as ecrire, lireLocal as lire } from '../profilActif'
 import { machineActive } from '../progressionStore'
 import { materielAmiga } from '../../../platforms/amiga/chipset'
@@ -58,6 +58,7 @@ export function renderTrainer(container: HTMLElement, initialProgram?: string): 
       <button id="btn-run" disabled>Exécuter</button>
       <button id="btn-reset" disabled>Réinitialiser</button>
       <button id="btn-prg" title="${MACHINES[machine].export.titre}">${MACHINES[machine].export.bouton}</button>
+      <button id="btn-essayer" title="Lancer le programme dans un vrai émulateur (onglet « Émulateurs » pour l'installer)">Essayer dans ${machine === 'amiga' ? 'WinUAE' : 'Hatari'}</button>
       <label class="toolbar-option" ${machine === 'atari' ? '' : 'style="display:none"'} title="Comme sous le vrai TOS : vecteurs, variables système et matériel protégés">
         <input type="checkbox" id="opt-utilisateur" /> Mode utilisateur
       </label>
@@ -158,6 +159,13 @@ export function renderTrainer(container: HTMLElement, initialProgram?: string): 
   container.querySelector('#btn-prg')!.addEventListener('click', () => {
     void exporterPrg(editor.getValue(), machine === 'amiga' ? 'bac_a_sable' : 'BACASABL', machine).then((r) => {
       statusEl.textContent = r.ok ? 'Programme exporté' : 'Export impossible'
+      errorsEl.textContent = r.message
+    })
+  })
+  container.querySelector('#btn-essayer')!.addEventListener('click', () => {
+    statusEl.textContent = 'Préparation de l’essai…'
+    void essayerDansEmulateur(editor.getValue(), machine === 'amiga' ? 'bac_a_sable' : 'BACASABL', machine).then((r) => {
+      statusEl.textContent = r.ok ? 'Essai lancé' : 'Essai impossible'
       errorsEl.textContent = r.message
     })
   })

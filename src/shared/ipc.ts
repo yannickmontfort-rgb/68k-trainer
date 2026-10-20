@@ -159,6 +159,22 @@ export interface ExportProfil {
   brouillons: Record<string, string>
 }
 
+/** Un émulateur d'étude, vu par l'interface (voir src/main/emulateurs/). */
+export interface EtatEmulateurPublic {
+  id: 'hatari' | 'winuae'
+  nom: string
+  machine: 'atari' | 'amiga'
+  version: string
+  licence: string
+  description: string
+  installe: boolean
+  versionInstallee?: string
+  embarque: boolean
+  taille: number
+  dossierPartage: string
+  enCours: boolean
+}
+
 export const IPC = {
   listerProfils: '68k:listerProfils',
   creerProfil: '68k:creerProfil',
@@ -173,6 +189,13 @@ export const IPC = {
   enregistrerPrg: '68k:enregistrerPrg',
   fabriquerPrg: '68k:fabriquerPrg',
   exporterPdf: '68k:exporterPdf',
+  emulateursEtat: '68k:emulateursEtat',
+  emulateurInstaller: '68k:emulateurInstaller',
+  emulateurDesinstaller: '68k:emulateurDesinstaller',
+  emulateurLancer: '68k:emulateurLancer',
+  emulateurEssayer: '68k:emulateurEssayer',
+  emulateurProgression: '68k:emulateurProgression',
+  ouvrirPartage: '68k:ouvrirPartage',
   assemble: '68k:assemble',
   loadProgress: '68k:loadProgress',
   saveProgress: '68k:saveProgress',

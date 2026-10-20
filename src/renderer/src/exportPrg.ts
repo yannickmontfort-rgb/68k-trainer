@@ -57,3 +57,24 @@ async function exporterAmiga(source: string, nom: string): Promise<ResultatExpor
   }
   return { ok: true, message: `Programme enregistré : ${enregistre.chemin}${conseils.join('\n')}` }
 }
+
+/**
+ * « Essayer dans Hatari / WinUAE » : le programme est assemblé, déposé dans le dossier de partage
+ * (Documents\68k Trainer\Atari ou Amiga) et lancé au démarrage de l'émulateur.
+ */
+export async function essayerDansEmulateur(source: string, nom: string, plateforme: Plateforme = 'atari'): Promise<ResultatExport> {
+  const id = plateforme === 'amiga' ? 'winuae' : 'hatari'
+  const etat = (await window.api.emulateursEtat()).find((e) => e.id === id)
+  if (!etat?.installe) {
+    return { ok: false, message: `${etat?.nom ?? id} n'est pas installé : installe-le depuis l'onglet « Émulateurs ».` }
+  }
+  const r = await window.api.emulateurEssayer(id, source, plateforme === 'amiga' ? nomAmiga(nom) : nomTos(nom))
+  if (!r.ok) return { ok: false, message: r.erreur ?? 'Essai impossible.' }
+  return {
+    ok: true,
+    message:
+      plateforme === 'amiga'
+        ? `${etat.nom} démarre et lance ${r.chemin} dès que le bureau d'AROS est prêt (une vingtaine de secondes).`
+        : `${etat.nom} démarre et lance ${r.chemin} dès que le bureau d'EmuTOS est prêt.`
+  }
+}

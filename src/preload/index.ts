@@ -5,6 +5,7 @@ import {
   type AssembleResult,
   type BuildInfo,
   type ContentBundle,
+  type EtatEmulateurPublic,
   type ExportProfil,
   type ProfilPublic,
   type ProgressState,
@@ -39,7 +40,19 @@ const api = {
   fabriquerPrg: (source: string, format: 'prg' | 'hunk' = 'prg'): Promise<{ octets?: Uint8Array; raison?: string }> =>
     ipcRenderer.invoke(IPC.fabriquerPrg, source, format),
   exporterPdf: (html: string, nom: string): Promise<{ ok: boolean; chemin?: string }> =>
-    ipcRenderer.invoke(IPC.exporterPdf, html, nom)
+    ipcRenderer.invoke(IPC.exporterPdf, html, nom),
+  emulateursEtat: (): Promise<EtatEmulateurPublic[]> => ipcRenderer.invoke(IPC.emulateursEtat),
+  emulateurInstaller: (id: 'hatari' | 'winuae'): Promise<{ ok: boolean; erreur?: string }> => ipcRenderer.invoke(IPC.emulateurInstaller, id),
+  emulateurDesinstaller: (id: 'hatari' | 'winuae'): Promise<void> => ipcRenderer.invoke(IPC.emulateurDesinstaller, id),
+  emulateurLancer: (id: 'hatari' | 'winuae'): Promise<{ ok: boolean; erreur?: string }> => ipcRenderer.invoke(IPC.emulateurLancer, id),
+  emulateurEssayer: (id: 'hatari' | 'winuae', source: string, nom: string): Promise<{ ok: boolean; erreur?: string; chemin?: string }> =>
+    ipcRenderer.invoke(IPC.emulateurEssayer, id, source, nom),
+  ouvrirPartage: (machine: 'atari' | 'amiga'): Promise<string> => ipcRenderer.invoke(IPC.ouvrirPartage, machine),
+  surProgressionEmulateur: (rappel: (p: { id: string; fait: number; total: number; etape: string }) => void): (() => void) => {
+    const f = (_e: unknown, p: { id: string; fait: number; total: number; etape: string }): void => rappel(p)
+    ipcRenderer.on(IPC.emulateurProgression, f)
+    return () => ipcRenderer.removeListener(IPC.emulateurProgression, f)
+  }
 }
 
 contextBridge.exposeInMainWorld('api', api)
