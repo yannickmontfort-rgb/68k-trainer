@@ -2,6 +2,8 @@ import type { Parcours } from './parcours'
 
 export interface AssembleRequest {
   source: string
+  /** Dossier du source ouvert dans le bac à sable : INCLUDE et INCBIN y cherchent d'abord. */
+  dossier?: string
 }
 
 export interface AssembleError {

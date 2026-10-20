@@ -22,9 +22,9 @@ function nomTos(nom: string): string {
   return propre || 'PROGRAM'
 }
 
-export async function exporterPrg(source: string, nom: string, plateforme: Plateforme = 'atari'): Promise<ResultatExport> {
-  if (machineDe(plateforme).export.format === 'hunk') return exporterAmiga(source, nom)
-  const prg = await window.api.fabriquerPrg(source)
+export async function exporterPrg(source: string, nom: string, plateforme: Plateforme = 'atari', dossier?: string): Promise<ResultatExport> {
+  if (machineDe(plateforme).export.format === 'hunk') return exporterAmiga(source, nom, dossier)
+  const prg = await window.api.fabriquerPrg(source, 'prg', dossier)
   if (!prg.octets) return { ok: false, message: prg.raison ?? 'Export impossible.' }
   const enregistre = await window.api.enregistrerPrg(prg.octets, nomTos(nom))
   if (!enregistre.ok) return { ok: false, message: 'Export annulé.' }
@@ -45,8 +45,8 @@ function nomAmiga(nom: string): string {
   return propre || 'programme'
 }
 
-async function exporterAmiga(source: string, nom: string): Promise<ResultatExport> {
-  const exe = await window.api.fabriquerPrg(source, 'hunk')
+async function exporterAmiga(source: string, nom: string, dossier?: string): Promise<ResultatExport> {
+  const exe = await window.api.fabriquerPrg(source, 'hunk', dossier)
   if (!exe.octets) return { ok: false, message: exe.raison ?? 'Export impossible.' }
   const enregistre = await window.api.enregistrerPrg(exe.octets, nomAmiga(nom), 'hunk')
   if (!enregistre.ok) return { ok: false, message: 'Export annulé.' }
@@ -62,13 +62,13 @@ async function exporterAmiga(source: string, nom: string): Promise<ResultatExpor
  * « Essayer dans Hatari / WinUAE » : le programme est assemblé, déposé dans le dossier de partage
  * (Documents\68k Trainer\Atari ou Amiga) et lancé au démarrage de l'émulateur.
  */
-export async function essayerDansEmulateur(source: string, nom: string, plateforme: Plateforme = 'atari'): Promise<ResultatExport> {
+export async function essayerDansEmulateur(source: string, nom: string, plateforme: Plateforme = 'atari', dossier?: string): Promise<ResultatExport> {
   const id = plateforme === 'amiga' ? 'winuae' : 'hatari'
   const etat = (await window.api.emulateursEtat()).find((e) => e.id === id)
   if (!etat?.installe) {
     return { ok: false, message: `${etat?.nom ?? id} n'est pas installé : installe-le depuis l'onglet « Émulateurs ».` }
   }
-  const r = await window.api.emulateurEssayer(id, source, plateforme === 'amiga' ? nomAmiga(nom) : nomTos(nom))
+  const r = await window.api.emulateurEssayer(id, source, plateforme === 'amiga' ? nomAmiga(nom) : nomTos(nom), dossier)
   if (!r.ok) return { ok: false, message: r.erreur ?? 'Essai impossible.' }
   return {
     ok: true,

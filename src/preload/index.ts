@@ -13,8 +13,8 @@ import {
 } from '../shared/ipc'
 
 const api = {
-  assemble: (source: string): Promise<AssembleResult> =>
-    ipcRenderer.invoke(IPC.assemble, { source } satisfies AssembleRequest),
+  assemble: (source: string, dossier?: string): Promise<AssembleResult> =>
+    ipcRenderer.invoke(IPC.assemble, { source, dossier } satisfies AssembleRequest),
   loadProgress: (): Promise<ProgressState> => ipcRenderer.invoke(IPC.loadProgress),
   saveProgress: (state: ProgressState): Promise<void> => ipcRenderer.invoke(IPC.saveProgress, state),
   loadContent: (): Promise<ContentBundle> => ipcRenderer.invoke(IPC.loadContent),
@@ -45,16 +45,20 @@ const api = {
     machine: 'atari' | 'amiga',
     nom: string
   ): Promise<{ ok: boolean; chemin?: string }> => ipcRenderer.invoke(IPC.enregistrerSource, texte, chemin, machine, nom),
-  fabriquerPrg: (source: string, format: 'prg' | 'hunk' = 'prg'): Promise<{ octets?: Uint8Array; raison?: string }> =>
-    ipcRenderer.invoke(IPC.fabriquerPrg, source, format),
+  fabriquerPrg: (source: string, format: 'prg' | 'hunk' = 'prg', dossier?: string): Promise<{ octets?: Uint8Array; raison?: string }> =>
+    ipcRenderer.invoke(IPC.fabriquerPrg, source, format, dossier),
   exporterPdf: (html: string, nom: string): Promise<{ ok: boolean; chemin?: string }> =>
     ipcRenderer.invoke(IPC.exporterPdf, html, nom),
   emulateursEtat: (): Promise<EtatEmulateurPublic[]> => ipcRenderer.invoke(IPC.emulateursEtat),
   emulateurInstaller: (id: 'hatari' | 'winuae'): Promise<{ ok: boolean; erreur?: string }> => ipcRenderer.invoke(IPC.emulateurInstaller, id),
   emulateurDesinstaller: (id: 'hatari' | 'winuae'): Promise<void> => ipcRenderer.invoke(IPC.emulateurDesinstaller, id),
   emulateurLancer: (id: 'hatari' | 'winuae'): Promise<{ ok: boolean; erreur?: string }> => ipcRenderer.invoke(IPC.emulateurLancer, id),
-  emulateurEssayer: (id: 'hatari' | 'winuae', source: string, nom: string): Promise<{ ok: boolean; erreur?: string; chemin?: string }> =>
-    ipcRenderer.invoke(IPC.emulateurEssayer, id, source, nom),
+  emulateurEssayer: (
+    id: 'hatari' | 'winuae',
+    source: string,
+    nom: string,
+    dossier?: string
+  ): Promise<{ ok: boolean; erreur?: string; chemin?: string }> => ipcRenderer.invoke(IPC.emulateurEssayer, id, source, nom, dossier),
   ouvrirPartage: (machine: 'atari' | 'amiga'): Promise<string> => ipcRenderer.invoke(IPC.ouvrirPartage, machine),
   surProgressionEmulateur: (rappel: (p: { id: string; fait: number; total: number; etape: string }) => void): (() => void) => {
     const f = (_e: unknown, p: { id: string; fait: number; total: number; etape: string }): void => rappel(p)

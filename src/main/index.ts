@@ -71,7 +71,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
-  ipcMain.handle(IPC.assemble, (_event, request: AssembleRequest) => assemblerDansApplication(request.source))
+  ipcMain.handle(IPC.assemble, (_event, request: AssembleRequest) => assemblerDansApplication(request.source, request.dossier))
   const profils = new GestionProfils(app.getPath('userData'))
   ipcMain.handle(IPC.loadProgress, () => profils.chargerProgression())
   ipcMain.handle(IPC.saveProgress, (_event, state: ProgressState) => profils.enregistrerProgression(state))
@@ -186,8 +186,8 @@ app.whenReady().then(() => {
       return { ok: false, erreur: (e as Error).message }
     }
   })
-  ipcMain.handle(IPC.emulateurEssayer, async (_e, id: 'hatari' | 'winuae', source: string, nom: string) => {
-    const exe = fabriquerPrg(source, id === 'winuae' ? 'hunk' : 'prg')
+  ipcMain.handle(IPC.emulateurEssayer, async (_e, id: 'hatari' | 'winuae', source: string, nom: string, dossier?: string) => {
+    const exe = fabriquerPrg(source, id === 'winuae' ? 'hunk' : 'prg', dossier)
     if (!exe.octets) return { ok: false, erreur: exe.raison }
     const lanceur = id === 'hatari' ? fabriquerPrg(emulateurs.sourceLanceurAtari(`${nom}.PRG`)).octets : undefined
     try {
@@ -201,7 +201,9 @@ app.whenReady().then(() => {
     mkdirSync(d, { recursive: true })
     return shell.openPath(d)
   })
-  ipcMain.handle(IPC.fabriquerPrg, (_event, source: string, format?: 'prg' | 'hunk') => fabriquerPrg(source, format))
+  ipcMain.handle(IPC.fabriquerPrg, (_event, source: string, format?: 'prg' | 'hunk', dossier?: string) =>
+    fabriquerPrg(source, format, dossier)
+  )
   // Certificat : page HTML rendue dans une fenêtre invisible, imprimée en PDF (A4 paysage)
   ipcMain.handle(IPC.exporterPdf, async (event, html: string, nom: string) => {
     const fenetre = BrowserWindow.fromWebContents(event.sender)!

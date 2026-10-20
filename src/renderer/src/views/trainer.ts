@@ -136,6 +136,8 @@ export function renderTrainer(container: HTMLElement, initialProgram?: string): 
   }
   if (fichier === '') fichier = null
   afficherFichier()
+  /** Dossier du source ouvert : INCLUDE et INCBIN y cherchent d'abord, comme Devpac et vasm. */
+  const dossierSource = (): string | undefined => (fichier ? fichier.replace(/[\\/][^\\/]*$/, '') : undefined)
 
   editor.onDidChangeModelContent(() => {
     ecrire(CLE_PROGRAMME, editor.getValue())
@@ -210,7 +212,7 @@ export function renderTrainer(container: HTMLElement, initialProgram?: string): 
 
   async function onAssemble(): Promise<void> {
     statusEl.textContent = 'Assemblage…'
-    const result = await exec.assembler(editor.getValue())
+    const result = await exec.assembler(editor.getValue(), dossierSource())
     if (!result.success) {
       errorsEl.textContent = result.errors.map((e) => (e.line > 0 ? `Ligne ${e.line} : ${e.message}` : e.message)).join('\n')
       statusEl.textContent = 'Erreur d’assemblage'
@@ -259,14 +261,14 @@ export function renderTrainer(container: HTMLElement, initialProgram?: string): 
   }
 
   container.querySelector('#btn-prg')!.addEventListener('click', () => {
-    void exporterPrg(editor.getValue(), machine === 'amiga' ? 'bac_a_sable' : 'BACASABL', machine).then((r) => {
+    void exporterPrg(editor.getValue(), machine === 'amiga' ? 'bac_a_sable' : 'BACASABL', machine, dossierSource()).then((r) => {
       statusEl.textContent = r.ok ? 'Programme exporté' : 'Export impossible'
       errorsEl.textContent = r.message
     })
   })
   container.querySelector('#btn-essayer')!.addEventListener('click', () => {
     statusEl.textContent = 'Préparation de l’essai…'
-    void essayerDansEmulateur(editor.getValue(), machine === 'amiga' ? 'bac_a_sable' : 'BACASABL', machine).then((r) => {
+    void essayerDansEmulateur(editor.getValue(), machine === 'amiga' ? 'bac_a_sable' : 'BACASABL', machine, dossierSource()).then((r) => {
       statusEl.textContent = r.ok ? 'Essai lancé' : 'Essai impossible'
       errorsEl.textContent = r.message
     })

@@ -61,9 +61,12 @@ export class Execution {
     return r
   }
 
-  /** Assemble le source ; renvoie le résultat (erreurs reformulées comprises). */
-  async assembler(source: string): Promise<AssembleResult> {
-    const result = await window.api.assemble(source)
+  /**
+   * Assemble le source ; renvoie le résultat (erreurs reformulées comprises). `dossier` : celui du
+   * fichier source ouvert, où INCLUDE et INCBIN cherchent d'abord.
+   */
+  async assembler(source: string, dossier?: string): Promise<AssembleResult> {
+    const result = await window.api.assemble(source, dossier)
     this.assemblage = result
     const model = this.editor.getModel()
     if (model) {
