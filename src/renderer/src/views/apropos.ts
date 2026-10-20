@@ -25,11 +25,13 @@ export function renderApropos(container: HTMLElement): () => void {
         ${info.builtAt ? `<p class="apropos-built">Compilé le ${new Date(info.builtAt).toLocaleString('fr-FR')}</p>` : '<p class="apropos-built">Version de développement</p>'}
         <h3>Sous le capot</h3>
         <p class="apropos-texte">Assembleur et désassembleur 68000 écrits pour 68k Trainer, compatibles Devpac (vérifiés octet par octet contre vasm, de Volker Barthelmann et Frank Wille).
-        Émulateur 68000 et TOS simulé écrits pour 68k Trainer.</p>
+        Émulateur 68000, TOS simulé et Amiga 500 simulé (puces custom, Kickstart 1.3) écrits pour 68k Trainer.</p>
         <h3>Sources des cours</h3>
         <p class="apropos-texte">Cours reformulés à partir du cours d'assembleur 68000 sur Atari ST du Féroce Lapin, du cours
         d'initiation à l'assembleur 68000 de David Bouchet (EPITA), du polycopié de Philippe Meyne (IUT d'Évry),
-        du manuel Motorola M68000PRM et d'un manuel de synthèse Atari ST (vérifié et corrigé).</p>
+        du manuel Motorola M68000PRM et d'un manuel de synthèse Atari ST (vérifié et corrigé). Parcours Amiga rédigé
+        d'après Amiga Intern (Abacus), La Bible de l'Amiga (Micro Application), le Hardware Reference Manual et les sources
+        d'AROS, et un manuel de synthèse Amiga (vérifié et corrigé).</p>
       </div>
       <div class="apropos-card profil-gestion">
         <h3>Mon profil : <span id="profil-nom">${echapper(profil.nom)}</span> ${profil.protege ? '🔒' : ''}</h3>

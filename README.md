@@ -1,9 +1,12 @@
 # 68k Trainer
 
-Apprendre l'assembleur **Motorola 68000** en programmant un **Atari ST simulé**, pas à pas.
+Apprendre l'assembleur **Motorola 68000** en programmant un **Atari ST** ou un **Amiga 500**
+simulés, pas à pas. À notre connaissance, c'est le premier outil qui réunit les deux machines.
 
-- Un **parcours guidé** façon OpenClassrooms, en **8 chapitres** : du premier `MOVE` à
-  l'animation, au clavier, au joystick, au son et à une petite intro façon démo. Barre de
+- Deux **parcours guidés** façon OpenClassrooms, avec un **tronc commun** (les chapitres 1 à 3, le
+  68000) : **Atari ST** en 8 chapitres (TOS, écran, animation, clavier, joystick, son, Devpac) et
+  **Amiga** en 10 chapitres (Exec et bibliothèques, puces custom, Copper, Blitter, sprites, Paula,
+  exécutable AmigaDOS). La machine se choisit dans le profil. Barre de
   progression, « reprendre là où je me suis arrêté », attestation et certificat en PDF.
 - Pour chaque notion : un cours, un **exemple corrigé exécuté pas à pas** (avec l'explication de
   chaque ligne), un exercice de **prédiction**, des **exercices par niveaux** (à compléter, guidé,
@@ -13,9 +16,13 @@ Apprendre l'assembleur **Motorola 68000** en programmant un **Atari ST simulé**
   un **Atari 1040 STF** simulé : écran en basse résolution, palette et rasters, VBL à 50 Hz, MFP
   68901, clavier IKBD et joysticks, puce sonore YM2149, TOS (GEMDOS, BIOS, XBIOS), bombes. Mode
   **temps réel** à la vitesse d'un vrai ST, avec le son.
+- Un **Amiga 500** simulé (OCS, PAL) : Copper, Blitter (zone, remplissage, lignes), plans de bits,
+  sprites, Paula, CIA, souris, joystick, clavier, et un Kickstart 1.3 simulé (ExecBase en `$4`,
+  vraies tables de sauts, exec, dos, graphics), Guru Meditation compris.
 - Un **débogueur** : pas à pas, points d'arrêt, désassemblage, pile, mémoire, matériel.
 - Son **propre assembleur 68000**, compatible Devpac (vérifié octet par octet contre vasm), un
-  **désassembleur**, et l'**export en .PRG** à lancer dans Hatari ou sur un vrai ST.
+  **désassembleur**, l'**export en .PRG** (Hatari, vrai ST) et en **exécutable AmigaDOS**
+  (WinUAE, FS-UAE, vrai Amiga).
 
 Les choix pédagogiques s'appuient sur la recherche : exemples résolus puis retrait progressif de
 l'aide, une difficulté à la fois, lire et prédire avant d'écrire, enseignement explicite du
@@ -51,10 +58,12 @@ npm run dist:mac   # macOS : .dmg universel (à lancer sous macOS)
 |---|---|
 | `src/cpu/` | émulateur 68000 (`cpu.ts`, `exceptions.ts`, point d'extension `platform.ts`) |
 | `src/platforms/atari-st/` | Atari ST : TOS simulé, VBL, MFP, IKBD, YM2149, écran, palette |
-| `src/asm/` | assembleur compatible Devpac, format .PRG, désassembleur (sans dépendance) |
+| `src/platforms/amiga/` | Amiga 500 : puces custom, Copper, Blitter, sprites, Paula, CIA, Kickstart simulé |
+| `src/asm/` | assembleur compatible Devpac, formats .PRG et hunk AmigaDOS, désassembleur (sans dépendance) |
 | `src/shared/` | modèle du parcours, calcul de la progression, vérification des exercices |
 | `src/renderer/` | interface (TypeScript sans framework, éditeur Monaco) |
-| `content/parcours/atari/` | le parcours : un dossier par chapitre (`chapitre.json`, cours `.md`, codes `code.s`) |
+| `content/parcours/` | les parcours `commun/`, `atari/`, `amiga/` : un dossier par chapitre (`chapitre.json`, cours `.md`, codes `code.s`) |
+| `content/fichiers/` | fichiers pour INCLUDE et INCBIN (dont `amiga-systeme.s` : prendre et rendre la main) |
 | `content/courses/`, `content/exercises/` | fiches et exercices de la version 0.1 |
 | `docs/` | état des lieux, inventaire des sources, errata du manuel, plan des émulateurs, rapports |
 
@@ -84,4 +93,5 @@ npm run desasm -- PROGRAMME.PRG -o p.s  # → source Devpac réassemblable à l'
 
 Développé par Yannick Montfort avec Claude (Anthropic). Cours reformulés à partir du cours
 d'assembleur 68000 sur Atari ST du Féroce Lapin, du cours de David Bouchet (EPITA), du polycopié de
-Philippe Meyne (IUT d'Évry) et du manuel Motorola M68000PRM.
+Philippe Meyne (IUT d'Évry) et du manuel Motorola M68000PRM ; parcours Amiga rédigé d'après Amiga
+Intern (Abacus), La Bible de l'Amiga, le Hardware Reference Manual et les sources d'AROS.
