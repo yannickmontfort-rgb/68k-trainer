@@ -1,0 +1,73 @@
+{
+  "id": "amiga-ch10",
+  "titre": "Outils, exécutable et démo",
+  "plateforme": "amiga",
+  "resume": "Le dernier pas : sortir tes programmes du simulateur. Tu vas voir comment est fait un **exécutable AmigaDOS** (les *hunks*, les relocations, les sections en Chip RAM), comment le lancer dans **WinUAE**, **FS-UAE** ou sur un vrai Amiga, comment lire un **Guru Meditation**, et les règles d'or du programmeur Amiga. Pour finir, une petite **intro** qui réunit Copper, sprite, son et interruption.",
+  "notions": [
+    {
+      "id": "amiga-ch10-n1",
+      "titre": "L'exécutable AmigaDOS",
+      "contenus": [
+        { "type": "cours", "id": "amiga-ch10-cours-executable", "titre": "Hunks, sections, et lancer son programme", "fichier": "01-executable.md", "aRelire": true, "source": "Rédigé pour 68k Trainer d'après The AmigaDOS Manual (format des hunks), Amiga Intern (Abacus) et la documentation de vasm" },
+        {
+          "type": "prediction", "id": "amiga-ch10-pred-retour", "titre": "Le code de retour", "aRelire": true,
+          "introduction": "Le programme se termine par `RTS` avec 20 dans D0.",
+          "code": "@code.s#retour-prediction",
+          "questions": [
+            { "id": "q1", "enonce": "Que vaut D0 à la fin ?", "choix": ["$00000014", "$00000020", "$00000000"], "bonne": 0, "explication": "20 en décimal = $14.", "verification": { "D0": "$00000014" } },
+            { "id": "q2", "enonce": "Que comprend le Shell ?", "choix": ["Le programme a échoué (FAIL)", "Tout va bien", "Un avertissement"], "bonne": 0, "explication": "0 = OK, 5 = WARN, 10 = ERROR, 20 = FAIL : un script qui l'appelle peut s'arrêter là." }
+          ]
+        },
+        { "type": "exercice", "id": "amiga-ch10-exo-retour", "titre": "Tout s'est bien passé", "variante": "completer", "niveau": 1, "aRelire": true,
+          "enonce": "Ce programme fait son travail, mais annonce un échec au Shell. Corrige son code de retour.",
+          "indices": ["Le code de retour est dans D0 au moment du `RTS`.", "`MOVEQ #0,D0`"],
+          "codeDepart": "@code.s#retour-depart", "solution": "@code.s#retour-solution",
+          "check": { "type": "registers", "maxSteps": 200, "terminer": true, "systemeRendu": true, "expected": { "D0": "$00000000" } } }
+      ]
+    },
+    {
+      "id": "amiga-ch10-n2",
+      "titre": "Déboguer, bien programmer, faire une démo",
+      "contenus": [
+        { "type": "cours", "id": "amiga-ch10-cours-pratiques", "titre": "Guru Meditation et règles d'or", "fichier": "02-pratiques.md", "aRelire": true, "source": "Rédigé pour 68k Trainer d'après Amiga Intern (Abacus), les cours de démo (Stash of Code) et l'expérience de la scène" },
+        {
+          "type": "exemple", "id": "amiga-ch10-ex-intro", "titre": "Une petite intro", "aRelire": true,
+          "introduction": "Tout le parcours en un programme : un ciel dégradé et une barre de trois couleurs qui rebondit (Copper, animé par une routine VBL), une balle (sprite 0) et une note tenue (Paula). Coche 🔊, lance **🎬 Temps réel**, puis clique pour finir. Exporte-le, et lance-le dans un émulateur !",
+          "code": "@code.s#intro-exemple",
+          "machine": { "ecran": true, "interactif": true },
+          "explications": [
+            { "ligne": 4, "texte": "`prendre` : le système est coupé, on a les puces pour nous." },
+            { "ligne": 5, "texte": "Les sprites : la balle, puis la liste vide pour les 7 autres." },
+            { "ligne": 22, "texte": "Paula : une onde carrée jouée à une période de 508, une note grave, au volume 24." },
+            { "ligne": 26, "texte": "Un seul DMACON allume tout : DMAEN, COPEN, SPREN et AUD0EN." },
+            { "ligne": 27, "texte": "La routine VBL fera bouger la barre ; le programme principal attend le clic." },
+            { "ligne": 30, "texte": "Le son s'arrête avant de rendre le système." },
+            { "ligne": 39, "texte": "Dans la VBL : la position suivante de la table, en boucle sur 32 valeurs." },
+            { "ligne": 46, "texte": "Les trois WAIT de la barre sont réécrits, 4 lignes les uns sous les autres." }
+          ],
+          "conclusion": "Copper, sprites, son, interruption : une intro de la scène Amiga, ce n'est que ça… et beaucoup d'imagination. À toi de jouer."
+        }
+      ]
+    }
+  ],
+  "qcm": {
+    "id": "amiga-ch10-qcm",
+    "seuil": 0.7,
+    "questions": [
+      { "id": "q1", "enonce": "Pourquoi un programme AmigaDOS n'a-t-il pas de ORG ?", "choix": ["AmigaDOS le charge où il trouve de la place et corrige ses adresses (relocations)", "ORG n'existe pas sur l'Amiga", "Pour aller plus vite"], "bonne": 0, "explication": "LoadSeg ajoute l'adresse réelle du chargement aux adresses listées dans les relocations." },
+      { "id": "q2", "enonce": "Que demande `SECTION ecran,BSS_C` ?", "choix": ["Une zone vide en Chip RAM", "Du code en Fast RAM", "Un écran du Workbench"], "bonne": 0, "explication": "BSS = zone vide ; _C = Chip RAM, visible des puces." },
+      { "id": "q3", "enonce": "Un Guru Meditation #00000004 signale…", "choix": ["une instruction illégale", "une division par zéro", "une erreur de bus"], "bonne": 0, "explication": "Le numéro est celui de l'exception du 68000 : 4 = instruction illégale." },
+      { "id": "q4", "enonce": "Lancé depuis une icône, un programme doit d'abord…", "choix": ["récupérer et rendre le message du Workbench", "ouvrir intuition.library", "rien de spécial"], "bonne": 0, "explication": "WaitPort et GetMsg au début, ReplyMsg avant de finir ; sinon, lance-le depuis le Shell." },
+      { "id": "q5", "enonce": "Pour qu'une animation ait la même vitesse sur un A500 et un A1200, on la cale sur…", "choix": ["la VBL ou le faisceau", "des boucles d'attente", "la vitesse du 68000"], "bonne": 0, "explication": "L'image dure toujours 1/50 de seconde en PAL ; le processeur, lui, peut être bien plus rapide." },
+      { "id": "q6", "enonce": "Quel émulateur peut faire tourner tes programmes ?", "choix": ["WinUAE ou FS-UAE", "Hatari", "DOSBox"], "bonne": 0, "explication": "Hatari émule l'Atari ST ; WinUAE et FS-UAE, l'Amiga." }
+    ]
+  },
+  "bonus": [
+    { "type": "exercice", "id": "amiga-ch10-bonus-intro", "titre": "Ton intro", "variante": "ecrire", "niveau": 3, "aRelire": true,
+      "enonce": "Défi final : la balle (sprite 0, un carré blanc) au milieu de l'écran en **(152, 120)**, et la barre de trois couleurs qui suit la table `positions`, une position par image, pendant **40 images** ; puis tout reste en place jusqu'au clic. Les listes et les données sont prêtes : à toi d'écrire le programme.",
+      "indices": ["Les pointeurs de sprites comme au chapitre 8 ; les mots de contrôle : VSTART = $2C + 120, HSTART = $81 + 152, VSTOP = VSTART + 16.", "La barre : 4 WAIT à réécrire (barre, barre2, barre3, barre4), espacés de `$0400`. Après 40 images, l'index vaut 7 : la barre commence à la ligne `$81`."],
+      "codeDepart": "@code.s#bonus-intro-depart", "solution": "@code.s#bonus-intro-solution",
+      "check": { "type": "image", "maxSteps": 3000000, "terminer": true, "systemeRendu": true, "image": 50, "expected": { "10,86": "$0F00", "10,90": "$0F80", "10,94": "$0FF0", "10,98": "$0003", "152,120": "$0FFF", "167,135": "$0FFF", "151,120": "$0003" } },
+      "machine": { "ecran": true, "evenements": [{ "image": 54, "boutonGauche": true }] } }
+  ]
+}
