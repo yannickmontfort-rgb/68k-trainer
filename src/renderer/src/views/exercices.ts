@@ -123,6 +123,8 @@ export function renderExercices(container: HTMLElement): () => void {
         theme: 'm68k-dark',
         fontSize: 14,
         minimap: { enabled: false },
+        // Menu du clic droit : celui de l'application (son « Coller » marche, pas celui de Monaco)
+        contextmenu: false,
         automaticLayout: true
       })
 

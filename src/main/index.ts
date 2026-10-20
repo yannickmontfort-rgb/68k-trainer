@@ -38,6 +38,23 @@ function createWindow(): void {
   })
 
   window.on('ready-to-show', () => window.show())
+  // Clic droit : Couper / Copier / Coller / Tout sélectionner (Electron n'en a pas par défaut)
+  window.webContents.on('context-menu', (_e, params) => {
+    const f = params.editFlags
+    const modele: Electron.MenuItemConstructorOptions[] = params.isEditable
+      ? [
+          { label: 'Couper', role: 'cut', enabled: f.canCut },
+          { label: 'Copier', role: 'copy', enabled: f.canCopy },
+          { label: 'Coller', role: 'paste', enabled: f.canPaste },
+          { type: 'separator' },
+          { label: 'Tout sélectionner', role: 'selectAll' }
+        ]
+      : [
+          { label: 'Copier', role: 'copy', enabled: params.selectionText.length > 0 },
+          { label: 'Tout sélectionner', role: 'selectAll' }
+        ]
+    Menu.buildFromTemplate(modele).popup({ window })
+  })
   window.webContents.on('console-message', (_e, level, message, line, sourceId) => {
     console.log(`[renderer:${level}] ${message} (${sourceId}:${line})`)
   })
