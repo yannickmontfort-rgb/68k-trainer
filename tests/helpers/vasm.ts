@@ -40,14 +40,14 @@ export interface ResultatVasm {
 }
 
 /** Assemble avec vasm en mode Devpac, sortie binaire à plat (`format` : bin ou tos). */
-export function vasm(source: string, format: 'bin' | 'tos' = 'bin', options: string[] = []): ResultatVasm {
+export function vasm(source: string, format: 'bin' | 'tos' | 'hunkexe' = 'bin', options: string[] = []): ResultatVasm {
   const dir = mkdtempSync(join(tmpdir(), '68k-vasm-'))
   try {
     const src = join(dir, 'p.s')
     const bin = join(dir, 'p.bin')
     const lst = join(dir, 'p.lst')
     writeFileSync(src, source, 'utf-8')
-    const args = [format === 'bin' ? '-Fbin' : '-Ftos', '-m68000', '-devpac', ...options, '-quiet', '-o', bin, '-L', lst, src]
+    const args = ['-F' + format, '-m68000', '-devpac', ...options, '-quiet', '-o', bin, '-L', lst, src]
     const r = spawnSync(VASM, args, { encoding: 'utf-8' })
     const sortie = (r.stdout ?? '') + (r.stderr ?? '')
     const lignesErreur = [...sortie.matchAll(/error \d+ in line (\d+) of "[^"]*"/g)].map((m) => +m[1])
