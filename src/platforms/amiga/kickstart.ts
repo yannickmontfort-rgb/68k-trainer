@@ -834,6 +834,7 @@ export function createKickstart(options: KickstartOptions = {}): Platform {
     materiel.ciaA.ecrire(2, 0x03, 0)
     materiel.ciaA.ecrire(0, 0x00, 0)
     materiel.ciaA.ecrire(13, 0x88, 0)
+    materiel.prechauffer()
   }
 
   const EXEC_CODE_PAR_DECALAGE: Record<number, number> = {

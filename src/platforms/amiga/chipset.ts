@@ -94,6 +94,11 @@ export interface MaterielAmiga {
   blitterOccupe(): boolean
   /** Cycle du prochain événement qui peut réveiller une attente (image, timer, son, action). */
   prochainEvenement(): number
+  /**
+   * Balaye une image complète sans faire avancer le temps du programme : au lancement, l'écran
+   * montre déjà ce que le système affiche (comme une machine allumée depuis longtemps).
+   */
+  prechauffer(): void
 }
 
 const registre = new WeakMap<Cpu, MaterielAmiga>()
@@ -316,6 +321,8 @@ export function createChipset(options: ChipsetOptions = {}): Platform {
     if ((dmacon & (DMA.DMAEN | DMA.SPR)) === (DMA.DMAEN | DMA.SPR)) dmaSprites(sprites, ligne, cpu.memory)
   }
 
+  let enPrechauffage = false
+
   function nouvelleImage(): void {
     ligne = 0
     debutImage = debutLigne
@@ -332,7 +339,22 @@ export function createChipset(options: ChipsetOptions = {}): Platform {
     attente = null
     copperArrete = false
     copperTemps = debutImage + 2
-    options.onVbl?.(cpu)
+    if (!enPrechauffage) options.onVbl?.(cpu)
+  }
+
+  function prechauffer(): void {
+    enPrechauffage = true
+    avancer(CYCLES_PAR_IMAGE)
+    enPrechauffage = false
+    // Retour à l'instant 0, avec l'image du système déjà affichée
+    debutImage = debutLigne = 0
+    ligne = 0
+    numeroImage = 0
+    intreq = 0
+    copperTemps = 2
+    ciaA.tod = ciaB.tod = 0
+    for (const s of sprites) s.etat = 'controle'
+    debutLigneSuivante()
   }
 
   /** Fait avancer le faisceau (Copper, lignes, images) jusqu'au cycle `t`. */
@@ -616,7 +638,8 @@ export function createChipset(options: ChipsetOptions = {}): Platform {
           refleter()
         },
         blitterOccupe: () => cpu.cycles < blitFin,
-        prochainEvenement
+        prochainEvenement,
+        prechauffer
       })
     },
 

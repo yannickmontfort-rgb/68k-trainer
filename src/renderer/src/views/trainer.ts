@@ -21,11 +21,26 @@ START:
   amiga: `; Bac à sable : écris ici ce que tu veux, puis Assembler et Pas / Exécuter.
 ; La machine simulée est un Amiga 500 (Kickstart 1.3, puces custom en $DFF000).
 START:
-    MOVE.W  #5,D0
-    MOVE.W  #10,D1
-    ADD.W   D1,D0           ; D0 = 15
-    MOVE.W  #$0F80,$DFF180  ; couleur 0 (le fond) = orange... jusqu'à ce que le Copper la remette
+    MOVEA.L 4.W,A6          ; A6 = ExecBase
+    LEA     dosnom(PC),A1
+    MOVEQ   #0,D0
+    JSR     -552(A6)        ; OpenLibrary("dos.library", 0)
+    MOVEA.L D0,A6           ; A6 = DOSBase
+    JSR     -60(A6)         ; Output() : la fenêtre du CLI
+    MOVE.L  D0,D1
+    LEA     texte(PC),A0
+    MOVE.L  A0,D2
+    MOVEQ   #fin-texte,D3
+    JSR     -48(A6)         ; Write(sortie, texte, longueur)
+    MOVEA.L A6,A1
+    MOVEA.L 4.W,A6
+    JSR     -414(A6)        ; CloseLibrary(DOSBase)
+    MOVEQ   #0,D0           ; code de retour : tout va bien
     RTS
+dosnom: DC.B    'dos.library',0
+texte:  DC.B    'Bonjour Amiga !',10
+fin:
+    EVEN
 `
 }
 
@@ -43,7 +58,7 @@ export function renderTrainer(container: HTMLElement, initialProgram?: string): 
       <button id="btn-run" disabled>Exécuter</button>
       <button id="btn-reset" disabled>Réinitialiser</button>
       <button id="btn-prg" title="${MACHINES[machine].export.titre}">${MACHINES[machine].export.bouton}</button>
-      <label class="toolbar-option" ${machine === 'atari' ? '' : 'hidden'} title="Comme sous le vrai TOS : vecteurs, variables système et matériel protégés">
+      <label class="toolbar-option" ${machine === 'atari' ? '' : 'style="display:none"'} title="Comme sous le vrai TOS : vecteurs, variables système et matériel protégés">
         <input type="checkbox" id="opt-utilisateur" /> Mode utilisateur
       </label>
       <span class="status" id="status">Prêt</span>
