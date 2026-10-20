@@ -281,6 +281,8 @@ export function createKickstart(options: KickstartOptions = {}): Platform {
   let libresChip: [number, number][] = []
   let libresFast: [number, number][] = []
   let saisie = ''
+  /** Lignes prévues par l'exercice, pas encore tapées. */
+  let prevue = ''
   let ioErr = 0
   let attenteDebut: number | null = null
   let imageAttendue: number | null = null
@@ -379,7 +381,15 @@ export function createKickstart(options: KickstartOptions = {}): Platform {
       saisie += car
       cpu.output += car
     }
-    const fin = saisie.indexOf('\n')
+    let fin = saisie.indexOf('\n')
+    if (fin < 0 && prevue.includes('\n')) {
+      // Une ligne prévue par l'exercice : « tapée » maintenant, elle apparaît dans le CLI
+      const l = prevue.slice(0, prevue.indexOf('\n') + 1)
+      prevue = prevue.slice(l.length)
+      saisie += l
+      cpu.output += l
+      fin = saisie.indexOf('\n')
+    }
     if (fin < 0) {
       if (options.clavierInteractif) return attendre(cpu)
       throw new Error("Le programme attend une ligne tapée au clavier (Read), mais rien n'a été prévu pour cet exercice.")
@@ -460,8 +470,10 @@ export function createKickstart(options: KickstartOptions = {}): Platform {
       sortie += texte
     }
     sortie += '\0'
+    // La routine classique range les caractères à partir de A3 ; comme toute fonction d'exec,
+    // RawDoFmt rend ensuite A3 inchangé (seuls D0, D1, A0 et A1 peuvent être modifiés)
     for (let k = 0; k < sortie.length; k++) mem.writeU8((cpu.a[3] + k) & 0xffffff, sortie.charCodeAt(k))
-    cpu.a[3] = (cpu.a[3] + sortie.length) >>> 0
+    cpu.cycles += sortie.length * 40
     cpu.d[0] = donnees
   }
 
@@ -736,7 +748,7 @@ export function createKickstart(options: KickstartOptions = {}): Platform {
       mem.writeU16(b.base + 16, b.vecteurs * 6) // LIB_NEGSIZE
       mem.writeU16(b.base + 18, b.positif)
       mem.writeU16(b.base + CHAMP.LIB_VERSION, b.version)
-      mem.writeU16(b.base + 22, 0)
+      mem.writeU16(b.base + 22, parseInt(b.idString.split(' ')[1].split('.')[1], 10)) // LIB_REVISION : « 34.2 » → 2
       mem.writeU32(b.base + 24, idAdr)
       mem.writeU16(b.base + CHAMP.LIB_OPENCNT, 1)
       for (let i = 1; i <= b.vecteurs; i++) {
@@ -879,7 +891,8 @@ export function createKickstart(options: KickstartOptions = {}): Platform {
       allouees = new Map()
       libresChip = [[CHIP_LIBRE_DEBUT, CHIP_LIBRE_FIN]]
       libresFast = [[SLOW_DEBUT, SLOW_FIN]]
-      saisie = options.saisie ?? ''
+      saisie = ''
+      prevue = options.saisie ?? ''
       ioErr = 0
       attenteDebut = null
       imageAttendue = null

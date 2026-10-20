@@ -1,0 +1,217 @@
+{
+  "id": "amiga-ch04",
+  "titre": "Le système de l'Amiga : Exec et les bibliothèques",
+  "plateforme": "amiga",
+  "resume": "Sur l'Amiga, on parle au système par des **bibliothèques** : `exec`, `dos`, `graphics`… Tu vas trouver **ExecBase** à la seule adresse fixe de la machine (`$4`), suivre un `JSR -132(A6)` jusque dans la ROM du **Kickstart**, ouvrir `dos.library` pour écrire dans la fenêtre du **CLI**, demander de la **Chip RAM** à exec et la lui rendre, attendre avec `Delay` et afficher des nombres avec `RawDoFmt`. À chaque fin de programme, un **bilan** vérifie que tu as tout rendu au système. Correspond au chapitre 4 du manuel Amiga (corrigé : voir l'errata).",
+  "notions": [
+    {
+      "id": "amiga-ch04-n1",
+      "titre": "Le Kickstart et ExecBase",
+      "contenus": [
+        { "type": "cours", "id": "amiga-ch04-cours-kickstart", "titre": "Bibliothèques, ExecBase et table de sauts", "fichier": "01-kickstart.md", "aRelire": true, "source": "Rédigé pour 68k Trainer d'après Amiga Intern (Abacus), La Bible de l'Amiga et les fichiers .fd des bibliothèques" },
+        {
+          "type": "exemple", "id": "amiga-ch04-ex-forbid", "titre": "Suivre un appel à Forbid", "aRelire": true,
+          "introduction": "Un appel système, de l'intérieur. Avance **pas à pas** et regarde le **PC** et la vue **Désassemblage** : après le `JSR`, le processeur arrive dans la table de sauts, juste sous ExecBase.",
+          "code": "@code.s#forbid-exemple",
+          "explications": [
+            { "ligne": 2, "texte": "Le mot long en `$4` : A6 = ExecBase (`$00000800` dans 68k Trainer, ailleurs sur un vrai Amiga)." },
+            { "ligne": 3, "texte": "`JSR -132(A6)` : le 68000 empile l'adresse de retour et saute en A6 − 132 = `$077C`. Le désassemblage y montre un `JMP` vers la ROM (`$FCxxxx`) : c'est l'entrée de Forbid dans la table de sauts. Le pas suivant exécute la routine d'exec en ROM d'un seul coup." },
+            { "ligne": 4, "texte": "TDNestCnt, à 295 octets au-dessus de la base, valait −1 ($FF) : Forbid l'a augmenté de 1. D0 = $00. Tant qu'il est ≥ 0, exec ne passe plus la main aux autres tâches." },
+            { "ligne": 5, "texte": "Permit fait l'inverse." },
+            { "ligne": 6, "texte": "D1 = $FF : le compteur est revenu à −1, le multitâche reprend." },
+            { "ligne": 7, "texte": "`RTS` rend la main au CLI. Le bilan de fin ne signale rien : tout a été rendu." }
+          ],
+          "conclusion": "Un appel système, c'est un `JSR` dans la table de sauts de la bibliothèque, avec sa base dans A6. Rien de magique : tu peux le suivre au débogueur jusqu'à la ROM."
+        },
+        {
+          "type": "prediction", "id": "amiga-ch04-pred-table", "titre": "Que contient la table de sauts ?", "aRelire": true,
+          "introduction": "On lit directement la mémoire sous et au-dessus d'ExecBase.",
+          "code": "@code.s#table-prediction",
+          "questions": [
+            { "id": "q1", "enonce": "Que vaut D0 à la fin ?", "choix": ["$00004EF9 : le code de JMP adresse.L", "$00004E75 : le code de RTS", "$00000000 : la table est vide"], "bonne": 0, "explication": "Chaque entrée de la table est une instruction `JMP $xxxxxxxx` de 6 octets : le mot `$4EF9`, puis l'adresse de la routine.", "verification": { "D0": "$00004EF9" } },
+            { "id": "q2", "enonce": "Que vaut D1 (le mot en 20(A6)) ?", "choix": ["$00000022", "$00000013", "$00000001"], "bonne": 0, "explication": "LIB_VERSION : 34 ($22) pour l'exec du Kickstart 1.3.", "verification": { "D1": "$00000022" } }
+          ]
+        },
+        { "type": "exercice", "id": "amiga-ch04-exo-forbid", "titre": "Forbid et Permit", "variante": "completer", "niveau": 1, "aRelire": true,
+          "enonce": "Le programme doit appeler `Forbid()`, lire le compteur TDNestCnt dans D7, puis appeler `Permit()`. Les deux décalages sont faux : remplace-les par les bons (regarde le tableau du cours).",
+          "indices": ["Forbid est à −132, Permit à −138.", "Après Forbid, TDNestCnt vaut 0."],
+          "codeDepart": "@code.s#forbid-depart", "solution": "@code.s#forbid-solution",
+          "check": { "type": "registers", "maxSteps": 50, "terminer": true, "systemeRendu": true, "expected": { "D7": "$00000000" } } },
+        { "type": "exercice", "id": "amiga-ch04-exo-permit", "titre": "Le multitâche resté bloqué", "variante": "corriger", "niveau": 2, "aRelire": true,
+          "enonce": "Ce programme calcule 9 + 8 + … + 0 dans D0 en suspendant le multitâche. Le résultat est bon, mais le **bilan de fin** se plaint : le système reste bloqué. Trouve l'instruction en trop.",
+          "indices": ["Compte les appels à Forbid et à Permit : il en faut autant.", "Le `JSR -132(A6)` placé dans la boucle est exécuté 10 fois : supprime-le."],
+          "codeDepart": "@code.s#permit-depart", "solution": "@code.s#permit-solution",
+          "check": { "type": "registers", "maxSteps": 200, "terminer": true, "systemeRendu": true, "expected": { "D0": "$0000002D" } } },
+        { "type": "exercice", "id": "amiga-ch04-exo-disable", "titre": "Disable et Enable s'imbriquent", "variante": "ecrire", "niveau": 3, "aRelire": true,
+          "enonce": "Appelle `Disable()` (−120) **deux fois**, puis `Enable()` (−126) **deux fois**. Après chaque appel, range l'octet **IDNestCnt** (en `294(A6)`) dans un registre : D4, puis D5, D6 et D7. Observe dans le panneau « Vecteurs et matériel » quand INTENA perd son bit INTEN.",
+          "indices": ["`MOVE.B 294(A6),D4` juste après le premier `JSR -120(A6)`.", "Le compteur part de −1 : 0, 1, puis 0 et −1 ($FF). Les interruptions ne reviennent qu'au dernier Enable."],
+          "codeDepart": "@code.s#disable-depart", "solution": "@code.s#disable-solution",
+          "check": { "type": "registers", "maxSteps": 100, "terminer": true, "systemeRendu": true, "expected": { "D4": "$00000000", "D5": "$00000001", "D6": "$00000000", "D7": "$000000FF" } } }
+      ]
+    },
+    {
+      "id": "amiga-ch04-n2",
+      "titre": "Ouvrir une bibliothèque et écrire dans le CLI",
+      "contenus": [
+        { "type": "cours", "id": "amiga-ch04-cours-bibliotheques", "titre": "OpenLibrary, versions, Output et Write", "fichier": "02-bibliotheques.md", "aRelire": true, "source": "Rédigé pour 68k Trainer d'après Amiga Intern (Abacus) et Amiga Machine Language (Abacus, chap. 6)" },
+        {
+          "type": "exemple", "id": "amiga-ch04-ex-bonjour", "titre": "Bonjour Amiga !", "aRelire": true,
+          "introduction": "Le « Bonjour » complet d'un programme AmigaDOS : ouvrir dos.library, écrire, refermer. Regarde la **Sortie texte** : c'est la fenêtre du CLI.",
+          "code": "@code.s#bonjour-exemple",
+          "explications": [
+            { "ligne": 2, "texte": "A6 = ExecBase : OpenLibrary est une fonction d'exec." },
+            { "ligne": 3, "texte": "A1 = l'adresse du nom, avec `(PC)` : le programme marche où qu'il soit chargé." },
+            { "ligne": 4, "texte": "D0 = 0 : n'importe quelle version de dos.library convient." },
+            { "ligne": 5, "texte": "OpenLibrary (−552) : D0 reçoit la base de dos.library." },
+            { "ligne": 6, "texte": "On teste toujours le résultat : 0 voudrait dire « pas de dos.library »." },
+            { "ligne": 8, "texte": "Désormais A6 = DOSBase : les appels suivants vont à dos.library." },
+            { "ligne": 9, "texte": "Output() : D0 = la poignée de la fenêtre du CLI." },
+            { "ligne": 10, "texte": "Write attend la poignée dans D1, l'adresse du texte dans D2 et sa longueur dans D3." },
+            { "ligne": 13, "texte": "`fin-texte` : l'assembleur calcule la longueur, 16 octets, le 10 final compris." },
+            { "ligne": 14, "texte": "Write : le texte apparaît dans la sortie." },
+            { "ligne": 15, "texte": "CloseLibrary veut la base dans A1… et exec dans A6." },
+            { "ligne": 19, "texte": "D0 = 0 au retour : le code de retour du programme. Le CLI considère 0 comme « tout va bien »." }
+          ],
+          "conclusion": "Ouvrir, vérifier, utiliser, fermer : tous les programmes système de l'Amiga suivent ce schéma. Garde-le sous la main, il servira à chaque chapitre."
+        },
+        {
+          "type": "prediction", "id": "amiga-ch04-pred-version", "titre": "La bonne version", "aRelire": true,
+          "introduction": "On demande deux fois graphics.library, avec deux versions minimales différentes, à un Kickstart 1.3.",
+          "code": "@code.s#version-prediction",
+          "questions": [
+            { "id": "q1", "enonce": "Que vaut D6 (la demande en version 36) ?", "choix": ["0 : refusé", "La base de graphics.library", "36"], "bonne": 0, "explication": "Le Kickstart 1.3 fournit la version 34 : une demande de version 36 (Kickstart 2.0) est refusée, OpenLibrary renvoie 0.", "verification": { "D6": "$00000000" } },
+            { "id": "q2", "enonce": "Et D7 (version 33) ?", "choix": ["0 : refusé", "Une adresse non nulle : la base de graphics.library", "33"], "bonne": 1, "explication": "34 ≥ 33 : accepté. C'est pour cela que les programmes pour A500 demandent 0, 33 ou 34." }
+          ]
+        },
+        { "type": "exercice", "id": "amiga-ch04-exo-longueur", "titre": "La longueur du texte", "variante": "completer", "niveau": 1, "aRelire": true,
+          "enonce": "Le programme n'affiche que « Bonj ». Donne à D3 la bonne longueur, **sans compter à la main**.",
+          "indices": ["L'étiquette `fin` suit le texte : `fin-texte` est sa longueur.", "`MOVEQ #fin-texte,D3`"],
+          "codeDepart": "@code.s#longueur-depart", "solution": "@code.s#longueur-solution",
+          "check": { "type": "output", "maxSteps": 200, "terminer": true, "systemeRendu": true, "expected": { "output": "Bonjour Amiga !\n" } } },
+        { "type": "exercice", "id": "amiga-ch04-exo-poignee", "titre": "La poignée oubliée", "variante": "corriger", "niveau": 2, "aRelire": true,
+          "enonce": "Ce programme doit écrire « Amiga 500 » mais rien ne s'affiche, et le simulateur se plaint. Lis le message, puis ajoute **une** instruction.",
+          "indices": ["Write prend la poignée dans D1. Où est-elle après Output() ?", "`MOVE.L D0,D1` juste après `JSR -60(A6)`."],
+          "codeDepart": "@code.s#poignee-depart", "solution": "@code.s#poignee-solution",
+          "check": { "type": "output", "maxSteps": 200, "terminer": true, "systemeRendu": true, "expected": { "output": "Amiga 500\n" } } },
+        { "type": "exercice", "id": "amiga-ch04-exo-ordre", "titre": "Ouvrir dos.library", "variante": "ordonner", "niveau": 1, "aRelire": true,
+          "enonce": "Remets dans l'ordre les cinq lignes qui ouvrent dos.library et rangent sa base dans A6 : le programme doit afficher « OK ».",
+          "indices": ["Il faut d'abord exec dans A6, puis les deux paramètres d'OpenLibrary (A1 et D0), puis l'appel.", "La base renvoyée dans D0 va dans A6 en dernier."],
+          "entete": "@code.s#ordonner-entete",
+          "lignes": ["    MOVEA.L 4.W,A6", "    LEA     dosnom(PC),A1", "    MOVEQ   #0,D0", "    JSR     -552(A6)", "    MOVEA.L D0,A6"],
+          "pied": "@code.s#ordonner-pied",
+          "codeDepart": "", "solution": "",
+          "check": { "type": "output", "maxSteps": 200, "terminer": true, "expected": { "output": "OK\n" } } },
+        { "type": "exercice", "id": "amiga-ch04-exo-lignes", "titre": "Deux lignes", "variante": "ecrire", "niveau": 3, "aRelire": true,
+          "enonce": "Écris un programme complet qui affiche deux lignes dans le CLI : « Ligne 1 » puis « Ligne 2 ». N'oublie pas de refermer dos.library.",
+          "indices": ["Un seul Write suffit : `DC.B 'Ligne 1',10,'Ligne 2',10`.", "Reprends le schéma de l'exemple : OpenLibrary, Output, Write, CloseLibrary."],
+          "codeDepart": "@code.s#deux-lignes-depart", "solution": "@code.s#deux-lignes-solution",
+          "check": { "type": "output", "maxSteps": 300, "terminer": true, "systemeRendu": true, "expected": { "output": "Ligne 1\nLigne 2\n" } } }
+      ]
+    },
+    {
+      "id": "amiga-ch04-n3",
+      "titre": "La mémoire : AllocMem et FreeMem",
+      "contenus": [
+        { "type": "cours", "id": "amiga-ch04-cours-memoire", "titre": "Chip RAM, Fast RAM, AllocMem et FreeMem", "fichier": "03-memoire.md", "aRelire": true, "source": "Rédigé pour 68k Trainer d'après Amiga Intern (Abacus) et le manuel Amiga (exercice 3, vérifié)" },
+        {
+          "type": "exemple", "id": "amiga-ch04-ex-memoire", "titre": "Réserver, utiliser, rendre", "aRelire": true,
+          "introduction": "Mille octets de Chip RAM, demandés à exec puis rendus. Regarde l'adresse reçue dans D0 et mets-la dans la vue **Mémoire**.",
+          "code": "@code.s#memoire-exemple",
+          "explications": [
+            { "ligne": 3, "texte": "D0 = la taille voulue." },
+            { "ligne": 4, "texte": "D1 = MEMF_CHIP ($2) + MEMF_CLEAR ($10000) : de la Chip RAM, remplie de zéros." },
+            { "ligne": 5, "texte": "AllocMem : D0 = `$00040000`, l'adresse du bloc (dans 68k Trainer)." },
+            { "ligne": 6, "texte": "Toujours tester : 0 voudrait dire « plus de mémoire »." },
+            { "ligne": 8, "texte": "On garde l'adresse dans A2 : exec peut modifier D0, D1, A0 et A1, mais pas A2." },
+            { "ligne": 9, "texte": "Le bloc est à nous : on y écrit ce qu'on veut, dans la limite de ses 1000 octets." },
+            { "ligne": 11, "texte": "FreeMem attend l'adresse dans A1…" },
+            { "ligne": 12, "texte": "… et **la même taille** dans D0." },
+            { "ligne": 13, "texte": "FreeMem (−210) : le bloc retourne à exec. Le bilan de fin ne signale aucune fuite." }
+          ],
+          "conclusion": "Toute mémoire demandée doit être rendue, avec sa taille exacte. Exec ne fait aucun ménage derrière toi."
+        },
+        {
+          "type": "prediction", "id": "amiga-ch04-pred-availmem", "titre": "Où sont passés les octets ?", "aRelire": true,
+          "introduction": "AvailMem(MEMF_CHIP) avant et après une réservation de 4000 octets.",
+          "code": "@code.s#availmem-prediction",
+          "questions": [
+            { "id": "q1", "enonce": "Que vaut D7 (la différence) ?", "choix": ["4000 ($FA0)", "0", "8000"], "bonne": 0, "explication": "Le bloc de 4000 octets a disparu de la Chip RAM libre. (Exec arrondit les tailles à un multiple de 8 ; 4000 en est déjà un.)", "verification": { "D7": "$00000FA0" } },
+            { "id": "q2", "enonce": "Pourquoi le programme garde-t-il l'adresse du bloc dans A2 plutôt que dans A0 ?", "choix": ["Parce qu'AvailMem peut modifier A0", "Parce que A0 ne peut pas contenir d'adresse", "Pour aller plus vite"], "bonne": 0, "explication": "Les fonctions d'exec peuvent modifier D0, D1, A0 et A1 : une valeur à garder va dans D2-D7 ou A2-A5." }
+          ]
+        },
+        { "type": "exercice", "id": "amiga-ch04-exo-drapeaux", "titre": "Le bon type de mémoire", "variante": "completer", "niveau": 1, "aRelire": true,
+          "enonce": "Le programme réserve 512 octets, y écrit `$CAFE` puis les rend. Mais il demande « n'importe quelle mémoire » (0) : sur un A500 avec extension, il reçoit de la Slow RAM, que les puces ne voient pas. Donne à D1 le type **Chip RAM remplie de zéros**.",
+          "indices": ["MEMF_CHIP = $2, MEMF_CLEAR = $10000 : on les additionne.", "`MOVE.L #$10002,D1`"],
+          "codeDepart": "@code.s#drapeaux-depart", "solution": "@code.s#drapeaux-solution",
+          "check": { "type": "registers", "maxSteps": 100, "terminer": true, "systemeRendu": true, "expected": { "D6": "$00040000", "D7": "$0000CAFE" } } },
+        { "type": "exercice", "id": "amiga-ch04-exo-freemem", "titre": "Le Guru de FreeMem", "variante": "corriger", "niveau": 2, "aRelire": true,
+          "enonce": "Ce programme s'arrête net sur `FreeMem`. Sur un vrai Amiga, ce serait un **Guru Meditation #81000009**. Lis le message et corrige.",
+          "indices": ["Compare la taille passée à AllocMem et celle passée à FreeMem.", "Il faut rendre exactement 320 octets."],
+          "codeDepart": "@code.s#freemem-depart", "solution": "@code.s#freemem-solution",
+          "check": { "type": "registers", "maxSteps": 100, "terminer": true, "systemeRendu": true, "expected": { "D0": "$00000000" } } },
+        { "type": "exercice", "id": "amiga-ch04-exo-table", "titre": "Une table en Chip RAM", "variante": "ecrire", "niveau": 3, "aRelire": true,
+          "enonce": "Réserve **256 octets de Chip RAM**, remplis-les avec les valeurs 0, 1, 2… 255, calcule leur **somme** dans D7 (en relisant le bloc), puis **rends** le bloc.",
+          "indices": ["Garde l'adresse du bloc dans A2 ; une boucle `MOVE.B D1,(A0)+` / `ADDQ.B #1,D1` / `DBF` remplit les 256 octets.", "Pour la somme, lis chaque octet dans un registre mis à zéro avant (`MOVEQ #0,D1`), puis `ADD.L D1,D7`. Résultat : 32 640."],
+          "codeDepart": "@code.s#table-depart", "solution": "@code.s#table-solution",
+          "check": { "type": "registers", "maxSteps": 3000, "terminer": true, "systemeRendu": true, "expected": { "D7": "$00007F80" } } }
+      ]
+    },
+    {
+      "id": "amiga-ch04-n4",
+      "titre": "Attendre et afficher des nombres",
+      "contenus": [
+        { "type": "cours", "id": "amiga-ch04-cours-delay", "titre": "Delay et RawDoFmt", "fichier": "04-attendre-afficher.md", "aRelire": true, "source": "Rédigé pour 68k Trainer d'après Amiga Intern (Abacus) et les autodocs d'exec et dos" },
+        {
+          "type": "exemple", "id": "amiga-ch04-ex-decompte", "titre": "Compte à rebours", "aRelire": true,
+          "introduction": "3, 2, 1… une seconde entre chaque nombre. Lance **Jusqu'au bout** et regarde le compteur d'images : 50 images par `Delay(50)`.",
+          "code": "@code.s#decompte-exemple",
+          "explications": [
+            { "ligne": 6, "texte": "On garde DOSBase dans A5 : A6 servira tantôt à exec, tantôt à dos." },
+            { "ligne": 9, "texte": "La donnée de `%d` est un **mot** : on range D7 en `.W`." },
+            { "ligne": 10, "texte": "A0 = le format, A1 = les données, A2 = la routine qui range chaque caractère, A3 = le tampon." },
+            { "ligne": 15, "texte": "RawDoFmt (exec, −522) : le tampon contient « 3... » suivi d'un retour à la ligne et d'un 0." },
+            { "ligne": 16, "texte": "Le sous-programme compte les caractères jusqu'au 0, puis appelle Write." },
+            { "ligne": 19, "texte": "Delay(50) : le programme dort une seconde, les autres tâches travaillent." },
+            { "ligne": 21, "texte": "On recommence tant que D7 n'est pas arrivé à 0." },
+            { "ligne": 43, "texte": "La routine appelée par RawDoFmt pour chaque caractère : elle le range et avance A3." }
+          ],
+          "conclusion": "RawDoFmt fabrique le texte, Write l'affiche, Delay rythme le tout. Ces trois fonctions suffisent pour tous les affichages du CLI."
+        },
+        { "type": "exercice", "id": "amiga-ch04-exo-score", "titre": "Afficher un score", "variante": "ecrire", "niveau": 2, "aRelire": true,
+          "enonce": "Le format `'Score : %ld',10,0` et la valeur `score` (un mot long, 1500) sont prêts. Appelle **RawDoFmt** pour remplir le tampon, puis affiche-le avec **Write**. Résultat attendu : « Score : 1500 ».",
+          "indices": ["A0 = format, A1 = score, A2 = ranger, A3 = tampon, puis `JSR -522(A6)` avec exec dans A6.", "Pour la longueur, compte les octets du tampon jusqu'au 0 (RawDoFmt ne modifie pas A3), puis Write avec dos.library."],
+          "codeDepart": "@code.s#score-depart", "solution": "@code.s#score-solution",
+          "check": { "type": "output", "maxSteps": 2000, "terminer": true, "expected": { "output": "Score : 1500\n" } } },
+        { "type": "exercice", "id": "amiga-ch04-exo-motlong", "titre": "Le mot ou le mot long ?", "variante": "corriger", "niveau": 3, "aRelire": true,
+          "enonce": "Ce programme devrait afficher « Octets libres : 250000 », mais il affiche un tout autre nombre. Trouve pourquoi et corrige **un seul caractère**.",
+          "indices": ["`%d` lit un **mot** de 16 bits ; `valeur` est un mot long. Quel mot RawDoFmt lit-il ?", "Ajoute le `l` : `%ld`."],
+          "codeDepart": "@code.s#mot-long-depart", "solution": "@code.s#mot-long-solution",
+          "check": { "type": "output", "maxSteps": 2000, "terminer": true, "expected": { "output": "Octets libres : 250000\n" } } }
+      ]
+    }
+  ],
+  "qcm": {
+    "id": "amiga-ch04-qcm",
+    "seuil": 0.7,
+    "questions": [
+      { "id": "q1", "enonce": "Quelle est la seule adresse fixe du système de l'Amiga ?", "choix": ["$4, qui contient l'adresse d'ExecBase", "$DFF000", "$FC0000"], "bonne": 0, "explication": "Tout le reste se retrouve à partir d'ExecBase. $DFF000 est fixe aussi, mais ce sont les puces, pas le système." },
+      { "id": "q2", "enonce": "Dans quel registre met-on la base de la bibliothèque appelée ?", "choix": ["A0", "A6", "D0"], "bonne": 1, "explication": "Règle d'appel des bibliothèques : la base dans A6." },
+      { "id": "q3", "enonce": "Que trouve-t-on en `-132(A6)` quand A6 = ExecBase ?", "choix": ["Une instruction JMP vers la routine Forbid", "La valeur de TDNestCnt", "Le nom de la bibliothèque"], "bonne": 0, "explication": "Les décalages négatifs forment la table de sauts : un JMP de 6 octets par fonction." },
+      { "id": "q4", "enonce": "Une fonction d'exec peut modifier quels registres ?", "choix": ["D0, D1, A0 et A1", "Tous", "Aucun"], "bonne": 0, "explication": "D0, D1, A0, A1 sont des registres de travail ; le résultat revient dans D0. Les autres sont préservés." },
+      { "id": "q5", "enonce": "Sur un Kickstart 1.3, `OpenLibrary` avec la version 37…", "choix": ["renvoie 0", "ouvre la bibliothèque quand même", "fait planter la machine"], "bonne": 0, "explication": "Le Kickstart 1.3 fournit la version 34 : une version minimale de 37 (Kickstart 2.04) est refusée.", "code": "@code.s#qcm-version" },
+      { "id": "q6", "enonce": "Dans le CLI de l'Amiga, une fin de ligne s'écrit…", "choix": ["10", "13, 10", "0"], "bonne": 0, "explication": "Un seul caractère, le *line feed* (10). Le 13, 10 est celui du ST et des PC." },
+      { "id": "q7", "enonce": "Pourquoi une image doit-elle être en Chip RAM ?", "choix": ["Parce que les puces custom ne peuvent lire que la Chip RAM", "Parce que la Chip RAM est plus rapide", "Parce que le 68000 ne voit pas la Fast RAM"], "bonne": 0, "explication": "La Fast RAM n'est visible que du 68000 ; les puces (affichage, son, Blitter) ne lisent que la Chip RAM." },
+      { "id": "q8", "enonce": "Que faut-il donner à FreeMem ?", "choix": ["L'adresse du bloc et exactement la taille demandée à AllocMem", "Seulement l'adresse", "La taille arrondie à 1 Ko"], "bonne": 0, "explication": "FreeMem(adresse, taille)(A1, D0) : une autre taille abîme les listes de mémoire libre (Guru #81000009)." },
+      { "id": "q9", "enonce": "Combien dure `Delay(25)` ?", "choix": ["Une demi-seconde", "25 secondes", "25 millisecondes"], "bonne": 0, "explication": "Delay compte en cinquantièmes de seconde : 25/50 = 0,5 s." },
+      { "id": "q10", "enonce": "Avec RawDoFmt, quel code affiche un mot long signé ?", "choix": ["%ld", "%d", "%s"], "bonne": 0, "explication": "Sans le `l`, RawDoFmt lit un mot de 16 bits." }
+    ]
+  },
+  "bonus": [
+    { "type": "exercice", "id": "amiga-ch04-bonus-prenom", "titre": "Bonjour, toi !", "variante": "ecrire", "niveau": 3, "aRelire": true,
+      "enonce": "Défi : demande « Ton prénom ? », **lis** la réponse avec `Read(Input())`, puis réponds « Bonjour <prénom> ! ». Dans l'exercice, le prénom tapé est « Yannick » ; en exécution libre, tape le tien dans l'écran (clique dessus d'abord).",
+      "indices": ["Garde DOSBase dans A6 et les deux poignées (Output et Input) dans D5 et D6 : dos ne touche pas à D2-D7.", "Read renvoie dans D0 la longueur, le 10 final compris : écris « Bonjour », puis le prénom sans son 10, puis « ! » et un 10."],
+      "codeDepart": "@code.s#bonus-prenom-depart", "solution": "@code.s#bonus-prenom-solution",
+      "check": { "type": "output", "maxSteps": 2000, "terminer": true, "systemeRendu": true, "expected": { "output": "Ton prénom ? Yannick\nBonjour Yannick !\n" } },
+      "machine": { "saisie": "Yannick\n", "ecran": true } }
+  ]
+}
