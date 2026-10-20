@@ -13,3 +13,6 @@ winuae-partage/
 
 # Paquets des émulateurs (téléchargés et vérifiés par scripts/preparer-emulateurs.mjs)
 build/emulateurs/
+
+# Réglages locaux de Claude Code
+.claude/settings.local.json
