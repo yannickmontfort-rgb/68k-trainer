@@ -8,12 +8,12 @@ import { exercicesParChapitre, parcoursDeLaMachine, pisteDeLaMachine } from '../
 import { ecranExercice, type ContexteEcran } from './parcours/ecrans'
 import { echapper } from './parcours/markdown'
 
-/** Onglet des exercices du parcours (avant les pistes d'exercices de la version 0.1). */
+/** Onglet des exercices du parcours (avant les exercices d'entraînement). */
 const PARCOURS = 'parcours'
 
 /**
  * Exercices libres : tous les exercices du parcours de la machine choisie (défis bonus compris),
- * à refaire dans l'ordre qu'on veut, puis les exercices de la version 0.1 (communs au 68000 et
+ * à refaire dans l'ordre qu'on veut, puis les exercices d'entraînement (communs au 68000 et
  * propres à la machine). Un exercice du parcours réussi ici compte aussi dans le parcours.
  */
 export function renderExercices(container: HTMLElement): () => void {
@@ -118,7 +118,7 @@ export function renderExercices(container: HTMLElement): () => void {
           ${pistes
             .map(
               (t) =>
-                `<button class="track-tab${t.id === currentTrack ? ' active' : ''}" data-track="${t.id}">Version 0.1 : ${t.title}</button>`
+                `<button class="track-tab${t.id === currentTrack ? ' active' : ''}" data-track="${t.id}">Entraînement : ${t.title}</button>`
             )
             .join('')}
         </div>

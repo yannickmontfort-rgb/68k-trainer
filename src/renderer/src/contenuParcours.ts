@@ -12,7 +12,7 @@ export function parcoursDeLaMachine(content: ContentBundle): Parcours | undefine
   return actifs.find((p) => p.plateforme === machineActive()) ?? actifs[0]
 }
 
-/** Piste des fiches et exercices de la version 0.1 pour la machine du profil. */
+/** Piste des fiches de référence et exercices d'entraînement propres à la machine du profil. */
 export const pisteDeLaMachine = (): string => (machineActive() === 'amiga' ? 'amiga' : 'atari-st')
 
 export interface Groupe<T> {

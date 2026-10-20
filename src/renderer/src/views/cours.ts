@@ -5,7 +5,7 @@ import type { ContenuCours } from '../../../shared/parcours'
 import { coursParChapitre, parcoursDeLaMachine, pisteDeLaMachine } from '../contenuParcours'
 import { echapper, renderMarkdown as afficherMarkdown } from './parcours/markdown'
 
-/** Onglet des cours du parcours (avant les pistes de fiches de la version 0.1). */
+/** Onglet des cours du parcours (avant les fiches de référence). */
 const PARCOURS = 'parcours'
 
 function resolveCourseLink(href: string, currentTrack: string): { track: string; slug: string } | null {
@@ -24,7 +24,7 @@ function resolveCourseLink(href: string, currentTrack: string): { track: string;
 
 /**
  * Fiches : les cours du parcours de la machine choisie, rangés par chapitre, puis les fiches de
- * référence de la version 0.1 (communes au 68000 et propres à la machine).
+ * référence (communes au 68000 et propres à la machine).
  */
 export function renderCours(container: HTMLElement): () => void {
   container.innerHTML = `<div class="cours-view"><p class="loading">Chargement du contenu…</p></div>`
@@ -78,7 +78,7 @@ export function renderCours(container: HTMLElement): () => void {
           ${pistes
             .map(
               (t) =>
-                `<button class="track-tab${t.id === currentTrack ? ' active' : ''}" data-track="${t.id}">Fiches : ${t.title}</button>`
+                `<button class="track-tab${t.id === currentTrack ? ' active' : ''}" data-track="${t.id}">Fiches de référence : ${t.title}</button>`
             )
             .join('')}
         </div>

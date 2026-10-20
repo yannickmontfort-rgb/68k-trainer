@@ -18,7 +18,7 @@ registerM68kLanguage()
 
 type ViewId = 'parcours' | 'trainer' | 'cours' | 'exercices' | 'emulateurs' | 'apropos'
 
-// « Fiches » et « Exercices libres » : les cours et exercices du parcours de la machine, plus ceux de la version 0.1.
+// « Fiches » et « Exercices libres » : les cours et exercices du parcours de la machine, plus les fiches de référence et exercices d'entraînement.
 const VIEWS: { id: ViewId; label: string; title: string; render: (el: HTMLElement) => () => void }[] = [
   { id: 'parcours', label: 'Parcours', title: 'Le parcours guidé, chapitre par chapitre', render: renderParcours },
   { id: 'trainer', label: 'Bac à sable', title: 'Écris et exécute librement ton propre code', render: renderTrainer },
