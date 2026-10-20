@@ -10,13 +10,16 @@ import { MACHINES, type Machine } from '../../../shared/machines'
 
 const PROGRAMMES: Record<Machine, string> = {
   atari: `; Bac à sable : écris ici ce que tu veux, puis Assembler et Pas / Exécuter.
-; La machine simulée est un Atari 1040 STF (écran en $F8000).
+; La machine simulée est un Atari 1040 STF (TOS, écran en $F8000).
 START:
-    MOVE.W  #5,D0
-    MOVE.W  #10,D1
-    ADD.W   D1,D0           ; D0 = 15
-    MOVE.W  #$FFFF,$F8000   ; 16 pixels en haut à gauche de l'écran
-    RTS
+    PEA     texte(PC)
+    MOVE.W  #9,-(SP)
+    TRAP    #1              ; GEMDOS Cconws : affiche le texte
+    ADDQ.L  #6,SP
+    CLR.W   -(SP)
+    TRAP    #1              ; GEMDOS Pterm0 : fin du programme
+texte:  DC.B    'Bonjour Atari !',13,10,0
+    EVEN
 `,
   amiga: `; Bac à sable : écris ici ce que tu veux, puis Assembler et Pas / Exécuter.
 ; La machine simulée est un Amiga 500 (Kickstart 1.3, puces custom en $DFF000).

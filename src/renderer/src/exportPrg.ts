@@ -74,7 +74,7 @@ export async function essayerDansEmulateur(source: string, nom: string, platefor
     ok: true,
     message:
       plateforme === 'amiga'
-        ? `${etat.nom} démarre et lance ${r.chemin} dès que le bureau d'AROS est prêt (une vingtaine de secondes).`
-        : `${etat.nom} démarre et lance ${r.chemin} dès que le bureau d'EmuTOS est prêt.`
+        ? `${etat.nom} (re)démarre et lance ${r.chemin} dès que le bureau d'AROS est prêt (une vingtaine de secondes).`
+        : `${etat.nom} (re)démarre et lance ${r.chemin} dès que le bureau d'EmuTOS est prêt.`
   }
 }

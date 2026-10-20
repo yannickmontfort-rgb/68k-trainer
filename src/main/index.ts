@@ -115,19 +115,20 @@ app.whenReady().then(() => {
   ipcMain.handle(IPC.emulateursEtat, () => emulateurs.etatEmulateurs())
   ipcMain.handle(IPC.emulateurInstaller, (_e, id: 'hatari' | 'winuae') => installerEmulateur(id))
   ipcMain.handle(IPC.emulateurDesinstaller, (_e, id: 'hatari' | 'winuae') => emulateurs.desinstaller(id))
-  ipcMain.handle(IPC.emulateurLancer, (_e, id: 'hatari' | 'winuae') => {
+  ipcMain.handle(IPC.emulateurLancer, async (_e, id: 'hatari' | 'winuae') => {
     try {
-      emulateurs.lancer(id)
+      await emulateurs.lancer(id)
       return { ok: true }
     } catch (e) {
       return { ok: false, erreur: (e as Error).message }
     }
   })
-  ipcMain.handle(IPC.emulateurEssayer, (_e, id: 'hatari' | 'winuae', source: string, nom: string) => {
+  ipcMain.handle(IPC.emulateurEssayer, async (_e, id: 'hatari' | 'winuae', source: string, nom: string) => {
     const exe = fabriquerPrg(source, id === 'winuae' ? 'hunk' : 'prg')
     if (!exe.octets) return { ok: false, erreur: exe.raison }
+    const lanceur = id === 'hatari' ? fabriquerPrg(emulateurs.sourceLanceurAtari(`${nom}.PRG`)).octets : undefined
     try {
-      return { ok: true, chemin: emulateurs.essayer(id, exe.octets, nom) }
+      return { ok: true, chemin: await emulateurs.essayer(id, exe.octets, nom, lanceur) }
     } catch (e) {
       return { ok: false, erreur: (e as Error).message }
     }

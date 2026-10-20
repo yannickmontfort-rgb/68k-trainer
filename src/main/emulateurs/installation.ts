@@ -11,7 +11,7 @@
  *   l'utilisateur pour ces émulateurs (Hatari : --configfile ; WinUAE : mode portable).
  */
 import { app, net } from 'electron'
-import { spawn, spawnSync } from 'child_process'
+import { spawn, spawnSync, type ChildProcess } from 'child_process'
 import { createHash } from 'crypto'
 import { createReadStream, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
@@ -275,42 +275,114 @@ export function configUae(aros: string, partage: string): string {
 
 // --- Lancement ----------------------------------------------------------------------
 
-function lancerProcessus(e: Emulateur, args: string[]): void {
+/** L'émulateur lancé par 68k Trainer, s'il tourne encore : une seule fenêtre par émulateur. */
+const processus = new Map<IdEmulateur, ChildProcess>()
+
+/** Arrête l'émulateur lancé par 68k Trainer (s'il tourne), puis le (re)lance : c'est son « reset ». */
+async function lancerProcessus(e: Emulateur, args: string[]): Promise<void> {
   const exe = join(dossierEmulateur(e.id), e.executable)
   if (!existsSync(exe)) throw new Error(`${e.nom} n'est pas installé.`)
+  const ancien = processus.get(e.id)
+  if (ancien && ancien.exitCode === null && ancien.signalCode === null) {
+    await new Promise<void>((fini) => {
+      ancien.once('exit', () => fini())
+      ancien.kill()
+      setTimeout(fini, 3000)
+    })
+  }
   const p = spawn(exe, args, { cwd: dossierEmulateur(e.id), detached: true, stdio: 'ignore' })
   p.unref()
+  processus.set(e.id, p)
+  p.once('exit', () => {
+    if (processus.get(e.id) === p) processus.delete(e.id)
+  })
 }
 
 function argumentsHatari(): string[] {
   const d = dossierEmulateur('hatari')
-  // Hatari démarre sur le dernier disque donné : ici C:, le dossier de partage
-  return ['--configfile', join(d, '68k-trainer.cfg'), '--tos', join(d, 'tos.img'), '--machine', 'st', '--memsize', '1024', '--harddrive', preparerPartage('atari')]
+  // Hatari démarre sur le dernier disque donné : ici C:, le dossier de partage. Basse résolution,
+  // celle des programmes du parcours
+  return [
+    '--configfile', join(d, '68k-trainer.cfg'), '--tos', join(d, 'tos.img'), '--tos-res', 'low',
+    '--machine', 'st', '--memsize', '1024', '--harddrive', preparerPartage('atari')
+  ]
 }
 
 /** Lance l'émulateur tel quel (bureau d'EmuTOS ou d'AROS). */
-export function lancer(id: IdEmulateur): void {
+export async function lancer(id: IdEmulateur): Promise<void> {
   const e = EMULATEURS[id]
   if (id === 'hatari') {
-    lancerProcessus(e, argumentsHatari())
+    await lancerProcessus(e, argumentsHatari())
   } else {
     rmSync(join(dossierPartage('amiga'), 'essai', 'lancer'), { force: true })
-    lancerProcessus(e, ['-f', join(dossierEmulateur(id), '68k-trainer.uae')])
+    await lancerProcessus(e, ['-f', join(dossierEmulateur(id), '68k-trainer.uae')])
   }
+}
+
+/**
+ * Lanceur Atari (C:\ESSAI68K.PRG) : exécute le programme par Pexec, puis attend une touche avant
+ * de rendre la main au bureau d'EmuTOS (sinon son affichage disparaît aussitôt). Le processus
+ * principal l'assemble en .PRG.
+ */
+export function sourceLanceurAtari(fichier: string): string {
+  return [
+    '    MOVEA.L 4(SP),A5            ; page de base du lanceur',
+    '    LEA     pile,SP',
+    '    MOVE.L  $C(A5),D0           ; rendre au TOS la mémoire inutile (Mshrink)',
+    '    ADD.L   $14(A5),D0',
+    '    ADD.L   $1C(A5),D0',
+    '    ADD.L   #$100,D0',
+    '    MOVE.L  D0,-(SP)',
+    '    MOVE.L  A5,-(SP)',
+    '    CLR.W   -(SP)',
+    '    MOVE.W  #$4A,-(SP)',
+    '    TRAP    #1',
+    '    LEA     12(SP),SP',
+    '    CLR.L   -(SP)               ; Pexec(0, programme, ligne de commande vide, environnement)',
+    '    PEA     vide(PC)',
+    '    PEA     nom(PC)',
+    '    CLR.W   -(SP)',
+    '    MOVE.W  #$4B,-(SP)',
+    '    TRAP    #1',
+    '    LEA     16(SP),SP',
+    '    PEA     message(PC)',
+    '    MOVE.W  #9,-(SP)            ; Cconws',
+    '    TRAP    #1',
+    '    ADDQ.L  #6,SP',
+    '    MOVE.W  #7,-(SP)            ; Crawcin : attendre une touche',
+    '    TRAP    #1',
+    '    ADDQ.L  #2,SP',
+    '    CLR.W   -(SP)               ; Pterm0',
+    '    TRAP    #1',
+    `nom:     DC.B    'C:\\${fichier}',0`,
+    'vide:    DC.B    0,0',
+    "message: DC.B    13,10,'(Appuie sur une touche pour revenir au bureau)',0",
+    '    EVEN',
+    '    SECTION BSS',
+    '    DS.L    256',
+    'pile:',
+    ''
+  ].join('\n')
 }
 
 /**
  * Essaie un programme : il est rangé dans le dossier de partage (sous son nom) et lancé
  * automatiquement au démarrage de la machine émulée.
  */
-export function essayer(id: IdEmulateur, octets: Uint8Array, nom: string): string {
+export async function essayer(id: IdEmulateur, octets: Uint8Array, nom: string, lanceurAtari?: Uint8Array): Promise<string> {
   const e = EMULATEURS[id]
   if (id === 'hatari') {
     const d = preparerPartage('atari')
     const fichier = `${nom}.PRG`
     writeFileSync(join(d, fichier), octets)
-    // Lancé par le bureau d'EmuTOS dès qu'il est prêt (rien n'est laissé dans un dossier AUTO)
-    lancerProcessus(e, [...argumentsHatari(), '--auto', 'C:\\' + fichier])
+    // Lancé par le bureau d'EmuTOS dès qu'il est prêt (rien n'est laissé dans un dossier AUTO),
+    // à travers le lanceur qui attend une touche à la fin
+    let auto = fichier
+    if (lanceurAtari) {
+      writeFileSync(join(d, 'ESSAI68K.PRG'), lanceurAtari)
+      auto = 'ESSAI68K.PRG'
+    }
+    await lancerProcessus(e, [...argumentsHatari(), '--auto', 'C:\\' + auto])
     return join(d, fichier)
   }
   const d = preparerPartage('amiga')
@@ -320,7 +392,7 @@ export function essayer(id: IdEmulateur, octets: Uint8Array, nom: string): strin
     join(d, 'essai', 'lancer'),
     `Delete >NIL: PARTAGE:essai/lancer\nRun >"CON:20/20/600/220/68k Trainer : ${nom}/WAIT/CLOSE" PARTAGE:${nom}\n`
   )
-  lancerProcessus(e, ['-f', join(dossierEmulateur(id), '68k-trainer.uae')])
+  await lancerProcessus(e, ['-f', join(dossierEmulateur(id), '68k-trainer.uae')])
   return join(d, nom)
 }
 
