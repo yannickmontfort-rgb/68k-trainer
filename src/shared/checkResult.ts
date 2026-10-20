@@ -45,6 +45,10 @@ function readMemory(cpu: Cpu, key: string): number {
  */
 export function evaluateCheck(cpu: Cpu, check: ExerciseCheck): CheckResult {
   const resultat = evaluer(cpu, check)
+  const alertes = check.sansAlerte ? (materielAmiga(cpu)?.alertes ?? []) : []
+  if (resultat.success && alertes.length) {
+    return { success: false, message: 'Le résultat semble bon ici, mais sur un vrai Amiga il serait faux :\n' + alertes.join('\n') }
+  }
   if (!resultat.success || !check.systemeRendu) return resultat
   const bilan = bilanAmiga(cpu)
   if (!bilan) return { success: false, message: "Le programme doit se terminer par RTS en rendant la main au système." }

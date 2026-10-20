@@ -96,6 +96,11 @@ export interface ExerciseCheck {
    * Enable, FreeMem, DMACON, INTENA, liste Copper, vecteur $6C, vue).
    */
   systemeRendu?: boolean
+  /**
+   * Amiga : aucune remarque de la machine ne doit avoir été levée (Blitter relancé sans attendre
+   * sa fin, Copper arrêté par un MOVE interdit…) : sur une vraie machine, ce serait un bogue.
+   */
+  sansAlerte?: boolean
 }
 
 export interface Exercise {

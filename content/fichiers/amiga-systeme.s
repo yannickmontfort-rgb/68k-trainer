@@ -6,6 +6,7 @@
 ;   BSR rendre          rend tout au système, tel qu'il était
 ;   BSR attendre_vbl    attend que le faisceau arrive en bas de l'image (ligne 303)
 ;   BSR attendre_clic   attend un clic du bouton gauche de la souris
+;   BSR attendre_blitter attend que le Blitter ait fini son travail
 ; Aucun registre n'est modifié (sauf A5 par prendre).
 
 prendre:
@@ -90,6 +91,13 @@ attendre_clic:
 .appui:
     BTST    #6,$BFE001
     BNE.S   .appui              ; puis attendre qu'on l'enfonce
+    RTS
+
+attendre_blitter:
+    TST.B   $DFF002             ; une première lecture « pour rien » (défaut des premières Agnus)
+.occupe:
+    BTST    #6,$DFF002          ; bit 14 de DMACONR (BBUSY) : le Blitter travaille encore ?
+    BNE.S   .occupe
     RTS
 
 sys_gfxnom: DC.B 'graphics.library',0

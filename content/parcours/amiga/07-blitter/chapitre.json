@@ -1,0 +1,226 @@
+{
+  "id": "amiga-ch07",
+  "titre": "Le Blitter",
+  "plateforme": "amiga",
+  "resume": "Le **Blitter** copie, efface et combine des blocs de mémoire bien plus vite que le 68000. Tu vas régler ses canaux et sa taille, **attendre sa fin** (BBUSY), calculer ses fonctions logiques (**minterms**) avec l'astuce `$F0` / `$CC` / `$AA`, poser un dessin sur un décor avec un masque (le **cookie-cut** des jeux), le décaler **au pixel près**, puis **tracer des lignes** et **remplir** des surfaces. Correspond au chapitre 3 du manuel Amiga (qui n'en donne que le principe).",
+  "notions": [
+    {
+      "id": "amiga-ch07-n1",
+      "titre": "Copier et effacer",
+      "contenus": [
+        { "type": "cours", "id": "amiga-ch07-cours-blitter", "titre": "Canaux, BLTSIZE, modulos et attente", "fichier": "01-blitter.md", "aRelire": true, "source": "Rédigé pour 68k Trainer d'après le Hardware Reference Manual (chap. 6) et Amiga Intern (Abacus, chap. 11)" },
+        {
+          "type": "exemple", "id": "amiga-ch07-ex-copie", "titre": "Effacer l'écran, puis poser un bloc", "aRelire": true,
+          "introduction": "Deux blits : effacer tout le plan, puis copier un bloc de 32 × 16 en (64, 100). Ouvre « Vecteurs et matériel » : le Blitter passe à « occupé » juste après chaque écriture de BLTSIZE.",
+          "code": "@code.s#copie-exemple",
+          "machine": { "ecran": true, "interactif": true },
+          "explications": [
+            { "ligne": 4, "texte": "Toujours vérifier que le Blitter est libre avant de toucher à ses registres." },
+            { "ligne": 5, "texte": "Un mot long écrit BLTCON0 et BLTCON1 d'un coup : `$0100` (canal D seul, minterm 0 : des zéros), puis 0." },
+            { "ligne": 6, "texte": "BLTDPT : où écrire. Le plan est en Chip RAM (`SECTION ecran,BSS_C`)." },
+            { "ligne": 8, "texte": "BLTSIZE = 256 × 64 + 20 : 256 lignes de 20 mots, tout le plan. L'écrire lance le travail ; le 68000 continue aussitôt." },
+            { "ligne": 9, "texte": "On attend la fin de l'effacement avant de préparer le blit suivant." },
+            { "ligne": 10, "texte": "`$09F0` : canaux A (`$0800`) et D (`$0100`), minterm `$F0` : D = A, une copie." },
+            { "ligne": 11, "texte": "Les deux masques à `$FFFF` (un mot long) : aucun bit de A n'est masqué." },
+            { "ligne": 13, "texte": "La destination : ligne 100, octet 8 (x = 64)." },
+            { "ligne": 15, "texte": "Modulo de D : 40 − 4 = 36 octets à sauter à la fin de chaque ligne du bloc, pour arriver à la ligne suivante de l'écran." },
+            { "ligne": 16, "texte": "16 lignes de 2 mots : le bloc apparaît." }
+          ],
+          "conclusion": "Régler les canaux, la fonction, les pointeurs et les modulos, puis écrire BLTSIZE en dernier ; attendre la fin avant le blit suivant. Tous les blits suivent ce schéma."
+        },
+        {
+          "type": "prediction", "id": "amiga-ch07-pred-taille", "titre": "Taille et modulo", "aRelire": true,
+          "introduction": "Un bloc de 64 pixels de large sur 20 lignes, copié dans un écran de 320 pixels.",
+          "code": "@code.s#bltsize-prediction",
+          "questions": [
+            { "id": "q1", "enonce": "Que vaut D0 (BLTSIZE) ?", "choix": ["$00000504", "$00001404", "$00000514"], "bonne": 0, "explication": "20 lignes dans les bits 15-6 : 20 × 64 = 1280 = $500 ; plus 4 mots : $504.", "verification": { "D0": "$00000504" } },
+            { "id": "q2", "enonce": "Et D1 (le modulo de l'écran) ?", "choix": ["32", "36", "40"], "bonne": 0, "explication": "64 pixels = 8 octets ; 40 − 8 = 32.", "verification": { "D1": "$00000020" } }
+          ]
+        },
+        { "type": "exercice", "id": "amiga-ch07-exo-modulo", "titre": "Le bon modulo", "variante": "completer", "niveau": 1, "aRelire": true,
+          "enonce": "Le programme copie un bloc plein de 32 × 16 en (64, 100), mais il s'étale en une longue bande. Complète le modulo de la destination.",
+          "indices": ["Le bloc fait 32 pixels, soit 4 octets par ligne.", "`MOVE.W #40-4,$66(A5)`"],
+          "codeDepart": "@code.s#modulo-depart", "solution": "@code.s#modulo-solution",
+          "check": { "type": "image", "maxSteps": 600000, "terminer": true, "systemeRendu": true, "sansAlerte": true, "image": 8, "expected": { "64,100": "$0FFF", "95,115": "$0FFF", "96,100": "$0000", "64,116": "$0000", "63,100": "$0000" } },
+          "machine": { "ecran": true, "evenements": [{ "image": 12, "boutonGauche": true }] } },
+        { "type": "exercice", "id": "amiga-ch07-exo-presse", "titre": "Le Blitter pressé", "variante": "corriger", "niveau": 2, "aRelire": true,
+          "enonce": "Ce programme efface le plan puis copie un bloc. Dans le simulateur, l'image semble juste… mais sur un vrai Amiga, le second blit écraserait le premier en plein travail. Lis la remarque du débogueur et corrige.",
+          "indices": ["Entre deux blits, le Blitter doit avoir fini.", "Ajoute `BSR attendre_blitter` juste après le premier `BLTSIZE`."],
+          "codeDepart": "@code.s#presse-depart", "solution": "@code.s#presse-solution",
+          "check": { "type": "image", "maxSteps": 600000, "terminer": true, "systemeRendu": true, "sansAlerte": true, "image": 8, "expected": { "128,40": "$0FFF", "159,55": "$0FFF", "127,40": "$0000" } },
+          "machine": { "ecran": true, "evenements": [{ "image": 12, "boutonGauche": true }] } },
+        { "type": "exercice", "id": "amiga-ch07-exo-effacer", "titre": "Effacer un rectangle", "variante": "ecrire", "niveau": 2, "aRelire": true,
+          "enonce": "Le 68000 a rempli tout le plan de blanc. Avec le Blitter, **efface** le rectangle x = 32 à 95, y = 50 à 99, sans toucher au reste.",
+          "indices": ["Canal D seul, minterm 0 : `$01000000` dans BLTCON0/BLTCON1. Le coin : `plan+50*40+32/8`.", "64 pixels = 4 mots = 8 octets : modulo 32, BLTSIZE = `(50<<6)|4`."],
+          "codeDepart": "@code.s#effacer-depart", "solution": "@code.s#effacer-solution",
+          "check": { "type": "image", "maxSteps": 600000, "terminer": true, "systemeRendu": true, "sansAlerte": true, "image": 8, "expected": { "32,50": "$0000", "95,99": "$0000", "31,50": "$0FFF", "96,50": "$0FFF", "32,49": "$0FFF", "32,100": "$0FFF" } },
+          "machine": { "ecran": true, "evenements": [{ "image": 12, "boutonGauche": true }] } }
+      ]
+    },
+    {
+      "id": "amiga-ch07-n2",
+      "titre": "Les minterms",
+      "contenus": [
+        { "type": "cours", "id": "amiga-ch07-cours-minterms", "titre": "La fonction logique et le cookie-cut", "fichier": "02-minterms.md", "aRelire": true, "source": "Rédigé pour 68k Trainer d'après le Hardware Reference Manual (chap. 6) et les cours de démo (RamJam)" },
+        {
+          "type": "exemple", "id": "amiga-ch07-ex-ou", "titre": "Poser un cadre sur des rayures", "aRelire": true,
+          "introduction": "Le fond a des rayures verticales. On y pose un cadre de 32 × 16 avec **D = A OU C** : le cadre s'ajoute, les rayures restent visibles à l'intérieur.",
+          "code": "@code.s#ou-exemple",
+          "machine": { "ecran": true, "interactif": true },
+          "explications": [
+            { "ligne": 7, "texte": "Le 68000 remplit le plan avec `$0F` : 4 pixels noirs, 4 blancs." },
+            { "ligne": 10, "texte": "`$0BFA` : canaux A, C, D (`$0800 + $0200 + $0100`) ; minterm `$F0 OR $AA = $FA`, D = A OU C." },
+            { "ligne": 14, "texte": "C lit le fond…" },
+            { "ligne": 15, "texte": "… et D l'écrit au même endroit : même adresse, et même modulo (36)." },
+            { "ligne": 19, "texte": "Le cadre apparaît ; à l'intérieur, là où A vaut 0, D = C : les rayures restent." }
+          ],
+          "conclusion": "Avec C = la destination, le Blitter peut combiner un dessin avec ce qui est déjà à l'écran. Le minterm se calcule en écrivant la formule avec A = $F0, B = $CC, C = $AA."
+        },
+        {
+          "type": "prediction", "id": "amiga-ch07-pred-minterm", "titre": "Calculer des minterms", "aRelire": true,
+          "introduction": "L'astuce du cours, faite par le 68000 : A = `$F0`, B = `$CC`, C = `$AA`.",
+          "code": "@code.s#minterm-prediction",
+          "questions": [
+            { "id": "q1", "enonce": "Le minterm de D = A EOR C (D0) ?", "choix": ["$5A", "$A5", "$FA"], "bonne": 0, "explication": "$F0 EOR $AA = $5A. Avec un dessin en A, il s'inverse sur le fond : l'effet des curseurs.", "verification": { "D0": "$0000005A" } },
+            { "id": "q2", "enonce": "Le minterm du cookie-cut (D1) ?", "choix": ["$CA", "$AC", "$C0"], "bonne": 0, "explication": "(A ET B) OU (NON A ET C) = $C0 OR $0A = $CA.", "verification": { "D1": "$000000CA" } }
+          ]
+        },
+        { "type": "exercice", "id": "amiga-ch07-exo-inverser", "titre": "Inverser une zone", "variante": "completer", "niveau": 1, "aRelire": true,
+          "enonce": "Le programme doit **inverser** (blanc ↔ noir) la zone x = 64 à 127, y = 64 à 95 du fond à rayures. Les canaux C et D sont bien choisis, mais le minterm vaut 0 : la zone est effacée. Complète BLTCON0.",
+          "indices": ["D = NON C. Avec C = $AA…", "NOT $AA = $55 : `$0355` dans BLTCON0."],
+          "codeDepart": "@code.s#inverser-depart", "solution": "@code.s#inverser-solution",
+          "check": { "type": "image", "maxSteps": 600000, "terminer": true, "systemeRendu": true, "sansAlerte": true, "image": 8, "expected": { "64,64": "$0FFF", "68,64": "$0000", "120,95": "$0FFF", "64,63": "$0000", "64,96": "$0000", "56,64": "$0000", "128,64": "$0000" } },
+          "machine": { "ecran": true, "evenements": [{ "image": 12, "boutonGauche": true }] } },
+        { "type": "exercice", "id": "amiga-ch07-exo-cookie", "titre": "Le cookie-cut", "variante": "ecrire", "niveau": 3, "aRelire": true,
+          "enonce": "Pose le dessin (`dessin`, 16 × 16 : moitié gauche blanche, moitié droite noire) en (64, 80) sur le fond à rayures, avec son masque (`masque`) : dans le carré, on doit voir **exactement le dessin** ; autour, les rayures intactes.",
+          "indices": ["Les 4 canaux et le minterm `$CA` : `$0FCA` dans BLTCON0. A = masque, B = dessin (`BLTBPT` = `$4C`), C et D = l'écran.", "Modulos : 0 pour A et B, 40 − 2 = 38 pour C et D ; BLTSIZE = `(16<<6)|1`."],
+          "codeDepart": "@code.s#cookie-depart", "solution": "@code.s#cookie-solution",
+          "check": { "type": "image", "maxSteps": 600000, "terminer": true, "systemeRendu": true, "sansAlerte": true, "image": 8, "expected": { "64,80": "$0FFF", "71,95": "$0FFF", "76,80": "$0000", "84,80": "$0FFF", "64,79": "$0000", "60,80": "$0FFF" } },
+          "machine": { "ecran": true, "evenements": [{ "image": 12, "boutonGauche": true }] } }
+      ]
+    },
+    {
+      "id": "amiga-ch07-n3",
+      "titre": "Au pixel près",
+      "contenus": [
+        { "type": "cours", "id": "amiga-ch07-cours-decalage", "titre": "Décalage, mot de plus et masques", "fichier": "03-decalage.md", "aRelire": true, "source": "Rédigé pour 68k Trainer d'après le Hardware Reference Manual (chap. 6)" },
+        {
+          "type": "exemple", "id": "amiga-ch07-ex-decalage", "titre": "Un carré en x = 37", "aRelire": true,
+          "introduction": "Un carré de 16 × 16 posé à une abscisse quelconque : décalage de 5 bits, un mot de plus par ligne, et le dernier mot masqué.",
+          "code": "@code.s#decalage-exemple",
+          "machine": { "ecran": true, "interactif": true },
+          "explications": [
+            { "ligne": 7, "texte": "37 mod 16 = 5 : le décalage." },
+            { "ligne": 8, "texte": "`ROR.W #4` place ces 4 bits tout en haut du mot : `$5000`." },
+            { "ligne": 9, "texte": "Plus les canaux et le minterm : BLTCON0 = `$59F0`." },
+            { "ligne": 13, "texte": "BLTALWM = 0 : le second mot lu de la source (qui appartient à la ligne suivante du carré) est vidé." },
+            { "ligne": 15, "texte": "37 ÷ 16 = 2 : le premier mot de destination est le n° 2, à l'octet 4 de la ligne." },
+            { "ligne": 20, "texte": "BLTAMOD = −2 : on a lu 2 mots alors que le carré n'en a qu'un par ligne ; on recule d'un mot." },
+            { "ligne": 22, "texte": "16 lignes de **2** mots : les 5 bits qui débordent du premier mot arrivent dans le second." }
+          ],
+          "conclusion": "Le Blitter décale au vol : pas besoin de préparer 16 versions décalées du dessin, comme on le faisait sur le ST. Il suffit d'un mot de plus et d'un masque."
+        },
+        {
+          "type": "prediction", "id": "amiga-ch07-pred-decalage", "titre": "Pour x = 100", "aRelire": true,
+          "introduction": "Le décalage, le premier octet de destination et BLTCON0 pour un dessin en x = 100.",
+          "code": "@code.s#decalage-prediction",
+          "questions": [
+            { "id": "q1", "enonce": "Que vaut D1 (le décalage) ?", "choix": ["4", "6", "100"], "bonne": 0, "explication": "100 = 6 × 16 + 4.", "verification": { "D1": "$00000004" } },
+            { "id": "q2", "enonce": "Et D2 (l'octet du premier mot dans la ligne) ?", "choix": ["12", "6", "8"], "bonne": 0, "explication": "Le mot n° 6, soit 12 octets.", "verification": { "D2": "$0000000C" } },
+            { "id": "q3", "enonce": "Et D3 (BLTCON0) ?", "choix": ["$000049F0", "$000009F4", "$000040F0"], "bonne": 0, "explication": "Le décalage 4 dans les bits 15-12, puis A + D et D = A.", "verification": { "D3": "$000049F0" } }
+          ]
+        },
+        { "type": "exercice", "id": "amiga-ch07-exo-ash", "titre": "Le bon décalage", "variante": "completer", "niveau": 2, "aRelire": true,
+          "enonce": "Le carré devrait être en x = 70, mais il apparaît en x = 64. Le mot de destination, le mot de plus et les masques sont prêts : ajoute le décalage dans BLTCON0.",
+          "indices": ["70 = 4 × 16 + 6 : le décalage est 6.", "`$69F0` : le 6 dans les bits 15-12."],
+          "codeDepart": "@code.s#ash-depart", "solution": "@code.s#ash-solution",
+          "check": { "type": "image", "maxSteps": 600000, "terminer": true, "systemeRendu": true, "sansAlerte": true, "image": 8, "expected": { "70,100": "$0FFF", "85,115": "$0FFF", "69,100": "$0000", "86,100": "$0000" } },
+          "machine": { "ecran": true, "evenements": [{ "image": 12, "boutonGauche": true }] } },
+        { "type": "exercice", "id": "amiga-ch07-exo-nimporte", "titre": "N'importe où", "variante": "ecrire", "niveau": 3, "aRelire": true,
+          "enonce": "Pose le carré de 16 × 16 (étiquette `carre`) en **x = 123, y = 40**, avec le Blitter.",
+          "indices": ["Décalage = 123 mod 16 = 11 ; premier mot = 123 ÷ 16 = 7, soit l'octet 14 de la ligne 40.", "Comme dans l'exemple : 2 mots par ligne, BLTALWM = 0, BLTAMOD = −2, BLTDMOD = 36."],
+          "codeDepart": "@code.s#nimporte-depart", "solution": "@code.s#nimporte-solution",
+          "check": { "type": "image", "maxSteps": 600000, "terminer": true, "systemeRendu": true, "sansAlerte": true, "image": 8, "expected": { "123,40": "$0FFF", "138,55": "$0FFF", "122,40": "$0000", "139,40": "$0000", "123,56": "$0000" } },
+          "machine": { "ecran": true, "evenements": [{ "image": 12, "boutonGauche": true }] } }
+      ]
+    },
+    {
+      "id": "amiga-ch07-n4",
+      "titre": "Tracer et remplir",
+      "contenus": [
+        { "type": "cours", "id": "amiga-ch07-cours-lignes", "titre": "Le mode ligne et le remplissage", "fichier": "04-lignes.md", "aRelire": true, "source": "Rédigé pour 68k Trainer d'après le Hardware Reference Manual (chap. 6) ; routine vérifiée contre Bresenham dans les 8 octants" },
+        {
+          "type": "exemple", "id": "amiga-ch07-ex-lignes", "titre": "Une étoile de lignes", "aRelire": true,
+          "introduction": "Huit lignes depuis le centre de l'écran, dans toutes les directions, tracées par le Blitter. La routine `ligne` calcule l'octant et les registres de Bresenham. Avance dans `ligne` pas à pas pour suivre le calcul de l'octant.",
+          "code": "@code.s#lignes-exemple",
+          "machine": { "ecran": true, "interactif": true },
+          "explications": [
+            { "ligne": 8, "texte": "Chaque ligne : (D0, D1) → (D2, D3), puis `BSR ligne`." },
+            { "ligne": 65, "texte": "dx = x2 − x1 ; s'il est négatif, on note que la ligne va vers la gauche." },
+            { "ligne": 81, "texte": "Plus large que haute ou plus haute que large : c'est ce qui décide quel pas est « toujours » et lequel est « parfois »." },
+            { "ligne": 83, "texte": "SUD : le pas « parfois » est vertical." },
+            { "ligne": 101, "texte": "Ligne plus haute que large : on échange pour avoir D2 = dmax et D3 = dmin." },
+            { "ligne": 103, "texte": "L'adresse du mot qui contient le point de départ : y × 40 + (x ÷ 16) × 2." },
+            { "ligne": 110, "texte": "Le bit de départ dans ce mot, dans les bits 15-12 de BLTCON0." },
+            { "ligne": 111, "texte": "Canaux A, C, D et minterm `$CA` : le point (A) est posé sur l'écran (C)." },
+            { "ligne": 117, "texte": "SIGN : le signe de l'accumulateur de départ, 4 dmin − 2 dmax." },
+            { "ligne": 122, "texte": "LINE : le mode ligne." },
+            { "ligne": 126, "texte": "BLTSIZE = (dmax + 1) × 64 + 2 : un point par pas." },
+            { "ligne": 135, "texte": "L'accumulateur de Bresenham va dans BLTAPTL." },
+            { "ligne": 140, "texte": "C'est parti : le Blitter trace la ligne pendant que le 68000 prépare la suivante." }
+          ],
+          "conclusion": "Le Blitter trace les lignes tout seul ; la routine n'a qu'à préparer les registres. C'est la base des démos en 3D « fil de fer »."
+        },
+        { "type": "exercice", "id": "amiga-ch07-exo-carre-lignes", "titre": "Un carré en quatre lignes", "variante": "ecrire", "niveau": 2, "aRelire": true,
+          "enonce": "Avec la routine `ligne` (déjà dans le programme), dessine le **contour** du carré de coins (50, 50) et (150, 150).",
+          "indices": ["Quatre appels : D0, D1 = le départ ; D2, D3 = l'arrivée ; puis `BSR ligne`.", "La routine modifie D0 à D6 : recharge les quatre registres avant chaque appel."],
+          "codeDepart": "@code.s#carre-lignes-depart", "solution": "@code.s#carre-lignes-solution",
+          "check": { "type": "image", "maxSteps": 800000, "terminer": true, "systemeRendu": true, "sansAlerte": true, "image": 8, "expected": { "50,50": "$0FFF", "150,50": "$0FFF", "150,150": "$0FFF", "50,150": "$0FFF", "100,50": "$0FFF", "150,100": "$0FFF", "100,150": "$0FFF", "50,100": "$0FFF", "100,100": "$0000", "51,51": "$0000" } },
+          "machine": { "ecran": true, "evenements": [{ "image": 12, "boutonGauche": true }] } },
+        {
+          "type": "exemple", "id": "amiga-ch07-ex-remplir", "titre": "Remplir entre deux bords", "aRelire": true,
+          "introduction": "Le 68000 dessine deux bords verticaux ; le Blitter remplit l'espace entre eux, en mode descendant.",
+          "code": "@code.s#remplir-exemple",
+          "machine": { "ecran": true, "interactif": true },
+          "explications": [
+            { "ligne": 4, "texte": "Les bords : un pixel en x = 40 et un en x = 200, sur 100 lignes." },
+            { "ligne": 7, "texte": "L'assembleur calcule le bit et l'octet du pixel : `7-(40&7)` et `40/8`." },
+            { "ligne": 12, "texte": "BLTCON1 = `$000A` : IFE (bit 3), le remplissage inclusif, et DESC (bit 1), le mode descendant, obligatoire pour remplir." },
+            { "ligne": 14, "texte": "En mode descendant, le Blitter part du **dernier** mot de la zone (ligne 159, octet 38) et remonte." },
+            { "ligne": 19, "texte": "Sur chaque ligne, de droite à gauche : au premier bord, on entre dans la zone ; au second, on en sort." }
+          ],
+          "conclusion": "Remplir, c'est copier une zone sur elle-même en mode descendant, avec IFE ou EFE : le Blitter colorie entre les bords."
+        },
+        { "type": "exercice", "id": "amiga-ch07-exo-remplir", "titre": "Le remplissage oublié", "variante": "completer", "niveau": 1, "aRelire": true,
+          "enonce": "Le Blitter recopie la zone en mode descendant… mais rien n'est rempli. Complète BLTCON1 pour un remplissage **inclusif**.",
+          "indices": ["IFE est le bit 3 de BLTCON1 ($0008), DESC le bit 1 ($0002).", "`$000A`"],
+          "codeDepart": "@code.s#remplir-depart", "solution": "@code.s#remplir-solution",
+          "check": { "type": "image", "maxSteps": 600000, "terminer": true, "systemeRendu": true, "sansAlerte": true, "image": 8, "expected": { "40,60": "$0FFF", "120,100": "$0FFF", "200,159": "$0FFF", "39,100": "$0000", "201,100": "$0000", "120,59": "$0000", "120,160": "$0000" } },
+          "machine": { "ecran": true, "evenements": [{ "image": 12, "boutonGauche": true }] } }
+      ]
+    }
+  ],
+  "qcm": {
+    "id": "amiga-ch07-qcm",
+    "seuil": 0.7,
+    "questions": [
+      { "id": "q1", "enonce": "Combien de sources et de destinations a le Blitter ?", "choix": ["3 sources (A, B, C) et une destination (D)", "1 source et 1 destination", "4 sources"], "bonne": 0, "explication": "Il combine A, B et C bit à bit et écrit D." },
+      { "id": "q2", "enonce": "Quel registre lance le travail du Blitter ?", "choix": ["BLTSIZE", "BLTCON0", "DMACON"], "bonne": 0, "explication": "On l'écrit en dernier, quand tout est réglé." },
+      { "id": "q3", "enonce": "Comment sait-on que le Blitter a fini ?", "choix": ["Le bit 14 de DMACONR (BBUSY) repasse à 0", "BLTSIZE repasse à 0", "On ne peut pas le savoir"], "bonne": 0, "explication": "`BTST #6,$DFF002` teste ce bit (bit 6 de l'octet fort)." },
+      { "id": "q4", "enonce": "Un bloc de 48 pixels de large dans un écran de 40 octets par ligne : quel modulo de destination ?", "choix": ["34", "40", "42"], "bonne": 0, "explication": "48 pixels = 6 octets ; 40 − 6 = 34." },
+      { "id": "q5", "enonce": "Avec A = $F0, B = $CC, C = $AA, quel minterm donne D = A OU C ?", "choix": ["$FA", "$5A", "$F0"], "bonne": 0, "explication": "$F0 OR $AA = $FA." },
+      { "id": "q6", "enonce": "Que fait cette instruction ?", "code": "@code.s#qcm-cookie", "choix": ["Elle allume les 4 canaux avec le minterm du cookie-cut", "Elle efface l'écran", "Elle lance le Blitter"], "bonne": 0, "explication": "$0F00 = A, B, C, D ; $CA = (A ET B) OU (NON A ET C)." },
+      { "id": "q7", "enonce": "Pour poser un dessin de 16 pixels en x = 21, combien de mots par ligne faut-il blitter ?", "choix": ["2, avec le dernier mot masqué", "1", "21"], "bonne": 0, "explication": "Décalé de 5 bits, il déborde sur le mot suivant." },
+      { "id": "q8", "enonce": "Pour remplir une zone, le Blitter doit être en mode…", "choix": ["descendant, avec IFE ou EFE", "ligne", "montant"], "bonne": 0, "explication": "Le remplissage se fait de droite à gauche, en partant du dernier mot." },
+      { "id": "q9", "enonce": "Où le Blitter peut-il lire et écrire ?", "choix": ["Seulement en Chip RAM", "Partout", "Seulement dans l'écran"], "bonne": 0, "explication": "Comme toutes les puces, il ne voit que la Chip RAM." }
+    ]
+  },
+  "bonus": [
+    { "type": "exercice", "id": "amiga-ch07-bonus-triangle", "titre": "Un triangle plein", "variante": "ecrire", "niveau": 3, "aRelire": true,
+      "enonce": "Défi : dessine le triangle **plein** de sommets (160, 40), (60, 200) et (260, 200). Trace ses deux bords obliques avec la routine `bord` (un seul point par ligne, en OU exclusif : le sommet commun s'annule), puis remplis les lignes 40 à 200 avec le Blitter.",
+      "indices": ["`bord` s'utilise comme `ligne` : (160, 40) → (60, 200), puis (160, 40) → (260, 200).", "Remplissage inclusif descendant (`$09F0000A`) à partir du dernier mot de la ligne 200, sur 161 lignes de 20 mots."],
+      "codeDepart": "@code.s#bonus-triangle-depart", "solution": "@code.s#bonus-triangle-solution",
+      "check": { "type": "image", "maxSteps": 800000, "terminer": true, "systemeRendu": true, "sansAlerte": true, "image": 8, "expected": { "160,120": "$0FFF", "160,190": "$0FFF", "100,190": "$0FFF", "160,39": "$0000", "160,201": "$0000", "50,190": "$0000", "270,190": "$0000", "100,60": "$0000" } },
+      "machine": { "ecran": true, "evenements": [{ "image": 12, "boutonGauche": true }] } }
+  ]
+}
