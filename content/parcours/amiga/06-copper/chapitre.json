@@ -1,0 +1,201 @@
+{
+  "id": "amiga-ch06",
+  "titre": "Le Copper",
+  "plateforme": "amiga",
+  "resume": "Le **Copper** est un petit processeur qui suit le faisceau : il attend une ligne (**WAIT**), écrit un registre (**MOVE**), et recommence à chaque image, sans occuper le 68000. Dégradés, bandes, barres de couleur qui bougent, écrans qui descendent sous la ligne 255 : tu vas écrire tes listes Copper, les animer depuis le 68000, puis installer ta propre **interruption VBL**. Correspond au chapitre 3 du manuel Amiga (son exercice 2 est corrigé : voir l'errata).",
+  "notions": [
+    {
+      "id": "amiga-ch06-n1",
+      "titre": "MOVE, WAIT et la fin de la liste",
+      "contenus": [
+        { "type": "cours", "id": "amiga-ch06-cours-copper", "titre": "Le Copper et ses trois instructions", "fichier": "01-copper.md", "aRelire": true, "source": "Rédigé pour 68k Trainer d'après Amiga Intern (Abacus, chap. 11), le Hardware Reference Manual et le manuel Amiga (chap. 3)" },
+        {
+          "type": "exemple", "id": "amiga-ch06-ex-degrade", "titre": "Un ciel dégradé", "aRelire": true,
+          "introduction": "Une liste Copper de 15 couples WAIT + MOVE : le fond passe du noir au bleu, puis au blanc. Lance **🎬 Temps réel**, ouvre « Vecteurs et matériel » pour voir COP1LC, puis clique sur l'écran pour finir.",
+          "code": "@code.s#degrade-exemple",
+          "machine": { "ecran": true, "interactif": true },
+          "explications": [
+            { "ligne": 2, "texte": "`prendre` coupe le système : seul notre Copper pilotera l'écran." },
+            { "ligne": 3, "texte": "COP1LC = l'adresse de la liste. Elle est en Chip RAM (`SECTION chip,DATA_C`) : le Copper ne lit que la Chip RAM." },
+            { "ligne": 5, "texte": "Le DMA du Copper est allumé : il commence à exécuter la liste." },
+            { "ligne": 14, "texte": "MOVE vers BPLCON0 (`$100`) : aucun plan, l'écran entier est en couleur 0, la couleur du fond." },
+            { "ligne": 16, "texte": "WAIT ligne `$60`, puis MOVE vers COLOR00 : à partir de cette ligne, le fond est bleu très sombre." },
+            { "ligne": 29, "texte": "Dernier changement : blanc à partir de la ligne `$94`." },
+            { "ligne": 30, "texte": "La fin : un WAIT impossible. À l'image suivante, Agnus relance la liste au début : le premier MOVE remet le noir en haut." }
+          ],
+          "conclusion": "Une liste Copper se lit de haut en bas, comme l'écran : « attendre telle ligne, changer tel registre ». Le 68000 n'y est pour rien : il attend tranquillement le clic."
+        },
+        {
+          "type": "prediction", "id": "amiga-ch06-pred-wait", "titre": "Quelle ligne de l'image ?", "aRelire": true,
+          "introduction": "Le WAIT `DC.W $9007,$FFFE` : à quelle ligne de l'image standard (y = 0 en haut) le Copper se réveille-t-il ?",
+          "code": "@code.s#wait-prediction",
+          "questions": [
+            { "id": "q1", "enonce": "Que vaut D0 ?", "choix": ["100 ($64)", "144 ($90)", "7"], "bonne": 0, "explication": "La ligne du faisceau est `$90` = 144. L'image standard commence à la ligne `$2C` = 44 : y = 144 − 44 = 100.", "verification": { "D0": "$00000064" } },
+            { "id": "q2", "enonce": "Et si l'on écrit `DC.W $9006,$FFFE` (bit 0 à 0) ?", "choix": ["C'est un MOVE vers le registre $006 : interdit, le Copper s'arrête", "C'est le même WAIT", "Le Copper attend la ligne $90, position 6"], "bonne": 0, "explication": "Le bit 0 du premier mot distingue WAIT (1) et MOVE (0). Un MOVE vers un registre sous `$80` arrête le Copper." }
+          ]
+        },
+        { "type": "exercice", "id": "amiga-ch06-exo-bande", "titre": "La bande bleue", "variante": "completer", "niveau": 1, "aRelire": true,
+          "enonce": "La liste dessine une bande verte de `$60` à `$70`, puis devrait dessiner une bande **bleue** de `$A0` à `$B0`. Corrige le WAIT de la bande bleue.",
+          "indices": ["Un WAIT pour la ligne `$A0` : la ligne dans l'octet fort, `$07` dans l'octet faible.", "`DC.W $A007,$FFFE`"],
+          "codeDepart": "@code.s#bande-depart", "solution": "@code.s#bande-solution",
+          "check": { "type": "image", "maxSteps": 600000, "terminer": true, "systemeRendu": true, "image": 8, "expected": { "10,56": "$00F0", "10,72": "$0000", "10,120": "$000F", "10,136": "$0000" } },
+          "machine": { "ecran": true, "evenements": [{ "image": 12, "boutonGauche": true }] } },
+        { "type": "exercice", "id": "amiga-ch06-exo-faux-wait", "titre": "Le WAIT qui n'en est pas un", "variante": "corriger", "niveau": 2, "aRelire": true,
+          "enonce": "Le bas de l'écran devrait être jaune à partir de la ligne `$80`, mais il reste rouge, et le débogueur signale que le Copper s'est arrêté. Trouve le mot fautif dans la liste.",
+          "indices": ["Le premier mot d'un WAIT a son bit 0 à 1. Regarde la ligne du `$80`.", "`$8006` est pair : le Copper y voit un MOVE vers le registre `$006`. Écris `$8007`."],
+          "codeDepart": "@code.s#faux-wait-depart", "solution": "@code.s#faux-wait-solution",
+          "check": { "type": "image", "maxSteps": 600000, "terminer": true, "systemeRendu": true, "image": 8, "expected": { "10,40": "$0F00", "10,100": "$0FF0", "10,148": "$0000" } },
+          "machine": { "ecran": true, "evenements": [{ "image": 12, "boutonGauche": true }] } },
+        { "type": "exercice", "id": "amiga-ch06-exo-drapeau", "titre": "Le drapeau allemand", "variante": "ecrire", "niveau": 2, "aRelire": true,
+          "enonce": "Complète la liste Copper : trois bandes horizontales, **noir** en haut, **rouge** (`$F00`) à partir de la ligne `$80`, **or** (`$FC0`) à partir de la ligne `$D5`.",
+          "indices": ["Un MOVE de `$0000` dans COLOR00 pour le haut, puis deux couples WAIT + MOVE.", "`DC.W $8007,$FFFE,$0180,$0F00` puis la même chose pour `$D5`."],
+          "codeDepart": "@code.s#drapeau-depart", "solution": "@code.s#drapeau-solution",
+          "check": { "type": "image", "maxSteps": 600000, "terminer": true, "systemeRendu": true, "image": 8, "expected": { "10,10": "$0000", "10,100": "$0F00", "300,180": "$0FC0" } },
+          "machine": { "ecran": true, "evenements": [{ "image": 12, "boutonGauche": true }] } }
+      ]
+    },
+    {
+      "id": "amiga-ch06-n2",
+      "titre": "Sous la ligne 255",
+      "contenus": [
+        { "type": "cours", "id": "amiga-ch06-cours-bas", "titre": "Les lignes au-delà de 255, les masques, SKIP", "fichier": "02-bas-ecran.md", "aRelire": true, "source": "Rédigé pour 68k Trainer d'après le Hardware Reference Manual (chap. 2) et Amiga Intern (Abacus)" },
+        {
+          "type": "exemple", "id": "amiga-ch06-ex-bas", "titre": "Un dégradé jusqu'en bas", "aRelire": true,
+          "introduction": "Un dégradé de rouge qui descend jusqu'au bas de l'image, sous la ligne 255. Regarde dans le débogueur la position du faisceau quand l'image se termine.",
+          "code": "@code.s#bas-exemple",
+          "machine": { "ecran": true, "interactif": true },
+          "explications": [
+            { "ligne": 15, "texte": "Ligne `$F0` (240) : un WAIT ordinaire." },
+            { "ligne": 16, "texte": "`$FFDF` : la ligne 255, position `$DE`, tout au bout de la ligne. Après elle, le numéro de ligne sur 8 bits repart de 0." },
+            { "ligne": 17, "texte": "Ce `$08` veut donc dire la ligne `$108` (264)." },
+            { "ligne": 21, "texte": "Ligne `$12C` (300) : la dernière ligne de l'image standard. Le fond redevient noir dans la bordure du bas." }
+          ],
+          "conclusion": "Sans le WAIT `$FFDF`, tous les WAIT des lignes 0 à 56 seraient remplis dès le haut de l'image. Avec lui, le Copper atteint les 57 dernières lignes de l'image PAL."
+        },
+        {
+          "type": "prediction", "id": "amiga-ch06-pred-256", "titre": "Après $FFDF", "aRelire": true,
+          "introduction": "Un WAIT `$2C07,$FFFE` placé juste après `$FFDF,$FFFE`.",
+          "code": "@code.s#ligne256-prediction",
+          "questions": [
+            { "id": "q1", "enonce": "À quelle ligne le Copper se réveille-t-il (D0) ?", "choix": ["$12C (300)", "$2C (44)", "$FF (255)"], "bonne": 0, "explication": "Après la ligne 255, le compteur sur 8 bits repart de 0 : `$2C` désigne la ligne 256 + 44 = 300.", "verification": { "D0": "$0000012C" } }
+          ]
+        },
+        { "type": "exercice", "id": "amiga-ch06-exo-sous255", "titre": "Le vert qui monte trop haut", "variante": "completer", "niveau": 2, "aRelire": true,
+          "enonce": "Le fond doit devenir **vert** à partir de la ligne `$110`, tout en bas. Mais tout l'écran est vert ! Ajoute la ligne qui manque dans la liste.",
+          "indices": ["`$10` sur 8 bits, c'est aussi la ligne 16, tout en haut : le WAIT est rempli dès le début de l'image.", "Ajoute `DC.W $FFDF,$FFFE` juste avant le WAIT `$1007`."],
+          "codeDepart": "@code.s#sous255-depart", "solution": "@code.s#sous255-solution",
+          "check": { "type": "image", "maxSteps": 600000, "terminer": true, "systemeRendu": true, "image": 8, "expected": { "10,50": "$0000", "10,200": "$0000", "10,230": "$00F0", "300,250": "$00F0" } },
+          "machine": { "ecran": true, "evenements": [{ "image": 12, "boutonGauche": true }] } }
+      ]
+    },
+    {
+      "id": "amiga-ch06-n3",
+      "titre": "Animer la liste Copper",
+      "contenus": [
+        { "type": "cours", "id": "amiga-ch06-cours-animer", "titre": "Le 68000 modifie la liste, une fois par image", "fichier": "03-animer.md", "aRelire": true, "source": "Rédigé pour 68k Trainer d'après les cours de démo (Stash of Code, RamJam) et le manuel Amiga (exercice 2, corrigé)" },
+        {
+          "type": "exemple", "id": "amiga-ch06-ex-barre", "titre": "La barre qui descend", "aRelire": true,
+          "introduction": "Une barre rouge de 8 lignes descend d'une ligne par image et repart en haut. Le 68000 réécrit les deux WAIT de la barre, une fois par image. Lance **🎬 Temps réel**, puis avance **pas à pas** dans `placer` pour voir les mots de la liste changer (vue **Mémoire** à l'adresse de `barre`).",
+          "code": "@code.s#barre-exemple",
+          "machine": { "ecran": true, "interactif": true },
+          "explications": [
+            { "ligne": 6, "texte": "D0 = la ligne du haut de la barre." },
+            { "ligne": 8, "texte": "On attend que le faisceau soit sous l'image (ligne 303) : le Copper ne lit plus la barre, on peut la modifier." },
+            { "ligne": 10, "texte": "Une ligne plus bas à chaque image : à 50 images par seconde, la barre traverse l'écran en 4 secondes." },
+            { "ligne": 13, "texte": "Arrivée à la ligne `$F0` : on repart en haut." },
+            { "ligne": 24, "texte": "Le numéro de ligne dans l'octet fort du mot." },
+            { "ligne": 25, "texte": "`$07` : position `$06` et bit 0 à 1, c'est un WAIT." },
+            { "ligne": 26, "texte": "Le nouveau WAIT du haut de la barre, écrit directement dans la liste." },
+            { "ligne": 28, "texte": "Le WAIT du bas suit, 8 lignes plus loin (`$0800` ajouté à l'octet fort)." },
+            { "ligne": 36, "texte": "Le mot que `placer` réécrit : l'étiquette `barre` désigne le premier mot du WAIT." }
+          ],
+          "conclusion": "Le Copper exécute, le 68000 prépare : c'est le partage des rôles de toutes les démos. Le 68000 ne touche à la liste que pendant le retour du faisceau."
+        },
+        {
+          "type": "prediction", "id": "amiga-ch06-pred-mot", "titre": "Fabriquer un WAIT", "aRelire": true,
+          "introduction": "On place la barre à la ligne `$50`.",
+          "code": "@code.s#wait-mot-prediction",
+          "questions": [
+            { "id": "q1", "enonce": "Que vaut D1 ?", "choix": ["$00005007", "$00000057", "$00500007"], "bonne": 0, "explication": "`LSL.W #8` met `$50` dans l'octet fort ($5000), `OR.W #$07` ajoute la position : `$5007`.", "verification": { "D1": "$00005007" } },
+            { "id": "q2", "enonce": "Et D2 (le bas de la barre) ?", "choix": ["$00005807", "$00005015", "$00005008"], "bonne": 0, "explication": "`$0800` ajoute 8 à l'octet fort : ligne `$58`.", "verification": { "D2": "$00005807" } }
+          ]
+        },
+        { "type": "exercice", "id": "amiga-ch06-exo-disparait", "titre": "La barre qui disparaît", "variante": "corriger", "niveau": 2, "aRelire": true,
+          "enonce": "La barre doit descendre d'une ligne par image pendant 30 images, puis rester en place. Elle disparaît presque tout de suite : c'est l'erreur de l'exercice 2 du manuel. Corrige.",
+          "indices": ["Le programme ne modifie que le WAIT du haut. Où est le WAIT du bas quand la barre est descendue ?", "Après `MOVE.W D1,barre`, ajoute `$0800` à D1 et écris-le dans `fin_barre`."],
+          "codeDepart": "@code.s#disparait-depart", "solution": "@code.s#disparait-solution",
+          "check": { "type": "image", "maxSteps": 1500000, "terminer": true, "systemeRendu": true, "image": 40, "expected": { "10,51": "$0F00", "10,57": "$0F00", "10,58": "$0000", "10,49": "$0000" } },
+          "machine": { "ecran": true, "evenements": [{ "image": 44, "boutonGauche": true }] } },
+        { "type": "exercice", "id": "amiga-ch06-exo-soixante", "titre": "Soixante images", "variante": "ecrire", "niveau": 3, "aRelire": true,
+          "enonce": "Fais descendre la barre rouge de **2 lignes par image**, **60 fois**, à partir de la ligne `$40`. Elle doit finir de la ligne `$B8` à la ligne `$C0`, puis rester en place jusqu'au clic.",
+          "indices": ["Une boucle de 60 tours (`MOVEQ #59,D7` et `DBF`) : `attendre_vbl`, `ADDQ.W #2`, puis les deux WAIT.", "Pense au WAIT du bas : `ADD.W #$0800` puis `MOVE.W` dans `fin_barre`."],
+          "codeDepart": "@code.s#soixante-depart", "solution": "@code.s#soixante-solution",
+          "check": { "type": "image", "maxSteps": 3000000, "terminer": true, "systemeRendu": true, "image": 70, "expected": { "10,141": "$0F00", "10,147": "$0F00", "10,149": "$0000", "10,139": "$0000", "10,25": "$0000" } },
+          "machine": { "ecran": true, "evenements": [{ "image": 74, "boutonGauche": true }] } }
+      ]
+    },
+    {
+      "id": "amiga-ch06-n4",
+      "titre": "Les interruptions : la VBL",
+      "contenus": [
+        { "type": "cours", "id": "amiga-ch06-cours-vbl", "titre": "Sa propre routine VBL, et l'interruption du Copper", "fichier": "04-interruptions.md", "aRelire": true, "source": "Rédigé pour 68k Trainer d'après Amiga Intern (Abacus, chap. 11) et le Hardware Reference Manual (chap. 7)" },
+        {
+          "type": "exemple", "id": "amiga-ch06-ex-vbl", "titre": "Une VBL à soi", "aRelire": true,
+          "introduction": "La barre (verte cette fois) est déplacée par une **routine d'interruption** appelée 50 fois par seconde, pendant que le programme principal attend le clic. Avance pas à pas : à la fin d'une image, le PC saute dans `vbl` tout seul.",
+          "code": "@code.s#vbl-exemple",
+          "machine": { "ecran": true, "interactif": true },
+          "explications": [
+            { "ligne": 6, "texte": "Le vecteur `$6C` (niveau 3) pointe désormais sur notre routine. `prendre` avait noté celui du système." },
+            { "ligne": 7, "texte": "INTENA : SET (`$8000`) + INTEN (`$4000`, l'interrupteur général) + VERTB (`$0020`)." },
+            { "ligne": 8, "texte": "Le programme principal n'a plus rien à faire que d'attendre le clic : la barre bouge toute seule." },
+            { "ligne": 14, "texte": "On sauvegarde les registres utilisés : la routine interrompt le programme n'importe où." },
+            { "ligne": 15, "texte": "La position de la barre est gardée en mémoire, d'une image à l'autre." },
+            { "ligne": 27, "texte": "INTREQ : bit 15 à 0 et bit 5 à 1, la demande VERTB est effacée. Sans cette ligne, la routine serait rappelée aussitôt, sans fin." },
+            { "ligne": 29, "texte": "`RTE` (et pas `RTS`) : dépile le registre d'état et l'adresse de retour, le programme principal reprend." }
+          ],
+          "conclusion": "Une interruption VBL fait le travail de chaque image sans que le programme principal ait à guetter le faisceau. `rendre` remet ensuite le vecteur du système."
+        },
+        { "type": "exercice", "id": "amiga-ch06-exo-intena", "titre": "Autoriser la VBL", "variante": "completer", "niveau": 1, "aRelire": true,
+          "enonce": "La routine compte les images ; le programme attend qu'elle en ait compté 50, puis range le compteur dans D7. Mais rien ne se passe : l'interruption n'est pas autorisée. Complète la valeur écrite dans INTENA.",
+          "indices": ["Il faut le bit 15 (SET), le bit 14 (INTEN) et le bit 5 (VERTB).", "`MOVE.W #$C020,$9A(A5)`"],
+          "codeDepart": "@code.s#intena-depart", "solution": "@code.s#intena-solution",
+          "check": { "type": "registers", "maxSteps": 1500000, "terminer": true, "systemeRendu": true, "expected": { "D7": "$00000032" } } },
+        { "type": "exercice", "id": "amiga-ch06-exo-sans-fin", "titre": "L'interruption sans fin", "variante": "corriger", "niveau": 2, "aRelire": true,
+          "enonce": "La routine VBL change la couleur du fond à chaque image, et le programme devrait s'arrêter après 100 images. Mais il ne s'arrête jamais : avance pas à pas pour voir où va le PC, puis corrige la routine.",
+          "indices": ["Après le `RTE`, le PC revient-il vraiment dans le programme principal ?", "La demande VERTB n'est jamais effacée : ajoute `MOVE.W #$0020,$DFF09C` avant le `RTE`."],
+          "codeDepart": "@code.s#sans-fin-depart", "solution": "@code.s#sans-fin-solution",
+          "check": { "type": "registers", "maxSteps": 2500000, "terminer": true, "systemeRendu": true, "expected": { "D0": "$00000000" } },
+          "machine": { "ecran": true } },
+        { "type": "exercice", "id": "amiga-ch06-exo-compte", "titre": "Compter cent images", "variante": "ecrire", "niveau": 3, "aRelire": true,
+          "enonce": "Installe une routine VBL qui ajoute 1 à `compteur` à chaque image. Le programme principal attend que le compteur atteigne **100**, le range dans D7 (en mot long, mis à zéro avant), puis rend la main.",
+          "indices": ["Vecteur `$6C`, puis INTENA = `$C020`.", "La routine : `ADDQ.W #1,compteur`, effacer la demande dans INTREQ, `RTE`."],
+          "codeDepart": "@code.s#compte-depart", "solution": "@code.s#compte-solution",
+          "check": { "type": "registers", "maxSteps": 2500000, "terminer": true, "systemeRendu": true, "expected": { "D7": "$00000064" } } }
+      ]
+    }
+  ],
+  "qcm": {
+    "id": "amiga-ch06-qcm",
+    "seuil": 0.7,
+    "questions": [
+      { "id": "q1", "enonce": "Quelles sont les trois instructions du Copper ?", "choix": ["MOVE, WAIT, SKIP", "MOVE, JMP, RTS", "LOAD, STORE, WAIT"], "bonne": 0, "explication": "MOVE écrit un registre, WAIT attend une position, SKIP saute l'instruction suivante si la position est dépassée." },
+      { "id": "q2", "enonce": "Qu'est-ce qui distingue un WAIT d'un MOVE ?", "choix": ["Le bit 0 du premier mot : 1 pour WAIT, 0 pour MOVE", "Le second mot", "Leur longueur"], "bonne": 0, "explication": "Un MOVE commence par un décalage de registre, toujours pair." },
+      { "id": "q3", "enonce": "Que fait cette instruction en fin de liste ?", "code": "@code.s#qcm-fin", "choix": ["Elle attend une position qui n'arrive jamais : le Copper s'arrête jusqu'à l'image suivante", "Elle efface l'écran", "Elle relance la liste tout de suite"], "bonne": 0, "explication": "La position `$FE` n'existe pas : c'est la fin conventionnelle d'une liste." },
+      { "id": "q4", "enonce": "Quand le Copper repart-il du début de sa liste ?", "choix": ["À chaque image, ou quand on écrit dans COPJMP1", "Jamais", "Quand le 68000 le lui demande par une interruption"], "bonne": 0, "explication": "Agnus recharge COP1LC au début de chaque image." },
+      { "id": "q5", "enonce": "Le WAIT `$2C07,$FFFE` attend la ligne…", "choix": ["$2C, la première ligne de l'image standard", "$2C07", "$07"], "bonne": 0, "explication": "L'octet fort est la ligne, l'octet faible la position horizontale." },
+      { "id": "q6", "enonce": "Pour attendre la ligne $110, il faut d'abord…", "choix": ["un WAIT $FFDF,$FFFE", "un WAIT $0110,$FFFE", "rien de spécial"], "bonne": 0, "explication": "Le WAIT ne compare que 8 bits de ligne : on attend la fin de la ligne 255, puis `$10`." },
+      { "id": "q7", "enonce": "Pourquoi le 68000 modifie-t-il la liste Copper pendant le retour du faisceau ?", "choix": ["Pour ne pas la changer pendant que le Copper la lit", "Parce que la liste est en lecture seule le reste du temps", "Pour aller plus vite"], "bonne": 0, "explication": "Sinon une partie de l'image utiliserait l'ancienne version et l'autre la nouvelle." },
+      { "id": "q8", "enonce": "Quel vecteur appelle la VBL sur l'Amiga ?", "choix": ["$6C, l'interruption de niveau 3", "$70", "$84"], "bonne": 0, "explication": "Niveau 3 : VBL, Copper et Blitter. ($70 est la VBL de l'Atari ST.)" },
+      { "id": "q9", "enonce": "Une routine VBL qui oublie d'effacer sa demande dans INTREQ…", "choix": ["est rappelée sans fin : le programme principal ne tourne plus", "n'est appelée qu'une fois", "ne pose aucun problème"], "bonne": 0, "explication": "Paula maintient la demande ; dès le RTE, l'interruption repart." },
+      { "id": "q10", "enonce": "Une routine d'interruption se termine par…", "choix": ["RTE", "RTS", "RTR"], "bonne": 0, "explication": "RTE dépile aussi le registre d'état sauvegardé par l'exception." }
+    ]
+  },
+  "bonus": [
+    { "type": "exercice", "id": "amiga-ch06-bonus-rebond", "titre": "La barre qui rebondit", "variante": "ecrire", "niveau": 3, "aRelire": true,
+      "enonce": "Défi : la barre bleue de 8 lignes suit la table `positions` (32 lignes de départ, déjà prête), une position par image, en boucle, pendant **80 images** ; puis elle reste en place jusqu'au clic. Lance-le en **🎬 Temps réel** pour la voir rebondir.",
+      "indices": ["Un index D6 de 0 à 31 : `MOVE.B 0(A0,D6.W),D0` avec A0 = la table, puis `ADDQ.W #1,D6` et `AND.W #31,D6`.", "Après 80 images, l'index a fait deux tours et demi : la barre finit à la ligne `$DF`."],
+      "codeDepart": "@code.s#bonus-rebond-depart", "solution": "@code.s#bonus-rebond-solution",
+      "check": { "type": "image", "maxSteps": 4000000, "terminer": true, "systemeRendu": true, "image": 90, "expected": { "10,180": "$008F", "10,186": "$008F", "10,187": "$0000", "10,178": "$0000" } },
+      "machine": { "ecran": true, "evenements": [{ "image": 94, "boutonGauche": true }] } }
+  ]
+}
