@@ -182,6 +182,16 @@ export function createChipset(options: ChipsetOptions = {}): Platform {
       if (e.joystick !== undefined) actions.push({ cycle, faire: () => (joy = e.joystick!) })
       if (e.boutonGauche !== undefined || e.boutonDroit !== undefined) {
         actions.push({ cycle, faire: () => ((gauche = e.boutonGauche ?? gauche), (droit = e.boutonDroit ?? droit)) })
+        // Un clic : le bouton est relâché deux images plus tard (sauf « maintenue »)
+        if (!e.maintenue && (e.boutonGauche || e.boutonDroit)) {
+          actions.push({
+            cycle: cycle + 2 * CYCLES_PAR_IMAGE,
+            faire: () => {
+              if (e.boutonGauche) gauche = false
+              if (e.boutonDroit) droit = false
+            }
+          })
+        }
       }
       if (e.souris) actions.push({ cycle, faire: () => deplacer(e.souris!.dx, e.souris!.dy) })
       if (e.touche !== undefined) {

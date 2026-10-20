@@ -4,5 +4,5 @@
   "plateforme": "amiga",
   "description": "Du premier MOVE au Copper et au Blitter : le 68000 et l'Amiga 500 expliqués pas à pas, avec une machine simulée.",
   "statut": "actif",
-  "chapitres": ["../commun/01-demarrer", "../commun/02-architecture", "../commun/03-instructions", "04-systeme"]
+  "chapitres": ["../commun/01-demarrer", "../commun/02-architecture", "../commun/03-instructions", "04-systeme", "05-ecran"]
 }

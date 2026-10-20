@@ -77,7 +77,12 @@ function verifierParcours(parcours: Parcours): void {
           }
           if (c.type === 'exemple') {
             it(`exemple « ${c.titre} » s'exécute jusqu'au bout`, () => {
-              const { cpu, last } = executer(c.code, parcours.plateforme, c.machine, 100000)
+              // Un exemple Amiga « interactif » attend un clic de souris : on le simule à l'image 6
+              const interactif = parcours.plateforme === 'amiga' && c.machine?.interactif
+              const machine = interactif
+                ? { ...c.machine, interactif: false, evenements: [...(c.machine?.evenements ?? []), { image: 6, boutonGauche: true }] }
+                : c.machine
+              const { cpu, last } = executer(c.code, parcours.plateforme, machine, interactif ? 2000000 : 100000)
               expect(last.error, last.error).toBeUndefined()
               expect(cpu.halted).toBe(true)
               const nbLignes = c.code.split('\n').length
