@@ -10,7 +10,7 @@ Seule la base d'exec est connue d'avance. Pour les autres, on demande à exec de
     TST.L   D0
     BEQ     erreur          ; toujours tester le résultat !
     MOVE.L  D0,dosbase
-    ...
+    ; ...
 dosnom: DC.B    'dos.library',0
 ```
 
@@ -59,7 +59,7 @@ dos.library fournit deux fonctions :
     MOVE.L  #texte,D2       ; D2 = l'adresse du texte
     MOVEQ   #fin-texte,D3   ; D3 = sa longueur, calculée par l'assembleur
     JSR     -48(A6)         ; Write
-    ...
+    ; ...
 texte:  DC.B    'Bonjour !',10
 fin:
 ```
