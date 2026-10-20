@@ -7,6 +7,7 @@ import { ecrireLocal as ecrire, lireLocal as lire } from '../profilActif'
 import { machineActive } from '../progressionStore'
 import { materielAmiga } from '../../../platforms/amiga/chipset'
 import { MACHINES, type Machine } from '../../../shared/machines'
+import { confirmer } from '../components/dialogue'
 
 const PROGRAMMES: Record<Machine, string> = {
   atari: `; Bac à sable : écris ici ce que tu veux, puis Assembler et Pas / Exécuter.
@@ -47,6 +48,29 @@ fin:
 `
 }
 
+/** Anciens programmes d'exemple : un brouillon resté identique est remplacé par l'exemple actuel. */
+const ANCIENS_EXEMPLES: Record<Machine, string[]> = {
+  atari: [
+    `; Bac à sable : écris ici ce que tu veux, puis Assembler et Pas / Exécuter.
+; La machine simulée est un Atari 1040 STF (écran en $F8000).
+START:
+    MOVE.W  #5,D0
+    MOVE.W  #10,D1
+    ADD.W   D1,D0           ; D0 = 15
+    MOVE.W  #$FFFF,$F8000   ; 16 pixels en haut à gauche de l'écran
+    RTS
+`
+  ],
+  amiga: []
+}
+
+/** Le brouillon du profil, sauf s'il n'est qu'un ancien exemple jamais modifié. */
+function brouillon(machine: Machine, texte: string | null): string | null {
+  if (texte === null) return null
+  const net = (t: string): string => t.replace(/\r\n/g, '\n').trim()
+  return ANCIENS_EXEMPLES[machine].some((ancien) => net(ancien) === net(texte)) ? null : texte
+}
+
 const cleProgramme = (m: Machine): string => (m === 'atari' ? 'bac-a-sable:programme' : `bac-a-sable:programme:${m}`)
 const CLE_MODE = 'bac-a-sable:mode-utilisateur'
 
@@ -56,6 +80,7 @@ export function renderTrainer(container: HTMLElement, initialProgram?: string): 
   const CLE_PROGRAMME = cleProgramme(machine)
   container.innerHTML = `
     <div class="toolbar">
+      <button id="btn-exemple" title="Remettre le programme d'exemple dans l'éditeur">Exemple</button>
       <button id="btn-assemble">Assembler</button>
       <button id="btn-step" disabled>Pas</button>
       <button id="btn-run" disabled>Exécuter</button>
@@ -75,7 +100,7 @@ export function renderTrainer(container: HTMLElement, initialProgram?: string): 
   `
 
   const editor = monaco.editor.create(container.querySelector('#editor') as HTMLDivElement, {
-    value: initialProgram ?? lire(CLE_PROGRAMME) ?? PROGRAMMES[machine],
+    value: initialProgram ?? brouillon(machine, lire(CLE_PROGRAMME)) ?? PROGRAMMES[machine],
     language: 'm68k',
     theme: 'm68k-dark',
     fontSize: 14,
@@ -85,6 +110,18 @@ export function renderTrainer(container: HTMLElement, initialProgram?: string): 
     automaticLayout: true
   })
   editor.onDidChangeModelContent(() => ecrire(CLE_PROGRAMME, editor.getValue()))
+  container.querySelector('#btn-exemple')!.addEventListener('click', () => {
+    const remettre = (): void => {
+      // Comme une frappe : Ctrl+Z rend le programme d'avant
+      editor.pushUndoStop()
+      editor.executeEdits('exemple', [{ range: editor.getModel()!.getFullModelRange(), text: PROGRAMMES[machine] }])
+      editor.pushUndoStop()
+    }
+    if (editor.getValue() === PROGRAMMES[machine]) return
+    void confirmer("Remplacer ton programme par l'exemple ? (Ctrl+Z pour revenir en arrière)", 'Remplacer').then((oui) => {
+      if (oui) remettre()
+    })
+  })
 
   const btnAssemble = container.querySelector('#btn-assemble') as HTMLButtonElement
   const btnStep = container.querySelector('#btn-step') as HTMLButtonElement
