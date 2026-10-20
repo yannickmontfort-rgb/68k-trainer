@@ -2,7 +2,7 @@
   "id": "atari-ch01",
   "titre": "Démarrer : l'atelier et ton premier programme",
   "plateforme": "commun",
-  "resume": "Avant d'écrire du code, il faut savoir **l'assembler, l'exécuter et l'observer**. Ce chapitre te présente l'atelier (l'équivalent de Devpac et MONST), la forme d'une ligne d'assembleur, ton premier programme… et la méthode pour trouver tes erreurs. Sur l'Atari ST, ces outils n'arrivaient qu'à la fin du manuel : ici, on commence par eux.",
+  "resume": "Avant d'écrire du code, il faut savoir **l'assembler, l'exécuter et l'observer**. Ce chapitre te présente l'atelier (l'équivalent de [[atari:Devpac et MONST|amiga:Devpac ou ASM-One]]), la forme d'une ligne d'assembleur, ton premier programme… et la méthode pour trouver tes erreurs. [[atari:Sur l'Atari ST, ces outils n'arrivaient qu'à la fin du manuel : ici, on commence par eux.|amiga:Ces outils sont souvent présentés à la fin des livres : ici, on commence par eux.]]",
   "notions": [
     {
       "id": "atari-ch01-n1",
@@ -35,7 +35,7 @@
             { "ligne": 3, "texte": "`MOVE.W #5,D0` copie la valeur immédiate 5 dans le registre D0. Regarde D0 : il vaut maintenant `$00000005`. Le PC (compteur de programme) a avancé jusqu'à l'instruction suivante." },
             { "ligne": 4, "texte": "Même chose avec D1, qui reçoit 3. D0 n'a pas bougé : une instruction ne modifie que sa **destination**." },
             { "ligne": 5, "texte": "`ADD.W D1,D0` additionne la source (D1) à la destination (D0) : D0 = 5 + 3 = 8. D1, la source, garde sa valeur." },
-            { "ligne": 6, "texte": "`RTS` dépile l'adresse de retour (regarde la pile : le sommet contenait l'adresse du TOS) et rend la main au système. Le programme est terminé." }
+            { "ligne": 6, "texte": "`RTS` dépile l'adresse de retour (regarde la pile : le sommet contenait l'adresse [[atari:du TOS|amiga:du CLI]]) et rend la main au système. Le programme est terminé." }
           ],
           "conclusion": "Tu as vu les trois éléments que tu retrouveras partout : des **registres** qui contiennent les valeurs, des **instructions** qui les transforment une par une, et le **PC** qui avance d'instruction en instruction."
         },
@@ -161,9 +161,9 @@
             {
               "id": "q1",
               "enonce": "Quand on l'exécute…",
-              "choix": ["il écrit $1234 à l'adresse $3001 et se termine normalement", "il s'arrête sur une erreur d'adresse (3 bombes sur un ST)", "l'assembleur refuse le programme"],
+              "choix": ["il écrit $1234 à l'adresse $3001 et se termine normalement", "il s'arrête sur une erreur d'adresse ([[atari:3 bombes sur un ST|amiga:Guru Meditation #00000003 sur l'Amiga]])", "l'assembleur refuse le programme"],
               "bonne": 1,
-              "explication": "Un mot (`.W`) doit toujours être lu ou écrit à une adresse **paire**. $3001 est impaire : le 68000 déclenche une erreur d'adresse (exception n° 3, donc 3 bombes). L'assembleur ne peut pas le voir : c'est une erreur d'**exécution**."
+              "explication": "Un mot (`.W`) doit toujours être lu ou écrit à une adresse **paire**. $3001 est impaire : le 68000 déclenche une erreur d'adresse (exception n° 3, [[atari:donc 3 bombes|amiga:d'où le Guru #00000003]]). L'assembleur ne peut pas le voir : c'est une erreur d'**exécution**."
             }
           ]
         },
@@ -213,15 +213,15 @@
     "id": "atari-ch01-qcm",
     "seuil": 0.7,
     "questions": [
-      { "id": "q1", "enonce": "Quel programme transforme ton texte assembleur en codes machine ?", "choix": ["Le débogueur", "L'assembleur", "Le TOS"], "bonne": 1, "explication": "L'assembleur (GENST sous Devpac, vasm ici) traduit chaque instruction en code machine. Le débogueur sert à observer l'exécution." },
+      { "id": "q1", "enonce": "Quel programme transforme ton texte assembleur en codes machine ?", "choix": ["Le débogueur", "L'assembleur", "[[atari:Le TOS|amiga:Le Kickstart]]"], "bonne": 1, "explication": "L'assembleur ([[atari:GENST|amiga:GenAm]] sous Devpac, celui de 68k Trainer ici) traduit chaque instruction en code machine. Le débogueur sert à observer l'exécution." },
       { "id": "q2", "enonce": "Dans `MOVE.W #5,D0`, que signifie le `#` ?", "choix": ["5 est une adresse mémoire", "5 est la valeur elle-même (immédiate)", "le reste de la ligne est un commentaire"], "bonne": 1, "explication": "`#` désigne une valeur immédiate. Sans `#`, 5 serait l'adresse mémoire 5." },
       { "id": "q3", "enonce": "`$1F` est un nombre écrit en…", "choix": ["binaire", "décimal", "hexadécimal"], "bonne": 2, "explication": "Le préfixe `$` indique l'hexadécimal ; `%` le binaire ; sans préfixe, c'est du décimal." },
       { "id": "q4", "enonce": "Combien vaut `%101` en décimal ?", "choix": ["5", "101", "3"], "bonne": 0, "explication": "%101 = 1×4 + 0×2 + 1×1 = 5." },
       { "id": "q5", "enonce": "Dans la ligne `BOUCLE: ADD.W D1,D0 ; total`, qu'est-ce que `BOUCLE` ?", "choix": ["Une étiquette", "Une instruction", "Un commentaire"], "bonne": 0, "explication": "Une étiquette commence en première colonne : c'est un nom donné à l'adresse de la ligne." },
       { "id": "q6", "enonce": "Que vaut D0 après ces deux instructions ?", "code": "@code.s#qcm-addition", "choix": ["$00000010", "$00000016", "$00000088"], "bonne": 0, "explication": "8 + 8 = 16, soit $10 en hexadécimal. Attention à ne pas confondre $10 (seize) et 10 (dix)." },
-      { "id": "q7", "enonce": "À quoi sert le `RTS` final de nos programmes ?", "choix": ["À effacer les registres", "À rendre la main au TOS", "À recommencer le programme"], "bonne": 1, "explication": "Le TOS lance le programme comme un sous-programme ; RTS revient à l'appelant." },
+      { "id": "q7", "enonce": "À quoi sert le `RTS` final de nos programmes ?", "choix": ["À effacer les registres", "À rendre la main [[atari:au TOS|amiga:au système]]", "À recommencer le programme"], "bonne": 1, "explication": "[[atari:Le TOS|amiga:Le CLI]] lance le programme comme un sous-programme ; RTS revient à l'appelant." },
       { "id": "q8", "enonce": "Dans quel ordre se déroule la méthode de débogage ?", "choix": ["Corriger, puis tester, puis réfléchir", "Hypothèse, inspection, vérification", "Inspection, correction de toutes les lignes suspectes, vérification"], "bonne": 1, "explication": "On formule une hypothèse, on inspecte pas à pas pour trouver la première ligne fautive, puis on corrige cette ligne et on vérifie." },
-      { "id": "q9", "enonce": "Sur un Atari ST, un accès en `.W` à une adresse impaire provoque…", "choix": ["2 bombes (erreur de bus)", "3 bombes (erreur d'adresse)", "4 bombes (instruction illégale)"], "bonne": 1, "explication": "Le nombre de bombes est le numéro de l'exception : 3 = erreur d'adresse." },
+      { "id": "q9", "enonce": "[[atari:Sur un Atari ST|amiga:Sur un 68000]], un accès en `.W` à une adresse impaire provoque…", "choix": ["[[atari:2 bombes|amiga:un Guru #00000002]] (erreur de bus)", "[[atari:3 bombes|amiga:un Guru #00000003]] (erreur d'adresse)", "[[atari:4 bombes|amiga:un Guru #00000004]] (instruction illégale)"], "bonne": 1, "explication": "[[atari:Le nombre de bombes|amiga:Le numéro du Guru]] est le numéro de l'exception : 3 = erreur d'adresse." },
       { "id": "q10", "enonce": "Une erreur signalée par l'assembleur (ligne soulignée en rouge) est…", "choix": ["une erreur de syntaxe", "une erreur de logique", "une exception du 68000"], "bonne": 0, "explication": "L'assembleur ne voit que le texte : il signale les erreurs de syntaxe. Les erreurs de logique et les exceptions n'apparaissent qu'à l'exécution." }
     ]
   },
@@ -238,7 +238,15 @@
       "codeDepart": "@code.s#bonus-fond-depart",
       "solution": "@code.s#bonus-fond-solution",
       "check": { "type": "memory", "maxSteps": 50, "terminer": true, "expected": { "$FF8240": "$0700" } },
-      "machine": { "ecran": true }
+      "machine": { "ecran": true },
+      "variantes": {
+        "amiga": {
+          "enonce": "Sur l'Amiga, la couleur du fond est la **couleur n° 0**, le registre **`COLOR00`** de la puce Denise, à l'adresse **`$DFF180`**. Une couleur s'écrit `$0RVB`, chaque composante allant de 0 à 15 (`$F`) : rouge vif = `$F00`.\n\nMais attention : 50 fois par seconde, le **Copper** (un petit processeur des puces) repeint le fond avec la couleur du Workbench. Un seul `MOVE` ne dure donc qu'un instant ! Écris un programme qui repeint le fond en rouge **en boucle**, jusqu'à ce qu'on clique avec le **bouton gauche de la souris** (bit 6 de l'octet `$BFE001` : il passe à 0 quand le bouton est enfoncé). Lance-le en **Temps réel** et clique sur l'écran pour finir.",
+          "indices": ["Une boucle : `MOVE.W #$F00,$DFF180`, puis `BTST #6,$BFE001` et `BNE` vers le début de la boucle.", "`BTST` met Z à 1 quand le bit vaut 0 : `BNE` reboucle tant que le bouton n'est pas enfoncé."],
+          "check": { "type": "image", "maxSteps": 400000, "terminer": true, "image": 3, "expected": { "100,100": "$0F00", "10,200": "$0F00" } },
+          "machine": { "ecran": true, "evenements": [{ "image": 5, "boutonGauche": true }] }
+        }
+      }
     }
   ]
 }

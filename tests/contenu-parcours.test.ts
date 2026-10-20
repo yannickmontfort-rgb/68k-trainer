@@ -14,10 +14,10 @@ import { assemble } from './helpers/assemble'
 
 const content = await loadContent(join(__dirname, '..', 'content'))
 
-function executer(source: string, plateforme: Plateforme, machine: ContenuExercice['machine'], maxSteps: number) {
+function executer(source: string, plateforme: Plateforme, machine: ContenuExercice['machine'], maxSteps: number, check?: ContenuExercice['check']) {
   const asm = assemble(source)
   if (!asm.success) throw new Error("Ne s'assemble pas : " + JSON.stringify(asm.errors))
-  return runBinary(asm.binary, asm.baseAddress, platformFor(plateforme, machine), maxSteps)
+  return runBinary(asm.binary, asm.baseAddress, platformFor(plateforme, machine, check), maxSteps)
 }
 
 function lireEtat(cpu: Cpu, cle: string): string {
@@ -49,6 +49,13 @@ function verifierParcours(parcours: Parcours): void {
   const exercices: ContenuExercice[] = []
 
   describe(`parcours ${parcours.id}`, () => {
+    it('tronc commun : plus aucune marque d’adaptation ([[atari:…]], :::amiga…)', () => {
+      const texte = JSON.stringify(parcours)
+      expect(texte).not.toMatch(/\[\[(atari|amiga):/)
+      expect(texte).not.toMatch(/(^|\\n);?:::(atari|amiga)?(\\n|$)/)
+      expect(texte).not.toContain('"variantes"')
+    })
+
     for (const chapitre of parcours.chapitres) {
       describe(chapitre.titre, () => {
         const contenus = [...chapitre.notions.flatMap((n) => n.contenus), ...(chapitre.bonus ?? [])]
@@ -94,7 +101,7 @@ function verifierParcours(parcours: Parcours): void {
             exercices.push(c)
             it(`exercice « ${c.titre} » : la solution est acceptée`, () => {
               expect(c.solution || c.variante === 'ordonner', 'solution manquante').toBeTruthy()
-              const { cpu, last } = executer(sourceExercice(c), parcours.plateforme, c.machine, c.check.maxSteps)
+              const { cpu, last } = executer(sourceExercice(c), parcours.plateforme, c.machine, c.check.maxSteps, c.check)
               const verdict = evaluateCheck(cpu, c.check)
               expect(verdict.success, `${verdict.message}\n${last.error ?? ''}`).toBe(true)
               expect(last.error, 'la solution ne doit pas planter').toBeUndefined()
@@ -103,7 +110,7 @@ function verifierParcours(parcours: Parcours): void {
               it(`exercice « ${c.titre} » : le code de départ n'est pas déjà juste`, () => {
                 const asm = assemble(c.codeDepart)
                 if (!asm.success) return // erreur de syntaxe volontaire
-                const { cpu, last } = runBinary(asm.binary, asm.baseAddress, platformFor(parcours.plateforme, c.machine), c.check.maxSteps)
+                const { cpu, last } = runBinary(asm.binary, asm.baseAddress, platformFor(parcours.plateforme, c.machine, c.check), c.check.maxSteps)
                 // Juste = check réussi ET pas de plantage (comme dans verifierExercice)
                 expect(evaluateCheck(cpu, c.check).success && !last.error).toBe(false)
               })

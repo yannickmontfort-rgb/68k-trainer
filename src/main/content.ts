@@ -3,6 +3,7 @@ import { readdir, readFile } from 'fs/promises'
 import { join } from 'path'
 import type { ContentBundle, CourseFile, Exercise, ExerciseLevel, Track } from '../shared/ipc'
 import type { Chapitre, ContenuExercice, Parcours, Plateforme } from '../shared/parcours'
+import { adapterEnLigne, adapterTexte, appliquerVariantes, type MachineContenu } from '../shared/adaptation'
 
 function getContentRoot(): string {
   // En dehors d'Electron (tests), on lit le dossier content/ du dépôt
@@ -86,13 +87,15 @@ const CHAMPS_CODE = ['code', 'solution', 'codeDepart', 'entete', 'pied'] as cons
 /**
  * "fichier.s" : tout le fichier ; "fichier.s#nom" : le bloc qui suit la ligne `;=== nom` dans ce
  * fichier, jusqu'au marqueur suivant (un seul fichier regroupe ainsi tous les codes d'un chapitre).
+ * Un bloc `;=== nom@amiga` remplace `;=== nom` pour l'Amiga (tronc commun).
  */
-async function lireCode(dir: string, ref: string): Promise<string> {
+async function lireCode(dir: string, ref: string, machine: MachineContenu): Promise<string> {
   const [fichier, nom] = ref.split('#')
-  const texte = (await readFile(join(dir, fichier), 'utf-8')).replace(/\r\n/g, '\n')
+  const texte = adapterTexte((await readFile(join(dir, fichier), 'utf-8')).replace(/\r\n/g, '\n'), machine)
   if (!nom) return texte.replace(/\n+$/, '')
   const lignes = texte.split('\n')
-  const debut = lignes.findIndex((l) => l.trim() === `;=== ${nom}`)
+  const variante = lignes.findIndex((l) => l.trim() === `;=== ${nom}@${machine}`)
+  const debut = variante >= 0 ? variante : lignes.findIndex((l) => l.trim() === `;=== ${nom}`)
   if (debut < 0) throw new Error(`Bloc de code « ${nom} » introuvable dans ${fichier}`)
   let fin = lignes.findIndex((l, i) => i > debut && l.startsWith(';=== '))
   if (fin < 0) fin = lignes.length
@@ -103,29 +106,36 @@ async function lireCode(dir: string, ref: string): Promise<string> {
  * Un champ de code peut désigner un fichier du dossier du chapitre : "@code/premier.s".
  * Le code 68000 reste ainsi lisible (et assemblable tel quel) hors du JSON.
  */
-async function resoudreFichiers(dir: string, objet: Record<string, unknown>): Promise<void> {
+async function resoudreFichiers(dir: string, objet: Record<string, unknown>, machine: MachineContenu): Promise<void> {
   for (const champ of CHAMPS_CODE) {
     const v = objet[champ]
-    if (typeof v === 'string' && v.startsWith('@')) objet[champ] = await lireCode(dir, v.slice(1))
+    if (typeof v === 'string' && v.startsWith('@')) objet[champ] = await lireCode(dir, v.slice(1), machine)
   }
   if (Array.isArray(objet.questions)) {
-    for (const q of objet.questions) await resoudreFichiers(dir, q as Record<string, unknown>)
+    for (const q of objet.questions) await resoudreFichiers(dir, q as Record<string, unknown>, machine)
   }
 }
 
-async function loadChapitre(dir: string, legacy: Map<string, Exercise>): Promise<Chapitre> {
-  const chapitre = JSON.parse(await readFile(join(dir, 'chapitre.json'), 'utf-8')) as Chapitre
+/** Le texte du chapitre adapté à la machine du parcours (tronc commun : `[[atari:…|amiga:…]]`, variantes). */
+async function lireChapitre(dir: string, machine: MachineContenu): Promise<Chapitre> {
+  const chapitre = JSON.parse(adapterEnLigne(await readFile(join(dir, 'chapitre.json'), 'utf-8'), machine)) as Chapitre
+  appliquerVariantes(chapitre, machine)
+  return chapitre
+}
+
+async function loadChapitre(dir: string, legacy: Map<string, Exercise>, machine: MachineContenu): Promise<Chapitre> {
+  const chapitre = await lireChapitre(dir, machine)
   chapitre.plateforme ??= 'atari'
   chapitre.notions ??= [] // chapitre esquissé : pas encore de contenu
-  for (const b of chapitre.bonus ?? []) await resoudreFichiers(dir, b as unknown as Record<string, unknown>)
-  if (chapitre.qcm) await resoudreFichiers(dir, chapitre.qcm as unknown as Record<string, unknown>)
+  for (const b of chapitre.bonus ?? []) await resoudreFichiers(dir, b as unknown as Record<string, unknown>, machine)
+  if (chapitre.qcm) await resoudreFichiers(dir, chapitre.qcm as unknown as Record<string, unknown>, machine)
   for (const notion of chapitre.notions) {
     for (let i = 0; i < notion.contenus.length; i++) {
       const c = notion.contenus[i]
-      await resoudreFichiers(dir, c as unknown as Record<string, unknown>)
+      await resoudreFichiers(dir, c as unknown as Record<string, unknown>, machine)
       if (c.type === 'cours' && c.fichier && !c.markdown) {
         const raw = await readFile(join(dir, c.fichier), 'utf-8')
-        c.markdown = parseFrontmatter(raw).body.trim()
+        c.markdown = adapterTexte(parseFrontmatter(raw).body.trim(), machine)
       }
       if (c.type === 'exercice') notion.contenus[i] = resolveRef(c, legacy)
     }
@@ -140,8 +150,12 @@ async function loadAllParcours(root: string, legacy: Map<string, Exercise>): Pro
   const result: Parcours[] = []
   for (const d of dirs.filter((e) => e.isDirectory()).sort((a, b) => a.name.localeCompare(b.name))) {
     const base = join(parcoursRoot, d.name)
-    const file = JSON.parse(await readFile(join(base, 'parcours.json'), 'utf-8')) as ParcoursFile
-    const chapitres = await Promise.all(file.chapitres.map((c) => loadChapitre(join(base, c), legacy)))
+    // Le dossier « commun » (chapitres partagés) n'est pas un parcours
+    const texte = await readFile(join(base, 'parcours.json'), 'utf-8').catch(() => null)
+    if (texte === null) continue
+    const file = JSON.parse(texte) as ParcoursFile
+    const machine: MachineContenu = file.plateforme === 'amiga' ? 'amiga' : 'atari'
+    const chapitres = await Promise.all(file.chapitres.map((c) => loadChapitre(join(base, c), legacy, machine)))
     result.push({
       id: file.id,
       titre: file.titre,

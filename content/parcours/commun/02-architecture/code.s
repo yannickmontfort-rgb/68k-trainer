@@ -124,7 +124,7 @@ START:
     MOVE.W  #$0001,D0       ; seul le mot faible change
     MOVEA.W #$1234,A0       ; extension de signe, bit 15 = 0
     MOVEA.W #$8000,A1       ; extension de signe, bit 15 = 1
-    LEA     $F8000,A2       ; l'adresse de l'écran
+    LEA     [[atari:$F8000,A2       ; l'adresse de l'écran|amiga:$DFF000,A2      ; l'adresse des puces custom]]
     RTS
 
 ;=== registres-prediction
@@ -308,4 +308,44 @@ START:
 ;=== bonus-ligne-solution
 START:
     MOVE.W  #$FFFF,$F8000
+    RTS
+;=== bonus-ligne-depart@amiga
+; Trouve ExecBase (adresse rangée en $4) et lis la version d'exec (le mot en 20(A6))
+START:
+
+    RTS
+
+;=== bonus-ligne-solution@amiga
+START:
+    MOVEA.L 4.W,A6          ; A6 = ExecBase
+    MOVEQ   #0,D0
+    MOVE.W  20(A6),D0       ; LIB_VERSION : 34 pour le Kickstart 1.3
+    RTS
+;=== memoire-even-depart@amiga
+; Objectif : D0 = 500 (le modèle d'Amiga)
+START:
+    MOVE.W  NOMBRE,D0
+    RTS
+TEXTE:  DC.B    'KS',0
+NOMBRE:
+        DC.W    500
+
+;=== memoire-even-solution@amiga
+START:
+    MOVE.W  NOMBRE,D0
+    RTS
+TEXTE:  DC.B    'KS',0
+        EVEN
+NOMBRE:
+        DC.W    500
+
+;=== registres-ecran-depart@amiga
+; Mets dans A5 l'adresse des puces custom : $DFF000
+START:
+
+    RTS
+
+;=== registres-ecran-solution@amiga
+START:
+    LEA     $DFF000,A5
     RTS

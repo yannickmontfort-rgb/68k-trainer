@@ -3,6 +3,9 @@ import type { CpuSnapshot } from '../cpu/types'
 import type { ExerciseCheck } from './ipc'
 import { readPixel, screenAddress } from '../platforms/atari-st/screen'
 import { materielAtari } from '../platforms/atari-st/materiel'
+import { materielAmiga } from '../platforms/amiga/chipset'
+import { bilanAmiga } from '../platforms/amiga/kickstart'
+import { decalageRegistre, R } from '../platforms/amiga/machine'
 
 export interface CheckResult {
   success: boolean
@@ -41,6 +44,19 @@ function readMemory(cpu: Cpu, key: string): number {
  * d'assembler et d'exécuter avant d'appeler cette fonction.
  */
 export function evaluateCheck(cpu: Cpu, check: ExerciseCheck): CheckResult {
+  const resultat = evaluer(cpu, check)
+  if (!resultat.success || !check.systemeRendu) return resultat
+  const bilan = bilanAmiga(cpu)
+  if (!bilan) return { success: false, message: "Le programme doit se terminer par RTS en rendant la main au système." }
+  if (bilan.problemes.length) {
+    return { success: false, message: 'Le résultat est bon, mais le système n’a pas été rendu proprement :\n' + bilan.problemes.join('\n') }
+  }
+  return { success: true, message: resultat.message + ' Et le système a été rendu proprement.' }
+}
+
+const hex4 = (v: number): string => '$' + v.toString(16).toUpperCase().padStart(4, '0')
+
+function evaluer(cpu: Cpu, check: ExerciseCheck): CheckResult {
   if (check.terminer && !cpu.halted) {
     return {
       success: false,
@@ -71,6 +87,45 @@ export function evaluateCheck(cpu: Cpu, check: ExerciseCheck): CheckResult {
     }
     if (mismatches.length > 0) return { success: false, message: mismatches.join('\n') }
     return { success: true, message: 'Bravo, l’écran est exactement comme prévu !' }
+  }
+
+  if (check.type === 'image') {
+    const m = materielAmiga(cpu)
+    const ecarts: string[] = []
+    for (const [cle, attendu] of Object.entries(check.expected)) {
+      const [x, y] = cle.split(',').map((v) => parseInt(v, 10))
+      const obtenu = m?.pixel(x, y, check.image) ?? 0
+      const voulu = parseInt(attendu.replace('$', ''), 16)
+      if (obtenu !== voulu) ecarts.push(`Point (${x}, ${y}) : couleur ${hex4(voulu)} attendue, ${hex4(obtenu)} affichée`)
+    }
+    if (ecarts.length) return { success: false, message: ecarts.join('\n') }
+    return { success: true, message: 'Bravo, l’écran est exactement comme prévu !' }
+  }
+
+  if (check.type === 'custom') {
+    const m = materielAmiga(cpu)
+    const ecarts: string[] = []
+    for (const [nom, attendu] of Object.entries(check.expected)) {
+      const d = decalageRegistre(nom)
+      if (d === undefined) throw new Error(`Registre inconnu dans le corrigé : ${nom}`)
+      const obtenu = d === R.DMACON ? (m?.dmacon() ?? 0) : d === R.INTENA ? (m?.intena() ?? 0) : (m?.regs[d >> 1] ?? 0)
+      const voulu = parseInt(attendu.replace('$', ''), 16)
+      if (obtenu !== voulu) ecarts.push(`${nom} : ${hex4(voulu)} attendu, ${hex4(obtenu)} obtenu`)
+    }
+    if (ecarts.length) return { success: false, message: ecarts.join('\n') }
+    return { success: true, message: 'Bravo, les puces sont réglées comme prévu !' }
+  }
+
+  if (check.type === 'paula') {
+    const voies = materielAmiga(cpu)?.paula.voies
+    const ecarts: string[] = []
+    for (const [cle, attendu] of Object.entries(check.expected)) {
+      const n = parseInt(cle.replace(/\D/g, ''), 10)
+      const joue = voies?.[n]?.actif ?? false
+      if (joue !== (attendu === 'on')) ecarts.push(`Voie ${n} : ${attendu === 'on' ? 'devrait jouer' : 'devrait être arrêtée'}`)
+    }
+    if (ecarts.length) return { success: false, message: ecarts.join('\n') }
+    return { success: true, message: 'Bravo, Paula joue comme prévu !' }
   }
 
   if (check.type === 'son') {

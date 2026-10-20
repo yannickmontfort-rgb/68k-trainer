@@ -38,8 +38,12 @@ export interface ProgressState {
   contenusVus?: string[]
   /** Résultats des QCM de fin de chapitre, par id de QCM. */
   qcm?: Record<string, { meilleurScore: number; total: number; reussi: boolean; date: string }>
-  /** Pour « Reprendre là où je me suis arrêté ». */
+  /** Pour « Reprendre là où je me suis arrêté » (dernière étape visitée, tous parcours confondus). */
   derniere?: { parcoursId: string; chapitreId: string; etapeId: string }
+  /** Dernière étape visitée dans chaque parcours (Atari, Amiga). */
+  positions?: Record<string, { chapitreId: string; etapeId: string }>
+  /** Machine choisie par l'apprenant (Atari ST par défaut). */
+  machine?: 'atari' | 'amiga'
 }
 
 export interface Track {
@@ -58,7 +62,7 @@ export interface CourseFile {
   markdown: string
 }
 
-export type ExerciseCheckType = 'registers' | 'memory' | 'output' | 'pixels' | 'son'
+export type ExerciseCheckType = 'registers' | 'memory' | 'output' | 'pixels' | 'son' | 'image' | 'custom' | 'paula'
 
 export interface ExerciseCheck {
   type: ExerciseCheckType
@@ -73,6 +77,11 @@ export interface ExerciseCheck {
    *                 les retours chariot (CR, code 13) sont ignorés des deux côtés)
    * - "pixels"    : clé = "x,y" sur l'écran Atari basse résolution, valeur = numéro de couleur 0-15 en décimal
    * - "son"       : clé = registre du YM2149 "R0".."R15", valeur = contenu attendu en hexa ("$1C")
+   * - "image"     : Amiga, clé = "x,y" sur l'écran (origine = coin de l'image standard, DIWSTRT $2C81),
+   *                 valeur = couleur affichée "$0RGB" (image n° `image`, sinon la dernière image complète)
+   * - "custom"    : Amiga, clé = nom d'un registre des puces ("COLOR00", "BPLCON0", "DMACON", "AUD0PER"…),
+   *                 valeur = dernier mot écrit (DMACON, INTENA : état réel), en hexa
+   * - "paula"     : Amiga, clé = "AUD0".."AUD3", valeur "on" ou "off" (le DMA de la voie joue-t-il ?)
    */
   expected: Record<string, string>
   /**
@@ -80,6 +89,13 @@ export interface ExerciseCheck {
    * « tourne dans le vide » (pile déséquilibrée, fin oubliée) et la vérification échoue.
    */
   terminer?: boolean
+  /** Amiga, vérification "image" : numéro de l'image à examiner (0 = la première). */
+  image?: number
+  /**
+   * Amiga : le programme doit aussi avoir rendu proprement le système avant de finir (Permit,
+   * Enable, FreeMem, DMACON, INTENA, liste Copper, vecteur $6C, vue).
+   */
+  systemeRendu?: boolean
 }
 
 export interface Exercise {

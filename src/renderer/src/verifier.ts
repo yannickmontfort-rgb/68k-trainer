@@ -1,6 +1,7 @@
 import { evaluateCheck } from '../../shared/checkResult'
 import type { ContenuExercice, Plateforme } from '../../shared/parcours'
 import { platformFor, runBinary } from '../../shared/runProgram'
+import { materielAmiga } from '../../platforms/amiga/chipset'
 
 export interface Verdict {
   success: boolean
@@ -29,8 +30,14 @@ function pistesPour(ex: ContenuExercice, message: string): string[] {
     pistes.push('Après un TRAP, la pile a-t-elle été nettoyée (ADDQ.L / LEA) du bon nombre d\'octets ?')
   } else if (ex.check.type === 'pixels') {
     pistes.push('Regarde l\'écran dans le pas à pas : le point est-il au bon endroit ? Vérifie le calcul d\'adresse (Y × 160 + (X / 16) × 8).')
+  } else if (ex.check.type === 'image') {
+    pistes.push('Lance « Temps réel » et regarde l\'écran : la couleur change-t-elle à la bonne ligne ? Ouvre « Vecteurs et matériel » pour voir COP1LC, DMACON et les couleurs.')
+    pistes.push('Une liste Copper se termine par DC.W $FFFF,$FFFE ; un WAIT s\'écrit DC.W $vvhh,$FFFE (ligne vv, position hh impaire).')
+  } else if (ex.check.type === 'custom') {
+    pistes.push('Un registre custom s\'écrit à $DFF000 + son décalage (COLOR00 = $DFF180). Ouvre « Vecteurs et matériel » pour voir ce que les puces ont reçu.')
   }
-  if (/bombe/.test(message)) pistes.unshift('Le programme a planté : regarde la ligne surlignée au moment de l\'arrêt, c\'est elle qui a provoqué l\'exception.')
+  if (ex.check.systemeRendu) pistes.push('Avant RTS, rends tout au système : Permit, Enable, FreeMem, DMACON et INTENA d\'origine (avec le bit 15), liste Copper du système dans COP1LC.')
+  if (/bombe|Guru/.test(message)) pistes.unshift('Le programme a planté : regarde la ligne surlignée au moment de l\'arrêt, c\'est elle qui a provoqué l\'exception.')
   return pistes
 }
 
@@ -45,12 +52,16 @@ export async function verifierExercice(source: string, ex: ContenuExercice, plat
       pistes: ['Erreur de syntaxe : corrige d\'abord la ligne indiquée (elle est soulignée en rouge dans l\'éditeur).']
     }
   }
-  const { cpu, last } = runBinary(asm.binary!, asm.baseAddress ?? 0, platformFor(plateforme, ex.machine), ex.check.maxSteps)
+  const { cpu, last } = runBinary(asm.binary!, asm.baseAddress ?? 0, platformFor(plateforme, ex.machine, ex.check), ex.check.maxSteps)
   const result = evaluateCheck(cpu, ex.check)
+  // Remarques de la machine (Amiga : WaitBlit oublié, Copper arrêté…)
+  const alertes = materielAmiga(cpu)?.alertes ?? []
+  const remarques = alertes.length ? '\n\nRemarques :\n' + alertes.map((a) => '⚠ ' + a).join('\n') : ''
   // Un programme qui plante n'est jamais réussi, même si les registres sont justes
-  if (result.success && !last.error) return { success: true, message: result.message, pistes: [] }
-  const message = last.error
-    ? `Le programme ne s'est pas terminé proprement.\n${last.error}${result.success ? '' : '\n\n' + result.message}`
-    : result.message
+  if (result.success && !last.error) return { success: true, message: result.message + remarques, pistes: [] }
+  const message =
+    (last.error
+      ? `Le programme ne s'est pas terminé proprement.\n${last.error}${result.success ? '' : '\n\n' + result.message}`
+      : result.message) + remarques
   return { success: false, message, pistes: pistesPour(ex, message) }
 }

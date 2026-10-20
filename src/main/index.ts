@@ -45,7 +45,7 @@ app.whenReady().then(() => {
   ipcMain.handle(IPC.loadProgress, () => profils.chargerProgression())
   ipcMain.handle(IPC.saveProgress, (_event, state: ProgressState) => profils.enregistrerProgression(state))
   ipcMain.handle(IPC.listerProfils, () => profils.lister())
-  ipcMain.handle(IPC.creerProfil, (_e, nom: string, motDePasse?: string) => profils.creer(nom, motDePasse))
+  ipcMain.handle(IPC.creerProfil, (_e, nom: string, motDePasse?: string, progression?: ProgressState) => profils.creer(nom, motDePasse, progression))
   ipcMain.handle(IPC.ouvrirProfil, (_e, id: string, motDePasse?: string) => profils.ouvrir(id, motDePasse))
   ipcMain.handle(IPC.fermerProfil, () => profils.fermer())
   ipcMain.handle(IPC.renommerProfil, (_e, nom: string) => profils.renommer(nom))
@@ -78,18 +78,27 @@ app.whenReady().then(() => {
       return { ok: false, erreur: "Ce fichier n'est pas un profil 68k Trainer lisible." }
     }
   })
-  ipcMain.handle(IPC.enregistrerPrg, async (event, octets: Uint8Array, nom: string) => {
+  ipcMain.handle(IPC.enregistrerPrg, async (event, octets: Uint8Array, nom: string, format: 'prg' | 'hunk' = 'prg') => {
     const fenetre = BrowserWindow.fromWebContents(event.sender)!
-    const choix = await dialog.showSaveDialog(fenetre, {
-      title: 'Exporter pour Hatari ou un vrai Atari ST',
-      defaultPath: `${nom}.PRG`,
-      filters: [{ name: 'Programme Atari ST', extensions: ['PRG', 'TOS', 'TTP'] }]
-    })
+    const choix = await dialog.showSaveDialog(
+      fenetre,
+      format === 'hunk'
+        ? {
+            title: 'Exporter pour un émulateur Amiga (WinUAE, FS-UAE) ou un vrai Amiga',
+            defaultPath: nom,
+            filters: [{ name: 'Programme Amiga (sans extension)', extensions: ['*'] }]
+          }
+        : {
+            title: 'Exporter pour Hatari ou un vrai Atari ST',
+            defaultPath: `${nom}.PRG`,
+            filters: [{ name: 'Programme Atari ST', extensions: ['PRG', 'TOS', 'TTP'] }]
+          }
+    )
     if (choix.canceled || !choix.filePath) return { ok: false }
     await writeFile(choix.filePath, Buffer.from(octets))
     return { ok: true, chemin: choix.filePath }
   })
-  ipcMain.handle(IPC.fabriquerPrg, (_event, source: string) => fabriquerPrg(source))
+  ipcMain.handle(IPC.fabriquerPrg, (_event, source: string, format?: 'prg' | 'hunk') => fabriquerPrg(source, format))
   // Certificat : page HTML rendue dans une fenêtre invisible, imprimée en PDF (A4 paysage)
   ipcMain.handle(IPC.exporterPdf, async (event, html: string, nom: string) => {
     const fenetre = BrowserWindow.fromWebContents(event.sender)!

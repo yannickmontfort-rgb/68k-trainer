@@ -1,7 +1,10 @@
 /**
- * « Exporter pour Hatari / un vrai ST » : le processus principal assemble le source en .PRG
- * relogeable (avec les fichiers d'INCLUDE et d'INCBIN), puis propose de l'enregistrer.
+ * « Exporter pour Hatari / un vrai ST » (.PRG) ou « pour l'Amiga » (exécutable AmigaDOS) : le
+ * processus principal assemble le source en programme relogeable (avec les fichiers d'INCLUDE et
+ * d'INCBIN), puis propose de l'enregistrer.
  */
+import type { Plateforme } from '../../shared/parcours'
+import { machineDe } from '../../shared/machines'
 
 export interface ResultatExport {
   ok: boolean
@@ -19,7 +22,8 @@ function nomTos(nom: string): string {
   return propre || 'PROGRAM'
 }
 
-export async function exporterPrg(source: string, nom: string): Promise<ResultatExport> {
+export async function exporterPrg(source: string, nom: string, plateforme: Plateforme = 'atari'): Promise<ResultatExport> {
+  if (machineDe(plateforme).export.format === 'hunk') return exporterAmiga(source, nom)
   const prg = await window.api.fabriquerPrg(source)
   if (!prg.octets) return { ok: false, message: prg.raison ?? 'Export impossible.' }
   const enregistre = await window.api.enregistrerPrg(prg.octets, nomTos(nom))
@@ -29,4 +33,27 @@ export async function exporterPrg(source: string, nom: string): Promise<Resultat
     ? ''
     : '\nAstuce : sur un vrai ST, termine le programme par CLR.W -(SP) puis TRAP #1 (Pterm0) pour revenir proprement au bureau.'
   return { ok: true, message: `Programme enregistré : ${enregistre.chemin}${conseil}` }
+}
+
+/** Nom de fichier AmigaDOS : jusqu'à 30 caractères, sans espace ni « : » ou « / ». */
+function nomAmiga(nom: string): string {
+  const propre = nom
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^A-Za-z0-9_-]/g, '')
+    .slice(0, 30)
+  return propre || 'programme'
+}
+
+async function exporterAmiga(source: string, nom: string): Promise<ResultatExport> {
+  const exe = await window.api.fabriquerPrg(source, 'hunk')
+  if (!exe.octets) return { ok: false, message: exe.raison ?? 'Export impossible.' }
+  const enregistre = await window.api.enregistrerPrg(exe.octets, nomAmiga(nom), 'hunk')
+  if (!enregistre.ok) return { ok: false, message: 'Export annulé.' }
+  const conseils = ['\nLance-le depuis le Shell (CLI) : un programme lancé par une icône doit d’abord répondre au message du Workbench.']
+  // Les données lues par les puces doivent être en Chip RAM sur une machine qui a de la Fast RAM
+  if (/\$?dff[0-9a-f]{3}|\$dff000/i.test(source) && !/_C\b/i.test(source)) {
+    conseils.push('Astuce : sur un Amiga avec de la Fast RAM, mets les listes Copper, images et sons dans une « SECTION nom,DATA_C » (Chip RAM).')
+  }
+  return { ok: true, message: `Programme enregistré : ${enregistre.chemin}${conseils.join('\n')}` }
 }

@@ -12,6 +12,7 @@ import { LIBELLE_VARIANTE, SEUIL_QCM_DEFAUT } from '../../../../shared/parcours'
 import type { ProgressState } from '../../../../shared/ipc'
 import { corrigerQcm, detailChapitre, etatNotion } from '../../../../shared/progression'
 import { platformFor } from '../../../../shared/runProgram'
+import { machineDe } from '../../../../shared/machines'
 import { Debogueur } from '../../components/debogueur'
 import { Execution } from '../../components/execution'
 import { exporterPrg } from '../../exportPrg'
@@ -118,7 +119,7 @@ export function ecranExemple(el: HTMLElement, ex: ContenuExemple, ctx: ContexteE
           <div class="toolbar-mini">
             <button id="btn-pas" class="btn-principal" disabled>▶ Pas suivant</button>
             <button id="btn-tout" disabled>⏭ Jusqu'au bout</button>
-            ${ex.machine?.ecran ? '<button id="btn-temps-reel" disabled title="Exécute à la vitesse d’un vrai ST : l’écran s’anime à 50 images par seconde">🎬 Temps réel</button>' : ''}
+            ${ex.machine?.ecran ? '<button id="btn-temps-reel" disabled title="Exécute à la vitesse de la vraie machine : l’écran s’anime à 50 images par seconde">🎬 Temps réel</button>' : ''}
             <button id="btn-reset">↺ Recommencer</button>
             <span class="statut" id="statut"></span>
           </div>
@@ -136,9 +137,9 @@ export function ecranExemple(el: HTMLElement, ex: ContenuExemple, ctx: ContexteE
   if (ex.conclusion) renderMarkdown(conclusionEl, ex.conclusion)
 
   const editor = creerEditeur(el.querySelector('#editeur')!, ex.code, true)
-  const dbg = new Debogueur({ ecran: ex.machine?.ecran })
+  const dbg = new Debogueur({ ecran: ex.machine?.ecran, machine: machineDe(ctx.plateforme).id })
   el.querySelector('#dbg')!.appendChild(dbg.element)
-  const exec = new Execution(editor, dbg, () => platformFor(ctx.plateforme, ex.machine), ex.machine?.memoire)
+  const exec = new Execution(editor, dbg, () => platformFor(ctx.plateforme, ex.machine), ex.machine?.memoire, machineDe(ctx.plateforme).id)
   const explicationEl = el.querySelector<HTMLDivElement>('#explication')!
   const statut = el.querySelector<HTMLSpanElement>('#statut')!
   const btnPas = el.querySelector<HTMLButtonElement>('#btn-pas')!
@@ -265,7 +266,7 @@ export function ecranExercice(el: HTMLElement, ex: ContenuExercice, ctx: Context
             <button id="btn-indice">Indice (0/${ex.indices.length})</button>
             <button id="btn-solution" disabled title="Disponible après avoir vu les indices ou après 3 essais">Voir la solution</button>
             ${ordonner ? '' : '<button id="btn-reinit" title="Revenir au code de départ">↺</button>'}
-            <button id="btn-prg" ${reussi ? '' : 'hidden'} title="Lance ton programme dans l'émulateur Hatari ou sur un vrai Atari ST !">Exporter .PRG</button>
+            <button id="btn-prg" ${reussi ? '' : 'hidden'} title="${machineDe(ctx.plateforme).export.titre}">${machineDe(ctx.plateforme).export.bouton}</button>
           </div>
           <p class="export-prg" id="export-prg" hidden></p>
           <ul class="indices" id="indices"></ul>
@@ -275,7 +276,7 @@ export function ecranExercice(el: HTMLElement, ex: ContenuExercice, ctx: Context
           <div class="toolbar-mini">
             <button id="dbg-pas" class="btn-principal">▶ Pas</button>
             <button id="dbg-tout">⏭ Jusqu'au bout</button>
-            ${ex.machine?.ecran ? '<button id="dbg-temps-reel" title="Exécute à la vitesse d’un vrai ST : l’écran s’anime à 50 images par seconde">🎬 Temps réel</button>' : ''}
+            ${ex.machine?.ecran ? '<button id="dbg-temps-reel" title="Exécute à la vitesse de la vraie machine : l’écran s’anime à 50 images par seconde">🎬 Temps réel</button>' : ''}
             <button id="dbg-reset">↺</button>
             <button id="dbg-fermer" title="Fermer le pas à pas">✕</button>
             <span class="statut" id="dbg-statut"></span>
@@ -373,7 +374,7 @@ export function ecranExercice(el: HTMLElement, ex: ContenuExercice, ctx: Context
   const btnPrg = el.querySelector<HTMLButtonElement>('#btn-prg')!
   const exportEl = el.querySelector<HTMLParagraphElement>('#export-prg')!
   btnPrg.addEventListener('click', () => {
-    void exporterPrg(sourceActuel(), ex.id.split('-').pop() ?? ex.id).then((r) => {
+    void exporterPrg(sourceActuel(), ex.id.split('-').pop() ?? ex.id, ctx.plateforme).then((r) => {
       exportEl.hidden = false
       exportEl.textContent = r.message
     })
@@ -405,7 +406,7 @@ export function ecranExercice(el: HTMLElement, ex: ContenuExercice, ctx: Context
   // Pas à pas
   const panneau = el.querySelector<HTMLDivElement>('#panneau-dbg')!
   const dbgStatut = el.querySelector<HTMLSpanElement>('#dbg-statut')!
-  const dbg = new Debogueur({ ecran: ex.machine?.ecran })
+  const dbg = new Debogueur({ ecran: ex.machine?.ecran, machine: machineDe(ctx.plateforme).id })
   el.querySelector('#dbg')!.appendChild(dbg.element)
   // Une seule exécution par éditeur : en recréer une à chaque clic laissait l'ancienne surligner
   // sa ligne et basculer les points d'arrêt en double.
@@ -427,7 +428,7 @@ export function ecranExercice(el: HTMLElement, ex: ContenuExercice, ctx: Context
       editeurPasAPas.setValue(sourceActuel())
       cible = editeurPasAPas
     }
-    exec ??= new Execution(cible, dbg, () => platformFor(ctx.plateforme, ex.machine), ex.machine?.memoire)
+    exec ??= new Execution(cible, dbg, () => platformFor(ctx.plateforme, ex.machine), ex.machine?.memoire, machineDe(ctx.plateforme).id)
     exec.arreter()
     const res = await exec.assembler(sourceActuel())
     aJour = true
@@ -586,8 +587,8 @@ export function ecranPrediction(el: HTMLElement, pred: ContenuPrediction, ctx: C
   })
   const dbgEl = el.querySelector<HTMLDivElement>('#dbg')!
   // Créés une seule fois : un second clic réutilise le même débogueur et la même exécution
-  const dbg = new Debogueur({ ecran: pred.machine?.ecran })
-  const exec = new Execution(editor, dbg, () => platformFor(ctx.plateforme, pred.machine), pred.machine?.memoire)
+  const dbg = new Debogueur({ ecran: pred.machine?.ecran, machine: machineDe(ctx.plateforme).id })
+  const exec = new Execution(editor, dbg, () => platformFor(ctx.plateforme, pred.machine), pred.machine?.memoire, machineDe(ctx.plateforme).id)
   btnExecuter.addEventListener('click', () => {
     void (async () => {
       dbgEl.hidden = false

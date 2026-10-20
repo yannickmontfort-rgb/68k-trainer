@@ -1,4 +1,5 @@
-import type { ProfilPublic } from '../../../shared/ipc'
+import type { ProfilPublic, ProgressState } from '../../../shared/ipc'
+import type { Parcours } from '../../../shared/parcours'
 import { detailChapitre, detailParcours } from '../../../shared/progression'
 import { getContent } from '../content'
 import { restaurerBrouillons } from '../profilActif'
@@ -104,6 +105,11 @@ export function renderChoixProfil(
     panneau().innerHTML = `
       <form class="profils-form" id="form-nouveau">
         <label>Prénom ou pseudo<input type="text" id="nom" maxlength="40" autofocus /></label>
+        <fieldset class="profils-machine"><legend>Ta machine</legend>
+          <label><input type="radio" name="machine" value="atari" checked /> Atari ST</label>
+          <label><input type="radio" name="machine" value="amiga" /> Amiga 500</label>
+          <small>Les trois premiers chapitres (le 68000) sont communs ; tu pourras changer de machine à tout moment, en haut à droite.</small>
+        </fieldset>
         ${CHAMPS_MDP}
         <p class="profils-aide">Sans mot de passe, n'importe qui sur cet ordinateur peut ouvrir ce profil. Avec, il est
         protégé dans l'application (mais pas chiffré sur le disque).</p>
@@ -120,7 +126,8 @@ export function renderChoixProfil(
         if (!nom) return void (erreurEl.textContent = 'Choisis un nom.')
         const { mdp, erreur } = lireMotDePasse(form)
         if (erreur) return void (erreurEl.textContent = erreur)
-        const res = await window.api.creerProfil(nom, mdp)
+        const machine = form.querySelector<HTMLInputElement>('input[name="machine"]:checked')?.value === 'amiga' ? 'amiga' : 'atari'
+        const res = await window.api.creerProfil(nom, mdp, { completedExerciseIds: [], machine })
         if (!res.ok || !res.profil) return void (erreurEl.textContent = res.erreur ?? 'Création impossible.')
         const err = await ouvrir(res.profil.id, mdp)
         if (err) erreurEl.textContent = err
@@ -159,8 +166,17 @@ export function renderChoixProfil(
 
   async function tableau(): Promise<void> {
     const [lignes, content] = await Promise.all([window.api.tableauProfils(), getContent()])
-    const parcours = content.parcours.find((p) => p.statut === 'actif') ?? content.parcours[0]
-    if (!parcours) return
+    const tableaux = content.parcours.filter((p) => p.statut === 'actif').map((p) => tableauParcours(p, lignes))
+    panneau().innerHTML = `
+      <div class="profils-tableau">
+        ${tableaux.join('')}
+        <p class="profils-aide">Le tableau ne montre que la progression, jamais le code ni les mots de passe.</p>
+        <button id="fermer-tableau">Fermer</button>
+      </div>`
+    panneau().querySelector('#fermer-tableau')!.addEventListener('click', () => (panneau().innerHTML = ''))
+  }
+
+  function tableauParcours(parcours: Parcours, lignes: { profil: ProfilPublic; progression: ProgressState }[]): string {
     const chapitres = parcours.chapitres.filter((c) => !c.esquisse)
     // Titres lisibles des étapes, pour la colonne « Dernière étape »
     const titres = new Map<string, string>()
@@ -171,8 +187,7 @@ export function renderChoixProfil(
     })
     const cellule = (pct: number): string =>
       `<td class="tab-pct" style="--pct:${pct}%"><span>${pct} %</span></td>`
-    panneau().innerHTML = `
-      <div class="profils-tableau">
+    return `
         <h3>Tableau de suivi — ${echapper(parcours.titre)}</h3>
         <table>
           <thead><tr><th>Profil</th><th>Total</th>${chapitres.map((c) => `<th title="${echapper(c.titre)}">Ch. ${parcours.chapitres.indexOf(c) + 1}</th>`).join('')}<th>Bonus</th><th>Dernière étape</th></tr></thead>
@@ -180,7 +195,7 @@ export function renderChoixProfil(
             ${lignes
               .map(({ profil, progression }) => {
                 const g = detailParcours(parcours, progression)
-                const id = progression.derniere?.etapeId
+                const id = progression.positions?.[parcours.id]?.etapeId
                 const derniere = id ? (titres.get(id) ?? id) : '—'
                 return `<tr><td>${echapper(profil.nom)}${profil.protege ? ' 🔒' : ''}</td>${cellule(g.pourcentage)}${chapitres
                   .map((c) => cellule(detailChapitre(c, progression).pourcentage))
@@ -188,11 +203,7 @@ export function renderChoixProfil(
               })
               .join('')}
           </tbody>
-        </table>
-        <p class="profils-aide">Le tableau ne montre que la progression, jamais le code ni les mots de passe.</p>
-        <button id="fermer-tableau">Fermer</button>
-      </div>`
-    panneau().querySelector('#fermer-tableau')!.addEventListener('click', () => (panneau().innerHTML = ''))
+        </table>`
   }
 
   void (async () => {

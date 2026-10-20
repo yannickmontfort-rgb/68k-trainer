@@ -49,6 +49,18 @@ export function enregistrerQcm(id: string, score: number, total: number, reussi:
 export function memoriserPosition(parcoursId: string, chapitreId: string, etapeId: string): void {
   if (!state) return
   state.derniere = { parcoursId, chapitreId, etapeId }
+  state.positions = { ...state.positions, [parcoursId]: { chapitreId, etapeId } }
+  enregistrer()
+}
+
+/** Machine choisie dans le profil ouvert (Atari ST tant que la progression n'est pas chargée). */
+export function machineActive(): 'atari' | 'amiga' {
+  return state?.machine ?? 'atari'
+}
+
+export function choisirMachine(machine: 'atari' | 'amiga'): void {
+  if (!state || state.machine === machine) return
+  state.machine = machine
   enregistrer()
 }
 

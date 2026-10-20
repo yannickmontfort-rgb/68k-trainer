@@ -7,14 +7,28 @@ plus facile à corriger : lis le message, regarde la ligne.
 
 **2. L'erreur d'exécution** : le programme s'assemble, mais il fait autre chose que ce que tu
 voulais. Soit le résultat est faux (erreur de **logique**), soit le processeur s'arrête sur une
-**exception**. Sur un vrai Atari, une exception non prévue affiche des **bombes** à l'écran, et
-leur nombre indique la cause :
+**exception**.
+:::atari
+Sur un vrai Atari, une exception non prévue affiche des **bombes** à l'écran, et leur nombre
+indique la cause :
 
 | Bombes | Exception | Cause typique |
 |---|---|---|
 | 2 | erreur de bus | accès à une zone protégée (le matériel, en mode utilisateur) |
 | 3 | erreur d'adresse | accès à un mot (`.W`) ou un mot long (`.L`) à une adresse **impaire** |
 | 4 | instruction illégale | le processeur exécute des données (programme sans `RTS`, pile abîmée…) |
+:::
+:::amiga
+Sur un vrai Amiga, une exception non prévue affiche la fameuse boîte rouge clignotante
+**« Software Failure — Guru Meditation #0000000N.xxxxxxxx »** : N est le numéro de l'exception.
+
+| Guru | Exception | Cause typique |
+|---|---|---|
+| `#00000003` | erreur d'adresse | accès à un mot (`.W`) ou un mot long (`.L`) à une adresse **impaire** |
+| `#00000004` | instruction illégale | le processeur exécute des données (programme sans `RTS`, pile abîmée…) |
+| `#00000005` | division par zéro | `DIVU` ou `DIVS` par 0 |
+| `#00000008` | violation de privilège | instruction réservée au mode superviseur (`MOVE … ,SR`, `STOP`…) |
+:::
 
 Dans 68k Trainer, le programme s'arrête sur l'instruction en cause et un message t'explique ce
 qui s'est passé.

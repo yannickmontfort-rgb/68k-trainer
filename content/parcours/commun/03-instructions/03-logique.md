@@ -2,7 +2,7 @@
 
 Les opérations logiques travaillent **bit à bit**. Combinées à une valeur bien choisie, le
 **masque**, elles permettent de modifier certains bits sans toucher aux autres. C'est la base du
-graphisme sur Atari ST, où chaque bit est un pixel.
+graphisme sur [[atari:Atari ST|amiga:Amiga]], où chaque bit est un pixel.
 
 | Instruction | Règle pour chaque bit | Usage avec un masque |
 |---|---|---|

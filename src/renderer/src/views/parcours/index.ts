@@ -11,7 +11,7 @@ import {
   type Etape
 } from '../../../../shared/progression'
 import { getContent } from '../../content'
-import { chargerProgression, memoriserPosition } from '../../progressionStore'
+import { chargerProgression, machineActive, memoriserPosition } from '../../progressionStore'
 import { echapper } from './markdown'
 import { htmlCertificat } from '../../../../shared/certificat'
 import { profilActif } from '../../profilActif'
@@ -47,7 +47,9 @@ export function renderParcours(container: HTMLElement): () => void {
 
   Promise.all([getContent(), chargerProgression()]).then(([content, progression]) => {
     if (disposed) return
-    const parcours: Parcours | undefined = content.parcours.find((p) => p.statut === 'actif') ?? content.parcours[0]
+    // Le parcours de la machine choisie dans le profil
+    const actifs = content.parcours.filter((x) => x.statut === 'actif')
+    const parcours: Parcours | undefined = actifs.find((x) => x.plateforme === machineActive()) ?? actifs[0] ?? content.parcours[0]
     if (!parcours) {
       root.innerHTML = '<p class="loading">Aucun parcours trouvé dans content/parcours/.</p>'
       return
@@ -98,7 +100,7 @@ export function renderParcours(container: HTMLElement): () => void {
 
     /** Dernière étape visitée ; si elle est déjà faite, la prochaine étape obligatoire non faite. */
     function etapeDeReprise(): string | undefined {
-      const derniere = p.derniere?.parcoursId === parcours!.id ? p.derniere.etapeId : undefined
+      const derniere = p.positions?.[parcours!.id]?.etapeId
       if (derniere && trouver(derniere) && !etapeFaite(derniere)) return derniere
       if (derniere) {
         const index = etapes.findIndex((e) => e.id === derniere)
@@ -111,6 +113,7 @@ export function renderParcours(container: HTMLElement): () => void {
     function renderEntete(): void {
       const d = detailParcours(parcours!, p)
       const reprise = etapeDeReprise()
+      const position = p.positions?.[parcours!.id]
       const repriseInfo = reprise ? trouver(reprise) : undefined
       const titreReprise =
         repriseInfo?.contenu?.titre ?? (repriseInfo?.genre === 'qcm' ? `QCM — ${repriseInfo.chapitre.titre}` : '')
@@ -127,8 +130,12 @@ export function renderParcours(container: HTMLElement): () => void {
         </div>
         ${
           reprise
-            ? `<button class="btn-principal btn-reprendre" id="btn-reprendre" title="${echapper(titreReprise)}">${!p.derniere ? 'Commencer' : reprise === p.derniere.etapeId ? 'Reprendre' : 'Continuer'} : ${echapper(titreReprise)}</button>`
-            : `<div class="parcours-fini"><strong>Parcours terminé, bravo ! 🎉</strong><br>Tu sais maintenant programmer le ST en assembleur : écran, animation, clavier, joystick, son, et de vrais .PRG. Il reste ${d.bonusTotal - d.bonusFaits} défi${d.bonusTotal - d.bonusFaits > 1 ? 's' : ''} bonus à relever, et le bac à sable t'attend pour tes propres démos.</div>`
+            ? `<button class="btn-principal btn-reprendre" id="btn-reprendre" title="${echapper(titreReprise)}">${!position ? 'Commencer' : reprise === position.etapeId ? 'Reprendre' : 'Continuer'} : ${echapper(titreReprise)}</button>`
+            : `<div class="parcours-fini"><strong>Parcours terminé, bravo ! 🎉</strong><br>${
+              parcours!.plateforme === 'amiga'
+                ? 'Tu sais maintenant programmer l’Amiga en assembleur : système, Copper, Blitter, sprites, Paula, et de vrais exécutables.'
+                : 'Tu sais maintenant programmer le ST en assembleur : écran, animation, clavier, joystick, son, et de vrais .PRG.'
+            } Il reste ${d.bonusTotal - d.bonusFaits} défi${d.bonusTotal - d.bonusFaits > 1 ? 's' : ''} bonus à relever, et le bac à sable t'attend pour tes propres démos.</div>`
         }
       `
       enteteEl.querySelector('#btn-reprendre')?.addEventListener('click', () => reprise && ouvrir(reprise))
@@ -303,7 +310,7 @@ export function renderParcours(container: HTMLElement): () => void {
     }
 
     // À l'ouverture : reprendre là où on s'était arrêté
-    const reprise = p.derniere?.parcoursId === parcours.id ? p.derniere.etapeId : undefined
+    const reprise = p.positions?.[parcours.id]?.etapeId
     if (reprise && trouver(reprise)) ouvrir(reprise)
     else ouvrirChapitre(chapitreOuvert!)
   })

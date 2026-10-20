@@ -325,7 +325,7 @@ BOUCLE:
     BRA     BOUCLE
 FIN:
     RTS
-TEXTE:  DC.B    'ATARI',0
+TEXTE:  DC.B    '[[atari:ATARI|amiga:AMIGA]]',0
 
 ;=== boucles-dbra
 START:
@@ -625,3 +625,8 @@ MODIFIE:
     ; restaure D1 ici
     RTS
 FIN:
+;=== l3-e1-depart-amiga
+    ORG $1000
+START:
+    MOVEQ   #0,D0           ; au lancement, l'Amiga met dans D0 la longueur de la ligne de commande
+    MOVE.L  #$FFFFFFF6,D1

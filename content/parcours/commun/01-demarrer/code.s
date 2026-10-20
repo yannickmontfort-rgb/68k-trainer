@@ -8,7 +8,7 @@ START:
     MOVE.W  #5,D0       ; D0 reçoit 5
     MOVE.W  #3,D1       ; D1 reçoit 3
     ADD.W   D1,D0       ; D0 = D0 + D1
-    RTS                 ; retour au TOS
+    RTS                 ; retour [[atari:au TOS|amiga:au CLI]]
 
 ;=== predire-sub
 START:
@@ -132,4 +132,17 @@ START:
 ;=== bonus-fond-solution
 START:
     MOVE.W  #$700,$FF8240   ; couleur 0 (le fond) = rouge
+    RTS
+;=== bonus-fond-depart@amiga
+; Peins le fond de l'écran en rouge, jusqu'au clic gauche de la souris
+START:
+
+    RTS
+
+;=== bonus-fond-solution@amiga
+START:
+.repeindre:
+    MOVE.W  #$F00,$DFF180   ; COLOR00 (le fond) = rouge
+    BTST    #6,$BFE001      ; bouton gauche de la souris enfoncé ?
+    BNE.S   .repeindre      ; pas encore : on recommence
     RTS

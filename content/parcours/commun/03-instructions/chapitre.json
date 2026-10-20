@@ -2,7 +2,7 @@
   "id": "atari-ch03",
   "titre": "Le jeu d'instructions : calculer, comparer, boucler",
   "plateforme": "commun",
-  "resume": "Le cœur de l'assembleur 68000 : déplacer des données avec tous les **modes d'adressage**, calculer, manipuler des bits, **comparer et brancher**, écrire des **boucles** et des **sous-programmes**. Ce chapitre comble un manque du manuel Atari, qui passe directement de l'architecture au TOS alors que ses propres routines utilisent DBRA, Bcc ou `MOVE.L (A0),A0`. Il reprend aussi les exercices de la première version de 68k Trainer.",
+  "resume": "Le cœur de l'assembleur 68000 : déplacer des données avec tous les **modes d'adressage**, calculer, manipuler des bits, **comparer et brancher**, écrire des **boucles** et des **sous-programmes**. [[atari:Ce chapitre comble un manque du manuel Atari, qui passe directement de l'architecture au TOS alors que ses propres routines utilisent DBRA, Bcc ou `MOVE.L (A0),A0`.|amiga:Tout ce qu'il faut avant d'attaquer le système et les puces de l'Amiga, qui emploient sans cesse DBRA, Bcc ou `MOVE.L (A0),A0`.]] Il reprend aussi les exercices de la première version de 68k Trainer.",
   "notions": [
     {
       "id": "atari-ch03-n1",
@@ -107,7 +107,7 @@
             { "ligne": 8, "texte": "Décaler de 1 vers la droite = ÷ 2 : 24 = `$18`. ASR conserve le signe (ici positif)." },
             { "ligne": 9, "texte": "`BSET #0` met le bit 0 à 1 : `$19` = 25." }
           ],
-          "conclusion": "AND pour éteindre, OR pour allumer, EOR pour inverser : c'est exactement ce qu'on fera pour dessiner des pixels sur l'écran de l'Atari."
+          "conclusion": "AND pour éteindre, OR pour allumer, EOR pour inverser : c'est exactement ce qu'on fera pour dessiner des pixels sur l'écran de [[atari:l'Atari|amiga:l'Amiga]]."
         },
         {
           "type": "prediction", "id": "atari-ch03-pred-decalage", "titre": "LSR ou ASR ?",
@@ -155,7 +155,8 @@
             { "id": "q3", "enonce": "Avec `MOVE.B #200,D1` ?", "code": "@code.s#signe-200", "choix": ["100", "200", "300"], "bonne": 1, "explication": "Piège ! 200 = `$C8` : son bit 7 vaut 1, donc N = 1 et BMI saute. Sur un octet, 200 « est » −56 pour les conditions signées.", "verification": { "D0": "$000000C8" } }
           ]
         },
-        { "type": "exercice", "ref": "general-l3-e1", "id": "general-l3-e1", "titre": "Tester le signe d'une valeur", "variante": "completer", "niveau": 1, "solution": "@code.s#sol-l3-e1" },
+        { "type": "exercice", "ref": "general-l3-e1", "id": "general-l3-e1", "titre": "Tester le signe d'une valeur", "variante": "completer", "niveau": 1, "solution": "@code.s#sol-l3-e1",
+          "variantes": { "amiga": { "codeDepart": "@code.s#l3-e1-depart-amiga" } } },
         { "type": "exercice", "ref": "general-l3-e2", "id": "general-l3-e2", "titre": "Le plus grand de deux nombres", "variante": "completer", "niveau": 2, "solution": "@code.s#sol-l3-e2" },
         { "type": "exercice", "ref": "general-l3-e3", "id": "general-l3-e3", "titre": "Tester un bit précis", "variante": "completer", "niveau": 2, "solution": "@code.s#sol-l3-e3" },
         { "type": "exercice", "id": "atari-ch03-exo-nonsigne", "titre": "Signé ou non signé ?", "variante": "corriger", "niveau": 3,
@@ -181,7 +182,7 @@
             { "ligne": 6, "texte": "Si c'était le 0 final (Z = 1), on sort de la boucle." },
             { "ligne": 7, "texte": "Sinon, un caractère de plus." },
             { "ligne": 8, "texte": "Et on recommence : `BRA` ramène le PC à BOUCLE." },
-            { "ligne": 10, "texte": "Sortie de boucle : D0 = 5, la longueur de `'ATARI'`." }
+            { "ligne": 10, "texte": "Sortie de boucle : D0 = 5, la longueur de `'[[atari:ATARI|amiga:AMIGA]]'`." }
           ],
           "conclusion": "Une boucle « tant que » : on teste **avant** de traiter. Le pointeur postincrémenté fait le travail d'avancer dans le texte."
         },

@@ -3,12 +3,9 @@ import { Cpu } from '../../../cpu/cpu'
 import type { Platform } from '../../../cpu/platform'
 import type { StepEffects } from '../../../cpu/types'
 import type { AssembleError, AssembleResult } from '../../../shared/ipc'
-import { CPU_HZ, ROM_END, ROM_START } from '../../../platforms/atari-st/machine'
+import { MACHINES, type Machine } from '../../../shared/machines'
 import type { Debogueur } from './debogueur'
 import { SortieSon } from './son'
-
-/** Code système en ROM (routine VBL, retour de Supexec...) : le pas à pas le traverse d'un coup. */
-const enRom = (pc: number): boolean => pc >= ROM_START && pc < ROM_END
 
 export type FinTempsReel = 'fin' | 'erreur' | 'arret' | 'point'
 
@@ -33,7 +30,9 @@ export class Execution {
     private readonly debogueur: Debogueur,
     private readonly creerPlateforme: () => Platform | undefined,
     /** Adresse affichée dans la vue mémoire (sinon : début du programme). */
-    private readonly adresseMemoire?: number
+    private readonly adresseMemoire?: number,
+    /** Machine simulée : horloge, durée d'une image, ROM du système. */
+    private readonly machine: Machine = 'atari'
   ) {
     editor.updateOptions({ glyphMargin: true })
     this.decorationsArret = editor.createDecorationsCollection()
@@ -115,6 +114,7 @@ export class Execution {
     const writes = [...effects.writes]
     // Interruption prise, retour vers le système ou appel qui attend (Vsync) : on va d'un coup
     // jusqu'à la prochaine instruction du programme
+    const enRom = MACHINES[this.machine].enRom
     for (let i = 0; i < 200000 && (enRom(cpu.pc) || cpu.waiting) && !cpu.halted && !effects.error; i++) {
       effects = cpu.step()
       writes.push(...effects.writes)
@@ -150,7 +150,7 @@ export class Execution {
   }
 
   /**
-   * Exécute à la vitesse d'un vrai ST (8 MHz, 50 trames par seconde) : l'écran et les registres
+   * Exécute à la vitesse de la vraie machine (8 MHz pour le ST, 7,09 MHz pour l'Amiga, 50 images par seconde) : l'écran et les registres
    * sont redessinés à chaque image, jusqu'à la fin du programme, une exception ou `arreter()`.
    */
   tempsReel(fin: (raison: FinTempsReel, effects: StepEffects | null) => void): void {
@@ -173,7 +173,8 @@ export class Execution {
       // Au plus 3 trames de retard (onglet en arrière-plan, machine lente)
       const ecoule = Math.max(0, Math.min(maintenant - precedent, 60))
       precedent = maintenant
-      cible = Math.max(cible + (ecoule * CPU_HZ) / 1000, cpu.cycles - 3 * 160256)
+      const m = MACHINES[this.machine]
+      cible = Math.max(cible + (ecoule * m.cpuHz) / 1000, cpu.cycles - 3 * m.cyclesParImage)
       while (cpu.cycles < cible && !cpu.halted) {
         last = cpu.step()
         if (last.error) break

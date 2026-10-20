@@ -1201,3 +1201,84 @@
   width: 100%;
   box-sizing: border-box;
 }
+
+/* Écran de l'Amiga : 352 × 288 pixels basse résolution (bordure comprise), tampon en haute résolution */
+.ecran-atari.ecran-amiga {
+  aspect-ratio: 352 / 288;
+  max-width: 600px;
+}
+
+.dbg-couleurs {
+  display: grid;
+  grid-template-columns: repeat(16, 1fr);
+  gap: 2px;
+}
+
+.dbg-couleur {
+  height: 14px;
+  border: 1px solid #333;
+}
+
+.dbg-alerte {
+  font-size: 12px;
+  color: #f0c060;
+  margin: 4px 0;
+}
+
+/* Choix de la machine (barre du haut et création du profil) */
+.nav-machine {
+  display: inline-flex;
+  border: 1px solid #444;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-right: 12px;
+}
+
+.nav-machine button {
+  background: transparent;
+  color: #aaa;
+  border: none;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.nav-machine button + button {
+  border-left: 1px solid #444;
+}
+
+.nav-machine button:hover {
+  background: #2a2a2a;
+  color: #ddd;
+}
+
+.nav-machine button.active {
+  background: #0e639c;
+  color: #fff;
+}
+
+.profils-machine {
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 8px 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  font-size: 13px;
+  color: #ccc;
+}
+
+.profils-machine legend {
+  padding: 0 4px;
+}
+
+.profils-form .profils-machine label {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+
+.profils-machine small {
+  flex-basis: 100%;
+  color: var(--texte-doux);
+}

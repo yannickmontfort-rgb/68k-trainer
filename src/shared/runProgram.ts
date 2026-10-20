@@ -2,10 +2,24 @@ import { Cpu } from '../cpu/cpu'
 import type { Platform } from '../cpu/platform'
 import type { StepEffects } from '../cpu/types'
 import { createAtariSt } from '../platforms/atari-st'
+import { createAmiga } from '../platforms/amiga'
+import type { ExerciseCheck } from './ipc'
 import type { MachineOptions, Plateforme } from './parcours'
 
-/** Plateforme simulée pour un contenu du parcours (Amiga : 68000 nu pour l'instant). */
-export function platformFor(plateforme: Plateforme, machine?: MachineOptions): Platform | undefined {
+/**
+ * Machine simulée pour un contenu du parcours. `check` : la vérification à faire ensuite (une
+ * vérification d'écran Amiga demande de garder l'image indiquée).
+ */
+export function platformFor(plateforme: Plateforme, machine?: MachineOptions, check?: ExerciseCheck): Platform | undefined {
+  if (plateforme === 'amiga') {
+    return createAmiga({
+      saisie: machine?.saisie,
+      arguments: machine?.arguments,
+      clavierInteractif: machine?.interactif,
+      evenements: machine?.evenements,
+      captures: check?.image !== undefined ? [check.image] : []
+    })
+  }
   if (plateforme === 'atari' || plateforme === 'commun') {
     return createAtariSt({
       userMode: machine?.modeUtilisateur ?? false,

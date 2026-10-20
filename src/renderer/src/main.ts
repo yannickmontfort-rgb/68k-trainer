@@ -4,7 +4,7 @@ import './monaco/workers'
 import type { ProfilPublic } from '../../shared/ipc'
 import { registerM68kLanguage } from './monaco/m68kLanguage'
 import { definirProfilActif } from './profilActif'
-import { oublierProgression } from './progressionStore'
+import { chargerProgression, choisirMachine, machineActive, oublierProgression } from './progressionStore'
 import { renderParcours } from './views/parcours'
 import { renderTrainer } from './views/trainer'
 import { renderCours } from './views/cours'
@@ -48,6 +48,9 @@ function demarrer(profil: ProfilPublic): void {
       <span class="app-title">68k Trainer</span>
       ${VIEWS.map((v) => `<button class="nav-tab" data-view="${v.id}" title="${v.title}">${v.label}</button>`).join('')}
       <span class="nav-espace"></span>
+      <span class="nav-machine" id="nav-machine" title="La machine simulée : chaque machine a son parcours (les chapitres du 68000 sont communs)">
+        <button data-machine="atari">Atari ST</button><button data-machine="amiga">Amiga 500</button>
+      </span>
       <span class="nav-profil" id="nav-profil" title="Profil ouvert">👤 ${echapper(profil.nom)}${profil.protege ? ' 🔒' : ''}</span>
       <button class="nav-tab" id="btn-changer-profil" title="Revenir à l'écran « Qui es-tu ? »">Changer de profil</button>
     </nav>
@@ -55,7 +58,10 @@ function demarrer(profil: ProfilPublic): void {
   `
   const viewContainer = document.getElementById('view-container') as HTMLDivElement
 
+  let vueCourante: ViewId = 'parcours'
+
   function switchTo(viewId: ViewId): void {
+    vueCourante = viewId
     const view = VIEWS.find((v) => v.id === viewId)!
     cleanupCurrentView?.()
     document.querySelectorAll<HTMLButtonElement>('.nav-tab[data-view]').forEach((btn) => {
@@ -70,7 +76,21 @@ function demarrer(profil: ProfilPublic): void {
   document.getElementById('btn-changer-profil')!.addEventListener('click', () => {
     void window.api.fermerProfil().then(() => choisirProfil(false))
   })
-  switchTo('parcours')
+  // Machine du profil : boutons de la barre, et changement à tout moment
+  const boutonsMachine = document.querySelectorAll<HTMLButtonElement>('#nav-machine button')
+  const marquerMachine = (): void => boutonsMachine.forEach((b) => b.classList.toggle('active', b.dataset.machine === machineActive()))
+  boutonsMachine.forEach((b) =>
+    b.addEventListener('click', () => {
+      if (b.dataset.machine === machineActive()) return
+      choisirMachine(b.dataset.machine === 'amiga' ? 'amiga' : 'atari')
+      marquerMachine()
+      switchTo(vueCourante)
+    })
+  )
+  void chargerProgression().then(() => {
+    marquerMachine()
+    switchTo('parcours')
+  })
 }
 
 // La page À propos peut renommer ou supprimer le profil ouvert

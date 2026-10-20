@@ -1,6 +1,6 @@
 ## Ce que le 68000 comprend vraiment
 
-Le microprocesseur **Motorola 68000** de l'Atari ST ne comprend qu'une chose : des **nombres**. Chaque
+Le microprocesseur **Motorola 68000** de [[atari:l'Atari ST|amiga:l'Amiga]] ne comprend qu'une chose : des **nombres**. Chaque
 instruction qu'il exécute est un code binaire rangé en mémoire. Par exemple, le mot `$303C`
 signifie pour lui « charge une valeur de 16 bits dans le registre D0 ».
 
@@ -15,16 +15,30 @@ Un programme, l'**assembleur**, traduit ce texte en codes machine. Il n'y a pres
 chaque ligne d'instruction devient un code machine, et rien d'autre. C'est ce qui rend
 l'assembleur si direct… et si exigeant.
 
+:::atari
 ## L'atelier : sur un vrai ST, et ici
 
 | Sur un Atari ST (Devpac 2) | Dans 68k Trainer |
 |---|---|
-| **GENST** : éditeur + assembleur | L'éditeur de code + l'assembleur **vasm** (même syntaxe que Devpac) |
+| **GENST** : éditeur + assembleur | L'éditeur de code + l'assembleur de 68k Trainer (même syntaxe que Devpac) |
 | **MONST** : débogueur pas à pas | Le panneau **Pas à pas** : registres, registre d'état, pile, mémoire, écran |
 | Le **TOS**, système de l'Atari | Un TOS **simulé** : les principaux appels système, la mémoire et l'écran d'un 1040 STF |
 
 Tout ce que tu apprends ici fonctionne sur un vrai Atari ST (ou dans un émulateur comme Hatari) :
 le 68000 simulé exécute exactement les mêmes codes machine que le vrai.
+:::
+:::amiga
+## L'atelier : sur un vrai Amiga, et ici
+
+| Sur un Amiga (Devpac 2 ou ASM-One) | Dans 68k Trainer |
+|---|---|
+| **GenAm** (Devpac) ou **ASM-One** : éditeur + assembleur | L'éditeur de code + l'assembleur de 68k Trainer (même syntaxe que Devpac) |
+| **MonAm** (Devpac) ou le débogueur d'ASM-One | Le panneau **Pas à pas** : registres, registre d'état, pile, mémoire, écran, puces |
+| Le **Kickstart** (en ROM) et AmigaOS | Un Kickstart 1.3 **simulé** : exec, dos, graphics, et les puces d'un Amiga 500 |
+
+Tout ce que tu apprends ici fonctionne sur un vrai Amiga (ou dans un émulateur comme WinUAE ou
+FS-UAE) : le 68000 simulé exécute exactement les mêmes codes machine que le vrai.
+:::
 
 ## Comment avancer dans ce parcours
 

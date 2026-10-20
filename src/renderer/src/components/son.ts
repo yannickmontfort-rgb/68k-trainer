@@ -1,5 +1,6 @@
 import type { Cpu } from '../../../cpu/cpu'
 import { materielAtari } from '../../../platforms/atari-st/materiel'
+import { materielAmiga } from '../../../platforms/amiga/chipset'
 import { ecrireLocal, lireLocal } from '../profilActif'
 
 const CLE_SON = 'son-actif'
@@ -13,8 +14,13 @@ export function activerSon(actif: boolean): void {
   ecrireLocal(CLE_SON, actif ? '1' : '0')
 }
 
+/** La puce qui fait le son : YM2149 de l'Atari ou Paula de l'Amiga (même interface). */
+function sourceSon(cpu: Cpu): { synchroniser(t: number): void; echantillons(t: number, frequence: number): Float32Array } | undefined {
+  return materielAtari(cpu)?.psg ?? materielAmiga(cpu)?.paula
+}
+
 /**
- * Haut-parleur du ST simulé : pendant le temps réel, le son produit par le YM2149 depuis l'image
+ * Haut-parleur de la machine simulée : pendant le temps réel, le son produit par le YM2149 depuis l'image
  * précédente est mis bout à bout dans Web Audio, avec un léger retard (60 ms) pour éviter les trous.
  */
 export class SortieSon {
@@ -24,7 +30,7 @@ export class SortieSon {
   private sources: AudioBufferSourceNode[] = []
 
   demarrer(cpu: Cpu): void {
-    materielAtari(cpu)?.psg.synchroniser(cpu.cycles)
+    sourceSon(cpu)?.synchroniser(cpu.cycles)
     if (!this.ctx) {
       try {
         this.ctx = new AudioContext()
@@ -40,7 +46,7 @@ export class SortieSon {
   }
 
   alimenter(cpu: Cpu): void {
-    const psg = materielAtari(cpu)?.psg
+    const psg = sourceSon(cpu)
     const ctx = this.ctx
     if (!psg || !ctx || !this.volume) return
     const echantillons = psg.echantillons(cpu.cycles, ctx.sampleRate)

@@ -40,6 +40,13 @@ pas du tout ce qu'on croit.
 
 - Sous Devpac, un programme commence simplement à sa première ligne. Dans 68k Trainer, il est
   chargé à l'adresse `$1000`.
+:::atari
 - Il se termine par **`RTS`** (*ReTurn from Subroutine*) : le TOS a lancé ton programme comme un
   sous-programme, et `RTS` lui rend la main. Plus tard, on verra la fin « officielle » avec
   l'appel système `Pterm0`.
+:::
+:::amiga
+- Il se termine par **`RTS`** (*ReTurn from Subroutine*) : le CLI (la fenêtre de commandes de
+  l'Amiga) a lancé ton programme comme un sous-programme, et `RTS` lui rend la main. C'est la
+  vraie fin d'un programme AmigaDOS : D0 contient alors son code de retour (0 = tout va bien).
+:::

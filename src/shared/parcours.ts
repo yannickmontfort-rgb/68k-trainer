@@ -7,7 +7,7 @@ import type { ExerciseCheck } from './ipc'
 export type Plateforme = 'atari' | 'amiga' | 'commun'
 export type Niveau = 1 | 2 | 3
 
-/** Options de la machine simulée pour un contenu (plateformes atari uniquement pour l'instant). */
+/** Options de la machine simulée pour un contenu. */
 export interface MachineOptions {
   /** Démarrer en mode utilisateur comme sous le vrai TOS (vecteurs et matériel protégés). */
   modeUtilisateur?: boolean
@@ -24,18 +24,27 @@ export interface MachineOptions {
   interactif?: boolean
   /** Événements joués pendant l'exécution (exercices vérifiés automatiquement). */
   evenements?: EvenementMachine[]
+  /** Amiga : texte tapé à l'avance, lu par Read(Input()) (lignes terminées par 
+). */
+  saisie?: string
+  /** Amiga : arguments de la ligne de commande (A0/D0 au lancement). */
+  arguments?: string
 }
 
 /** Action sur le clavier ou le joystick, à l'image (VBL) n° `image` depuis le lancement. */
 export interface EvenementMachine {
   image: number
-  /** Code clavier du ST enfoncé (puis relâché aussitôt, sauf `maintenue`). */
+  /** Code clavier (du ST, ou code brut de l'Amiga) enfoncé (puis relâché aussitôt, sauf `maintenue`). */
   touche?: number
   /** Caractère de la touche (sinon : clavier QWERTY). */
   caractere?: string
   maintenue?: boolean
-  /** Nouvel état du joystick 1 (bits : 1 haut, 2 bas, 4 gauche, 8 droite, $80 bouton). */
+  /** Nouvel état du joystick (bits : 1 haut, 2 bas, 4 gauche, 8 droite, $80 bouton). */
   joystick?: number
+  /** Amiga : boutons et déplacement de la souris. */
+  boutonGauche?: boolean
+  boutonDroit?: boolean
+  souris?: { dx: number; dy: number }
 }
 
 interface ContenuBase {

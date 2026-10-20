@@ -9,7 +9,7 @@ d'une fonction).
 | `JSR adresse` | pareil, mais l'adresse peut être n'importe où (`JSR (A0)`…) |
 | `RTS` | **dépile** l'adresse de retour et y saute |
 
-C'est exactement ce que fait le TOS avec ton programme : il l'appelle, et ton `RTS` final revient
+C'est exactement ce que fait [[atari:le TOS|amiga:le CLI de l'Amiga]] avec ton programme : il l'appelle, et ton `RTS` final revient
 chez lui. Un sous-programme peut en appeler un autre : les adresses de retour s'empilent, et
 chacun revient au bon endroit grâce à la pile.
 
@@ -19,8 +19,9 @@ chacun revient au bon endroit grâce à la pile.
   qu'il attend (« Entrée : D0.W = … ») et ce qu'il renvoie (« Sortie : D0.L = … »).
 - **Par la pile** : l'appelant empile les paramètres avant le `BSR`. Dans le sous-programme,
   l'adresse de retour est au sommet (`(SP)`), donc le dernier paramètre empilé est en `4(SP)`.
-  **Après** le retour, l'appelant **nettoie la pile** (`ADDQ.L #n,SP` ou `LEA n(SP),SP`). Les
-  appels système du TOS fonctionnent ainsi.
+  **Après** le retour, l'appelant **nettoie la pile** (`ADDQ.L #n,SP` ou `LEA n(SP),SP`).[[atari: Les
+  appels système du TOS fonctionnent ainsi.|amiga: Les bibliothèques de l'AmigaOS, elles, prennent
+  leurs paramètres dans des registres (on le verra au chapitre 4).]]
 
 ## Ne pas abîmer les registres de l'appelant
 
@@ -39,5 +40,12 @@ SOUSPROG:
 `D1-D3` désigne D1, D2 et D3 ; `/` sépare les groupes. La liste doit être **la même** à l'entrée et
 à la sortie, sinon la pile est déséquilibrée et le `RTS` part dans le décor.
 
+:::atari
 Le TOS suit d'ailleurs une convention : il préserve **D3-D7 et A3-A6**, mais peut modifier
 D0-D2 et A0-A2 (les registres « de travail »). Beaucoup de programmeurs adoptent la même règle.
+:::
+:::amiga
+Les bibliothèques de l'Amiga suivent d'ailleurs une convention : elles préservent **D2-D7 et
+A2-A6**, mais peuvent modifier **D0, D1, A0 et A1** (les registres « de travail ») ; le résultat
+revient dans D0. Beaucoup de programmeurs adoptent la même règle.
+:::

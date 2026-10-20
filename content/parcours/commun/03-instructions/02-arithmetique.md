@@ -44,6 +44,6 @@ reste, `SWAP D0` le fait passer dans le mot faible.
 
 Deux pièges :
 
-- **division par zéro** : le 68000 déclenche l'exception n° 5 (cinq bombes sur un ST) ;
+- **division par zéro** : le 68000 déclenche l'exception n° 5 ([[atari:cinq bombes sur un ST|amiga:Guru Meditation #00000005 sur l'Amiga]]) ;
 - **dépassement** : si le quotient ne tient pas sur 16 bits, le flag **V** passe à 1 et le
   registre reste **inchangé**.

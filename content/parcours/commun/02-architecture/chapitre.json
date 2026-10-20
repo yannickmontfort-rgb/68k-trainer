@@ -2,7 +2,7 @@
   "id": "atari-ch02",
   "titre": "Architecture du 68000 et notions fondamentales",
   "plateforme": "commun",
-  "resume": "Ce que le 68000 manipule (bits, octets, mots, mots longs), où il le range (la mémoire, avec sa règle d'or de l'alignement pair), avec quoi il travaille (ses registres) et comment il résume chaque résultat (les flags du registre d'état). On termine par la pile, indispensable dès qu'un programme grandit. Correspond au module 1 du manuel Atari ST.",
+  "resume": "Ce que le 68000 manipule (bits, octets, mots, mots longs), où il le range (la mémoire, avec sa règle d'or de l'alignement pair), avec quoi il travaille (ses registres) et comment il résume chaque résultat (les flags du registre d'état). On termine par la pile, indispensable dès qu'un programme grandit. [[atari:Correspond au module 1 du manuel Atari ST.|amiga:Correspond au chapitre 1 du manuel Amiga.]]",
   "notions": [
     {
       "id": "atari-ch02-n1",
@@ -75,11 +75,12 @@
             { "id": "q2", "enonce": "Que vaut D2 ?", "choix": ["$04030201", "$01020304", "$00000004"], "bonne": 1, "explication": "Big endian : le premier octet en mémoire est le poids fort.", "verification": { "D2": "$01020304" } }
           ]
         },
-        { "type": "exercice", "id": "atari-ch02-exo-even", "titre": "Les trois bombes de l'étiquette seule", "variante": "corriger", "niveau": 1,
-          "enonce": "Ce programme doit mettre **1040** dans D0, mais il plante avec une **erreur d'adresse**. L'assembleur a pourtant aligné le `DC.W` (regarde son avertissement)… mais pas l'étiquette `NOMBRE`, seule sur sa ligne. Lance le pas à pas pour voir à quelle adresse `MOVE.W` lit, puis corrige en **ajoutant une seule ligne**.",
-          "indices": ["Compte les octets de `'ST',0` : à quelle adresse tombe l'étiquette `NOMBRE` ?", "Ajoute `EVEN` juste avant `NOMBRE:` : l'étiquette et la donnée seront toutes les deux à une adresse paire."],
+        { "type": "exercice", "id": "atari-ch02-exo-even", "titre": "[[atari:Les trois bombes|amiga:Le Guru]] de l'étiquette seule", "variante": "corriger", "niveau": 1,
+          "enonce": "Ce programme doit mettre **[[atari:1040|amiga:500]]** dans D0, mais il plante avec une **erreur d'adresse**. L'assembleur a pourtant aligné le `DC.W` (regarde son avertissement)… mais pas l'étiquette `NOMBRE`, seule sur sa ligne. Lance le pas à pas pour voir à quelle adresse `MOVE.W` lit, puis corrige en **ajoutant une seule ligne**.",
+          "indices": ["Compte les octets de `'[[atari:ST|amiga:KS]]',0` : à quelle adresse tombe l'étiquette `NOMBRE` ?", "Ajoute `EVEN` juste avant `NOMBRE:` : l'étiquette et la donnée seront toutes les deux à une adresse paire."],
           "codeDepart": "@code.s#memoire-even-depart", "solution": "@code.s#memoire-even-solution",
-          "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "D0": "$00000410" } } },
+          "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "D0": "$00000410" } },
+          "variantes": { "amiga": { "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "D0": "$000001F4" } } } } },
         { "type": "exercice", "id": "atari-ch02-exo-poids-fort", "titre": "L'octet de poids fort", "variante": "ecrire", "niveau": 2,
           "enonce": "Range le mot `$ABCD` à l'adresse `$3000`, puis copie son **octet de poids fort** dans D1 (D1 doit valoir `$000000AB`).",
           "indices": ["Le poids fort est à l'adresse la plus basse.", "`MOVE.B $3000,D1`"],
@@ -107,7 +108,7 @@
             { "ligne": 3, "texte": "Registre de **données** en `.W` : seul le mot faible change. D0 = `$FFFF0001`." },
             { "ligne": 4, "texte": "Registre d'**adresse** en `.W` : tout le registre est rempli. Le bit 15 de `$1234` vaut 0, il est recopié vers le haut : A0 = `$00001234`." },
             { "ligne": 5, "texte": "Le bit 15 de `$8000` vaut 1 : A1 = `$FFFF8000`. C'est l'**extension de signe**. Les flags, eux, n'ont pas bougé." },
-            { "ligne": 6, "texte": "`LEA` charge une adresse : A2 = `$000F8000`, le début de l'écran d'un 1040 ST." }
+            { "ligne": 6, "texte": "`LEA` charge une adresse : A2 = `[[atari:$000F8000`, le début de l'écran d'un 1040 ST|amiga:$00DFF000`, l'adresse des puces custom de l'Amiga]]." }
           ],
           "conclusion": "Pour une adresse au-delà de `$7FFF`, utilise `LEA` ou `MOVEA.L`, jamais `MOVEA.W` : l'extension de signe te donnerait une adresse en `$FFFFxxxx`."
         },
@@ -129,7 +130,12 @@
           "enonce": "Mets dans A0 l'adresse de l'écran du 1040 ST : `$F8000`. Attention au piège de l'extension de signe.",
           "indices": ["`MOVEA.W` ne convient pas pour une adresse aussi grande.", "`LEA $F8000,A0` ou `MOVEA.L #$F8000,A0`."],
           "codeDepart": "@code.s#registres-ecran-depart", "solution": "@code.s#registres-ecran-solution",
-          "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "A0": "$000F8000" } } },
+          "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "A0": "$000F8000" } },
+          "variantes": { "amiga": {
+            "titre": "Pointer sur les puces custom",
+            "enonce": "Tous les registres des puces de l'Amiga (écran, Copper, Blitter, son…) sont rangés à partir de l'adresse `$DFF000`. Les programmeurs de démos gardent cette adresse dans **A5** pour tout le programme. Mets-la dans A5. Attention au piège de l'extension de signe.",
+            "indices": ["`MOVEA.W` ne convient pas pour une adresse aussi grande.", "`LEA $DFF000,A5` ou `MOVEA.L #$DFF000,A5`."],
+            "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "A5": "$00DFF000" } } } } },
         { "type": "exercice", "id": "atari-ch02-exo-extension", "titre": "Utiliser l'extension de signe", "variante": "ecrire", "niveau": 3,
           "enonce": "Avec **une seule instruction de taille `.W`**, mets `$FFFFFFF0` dans A1.",
           "indices": ["Quel mot de 16 bits, étendu en signe, donne $FFFFFFF0 ?", "`MOVEA.W #$FFF0,A1` (ou `#-16`)."],
@@ -193,7 +199,7 @@
           "introduction": "Regarde la colonne **Pile** : le sommet (A7) descend à chaque empilement et remonte à chaque dépilement.",
           "code": "@code.s#pile-exemple",
           "explications": [
-            { "ligne": 2, "texte": "A7 diminue de 4, puis `$11111111` est écrit au nouveau sommet. Juste en dessous (adresse plus haute), on voit l'adresse de retour vers le TOS." },
+            { "ligne": 2, "texte": "A7 diminue de 4, puis `$11111111` est écrit au nouveau sommet. Juste en dessous (adresse plus haute), on voit l'adresse de retour vers [[atari:le TOS|amiga:le CLI]]." },
             { "ligne": 3, "texte": "A7 diminue encore de 4 : `$22222222` est maintenant au sommet." },
             { "ligne": 4, "texte": "On dépile **la dernière valeur posée** : D0 = `$22222222`, A7 remonte de 4." },
             { "ligne": 5, "texte": "Puis la première : D1 = `$11111111`. La pile est revenue à son état de départ." },
@@ -251,7 +257,16 @@
       "indices": ["16 pixels allumés = 16 bits à 1.", "`MOVE.W #$FFFF,$F8000`"],
       "codeDepart": "@code.s#bonus-ligne-depart", "solution": "@code.s#bonus-ligne-solution",
       "check": { "type": "pixels", "maxSteps": 50, "terminer": true, "expected": { "0,0": "1", "15,0": "1", "16,0": "0" } },
-      "machine": { "ecran": true }
+      "machine": { "ecran": true },
+      "variantes": {
+        "amiga": {
+          "titre": "La version du Kickstart",
+          "enonce": "Sur l'Amiga, une seule adresse est fixe : le mot long en **`$4`** contient l'adresse d'**ExecBase**, la structure centrale du système. Dans cette structure, le **mot** situé **20 octets plus loin** est le numéro de version d'exec : 34 pour le Kickstart 1.3.\n\nMets l'adresse d'ExecBase dans **A6**, puis le numéro de version dans **D0** (en mot, après avoir mis D0 à zéro).",
+          "indices": ["`MOVEA.L 4.W,A6` lit le mot long à l'adresse 4.", "Adressage avec déplacement : `MOVE.W 20(A6),D0` lit le mot 20 octets après l'adresse contenue dans A6. N'oublie pas `MOVEQ #0,D0` avant."],
+          "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "D0": "$00000022" } },
+          "machine": {}
+        }
+      }
     }
   ]
 }

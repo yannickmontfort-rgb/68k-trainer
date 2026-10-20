@@ -19,8 +19,8 @@ const api = {
   loadContent: (): Promise<ContentBundle> => ipcRenderer.invoke(IPC.loadContent),
   getBuildInfo: (): Promise<BuildInfo> => ipcRenderer.invoke(IPC.getBuildInfo),
   listerProfils: (): Promise<{ profils: ProfilPublic[]; dernier?: string }> => ipcRenderer.invoke(IPC.listerProfils),
-  creerProfil: (nom: string, motDePasse?: string): Promise<ResultatProfil> =>
-    ipcRenderer.invoke(IPC.creerProfil, nom, motDePasse),
+  creerProfil: (nom: string, motDePasse?: string, progression?: ProgressState): Promise<ResultatProfil> =>
+    ipcRenderer.invoke(IPC.creerProfil, nom, motDePasse, progression),
   ouvrirProfil: (id: string, motDePasse?: string): Promise<ResultatProfil> =>
     ipcRenderer.invoke(IPC.ouvrirProfil, id, motDePasse),
   fermerProfil: (): Promise<void> => ipcRenderer.invoke(IPC.fermerProfil),
@@ -34,10 +34,10 @@ const api = {
     ipcRenderer.invoke(IPC.importerProfil, motDePasse),
   tableauProfils: (): Promise<{ profil: ProfilPublic; progression: ProgressState }[]> =>
     ipcRenderer.invoke(IPC.tableauProfils),
-  enregistrerPrg: (octets: Uint8Array, nom: string): Promise<{ ok: boolean; chemin?: string }> =>
-    ipcRenderer.invoke(IPC.enregistrerPrg, octets, nom),
-  fabriquerPrg: (source: string): Promise<{ octets?: Uint8Array; raison?: string }> =>
-    ipcRenderer.invoke(IPC.fabriquerPrg, source),
+  enregistrerPrg: (octets: Uint8Array, nom: string, format: 'prg' | 'hunk' = 'prg'): Promise<{ ok: boolean; chemin?: string }> =>
+    ipcRenderer.invoke(IPC.enregistrerPrg, octets, nom, format),
+  fabriquerPrg: (source: string, format: 'prg' | 'hunk' = 'prg'): Promise<{ octets?: Uint8Array; raison?: string }> =>
+    ipcRenderer.invoke(IPC.fabriquerPrg, source, format),
   exporterPdf: (html: string, nom: string): Promise<{ ok: boolean; chemin?: string }> =>
     ipcRenderer.invoke(IPC.exporterPdf, html, nom)
 }

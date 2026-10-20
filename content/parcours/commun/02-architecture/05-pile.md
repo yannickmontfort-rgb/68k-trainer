@@ -22,10 +22,10 @@ Pour garder SP toujours pair, empiler un **octet** fait quand même diminuer SP 
 
 ## Pourquoi la pile doit rester équilibrée
 
-Quand le TOS lance ton programme, il dépose **sur la pile l'adresse où revenir**. C'est elle que
+Quand [[atari:le TOS|amiga:le CLI]] lance ton programme, il dépose **sur la pile l'adresse où revenir**. C'est elle que
 `RTS` reprend à la fin. Si ton programme a empilé une valeur sans la dépiler, `RTS` prend cette
 valeur pour une adresse de retour… et le processeur saute n'importe où. Résultat : une erreur
-d'adresse, une instruction illégale, des bombes.
+d'adresse, une instruction illégale, [[atari:des bombes|amiga:un Guru Meditation]].
 
 **Règle** : autant d'octets dépilés qu'empilés, avant chaque `RTS`.
 

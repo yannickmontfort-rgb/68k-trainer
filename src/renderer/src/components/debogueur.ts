@@ -1,8 +1,12 @@
 import type { Cpu } from '../../../cpu/cpu'
 import type { CpuSnapshot, MemoryWrite } from '../../../cpu/types'
 import { EcranAtari } from './ecran'
+import { EcranAmiga } from './ecranAmiga'
 import { desassemblerInstruction } from '../../../asm/desassembleur'
 import { materielAtari } from '../../../platforms/atari-st/materiel'
+import { materielAmiga } from '../../../platforms/amiga/chipset'
+import { R, nomRegistre } from '../../../platforms/amiga/machine'
+import { MACHINES, type Machine } from '../../../shared/machines'
 
 /** Vecteurs utiles sur ST : [adresse, nom]. */
 const VECTEURS: [number, string][] = [
@@ -28,10 +32,32 @@ const REGISTRES_MFP: [number, string][] = [
   [0x21, 'TBDR'], [0x1d, 'TCDCR'], [0x23, 'TCDR']
 ]
 
+/** Vecteurs utiles sur Amiga : [adresse, nom]. */
+const VECTEURS_AMIGA: [number, string][] = [
+  [0x04, 'ExecBase (pas un vecteur)'],
+  [0x08, 'Erreur de bus'],
+  [0x0c, "Erreur d'adresse"],
+  [0x10, 'Instruction illégale'],
+  [0x20, 'Violation de privilège'],
+  [0x64, 'Niveau 1 (disque, série, logiciel)'],
+  [0x68, 'Niveau 2 (CIA-A : clavier, timers)'],
+  [0x6c, 'Niveau 3 (VBL, Copper, Blitter)'],
+  [0x70, 'Niveau 4 (son, Paula)'],
+  [0x74, 'Niveau 5 (série, disque)'],
+  [0x78, 'Niveau 6 (CIA-B)']
+]
+
+/** Registres custom affichés : dernière valeur écrite. */
+const REGISTRES_AMIGA = [R.BPLCON0, R.BPLCON1, R.BPLCON2, R.DIWSTRT, R.DIWSTOP, R.DDFSTRT, R.DDFSTOP, R.BPL1MOD, R.BPL2MOD, R.BLTCON0, R.BLTCON1, R.BLTSIZE]
+const BITS_DMA = ['AUD0', 'AUD1', 'AUD2', 'AUD3', 'DSK', 'SPR', 'BLT', 'COP', 'BPL', 'DMAEN', 'BLTPRI']
+const BITS_INT = ['TBE', 'DSKBLK', 'SOFT', 'PORTS', 'COPER', 'VERTB', 'BLIT', 'AUD0', 'AUD1', 'AUD2', 'AUD3', 'RBF', 'DSKSYN', 'EXTER', 'INTEN']
+
 const hex = (value: number, digits = 8): string => '$' + (value >>> 0).toString(16).toUpperCase().padStart(digits, '0')
 
 export interface DebogueurOptions {
   ecran?: boolean
+  /** Machine simulée (écran, panneau du matériel) : Atari ST par défaut. */
+  machine?: Machine
   /** Adresse affichée au départ dans la vue mémoire. */
   adresseMemoire?: number
 }
@@ -51,11 +77,13 @@ export class Debogueur {
   private readonly sortieEl: HTMLPreElement
   private readonly desasmEl: HTMLDivElement
   private readonly materielEl: HTMLDetailsElement
-  private readonly ecran?: EcranAtari
+  private readonly ecran?: EcranAtari | EcranAmiga
+  private readonly machine: Machine
   private precedent: CpuSnapshot | null = null
   private cpu: Cpu | null = null
 
   constructor(options: DebogueurOptions = {}) {
+    this.machine = options.machine ?? 'atari'
     this.element = document.createElement('div')
     this.element.className = 'debogueur'
     this.element.innerHTML = `
@@ -79,7 +107,7 @@ export class Debogueur {
     this.materielEl.addEventListener('toggle', () => this.cpu && this.renderMateriel())
     this.memInput.addEventListener('change', () => this.cpu && this.renderMemoire([]))
     if (options.ecran) {
-      this.ecran = new EcranAtari()
+      this.ecran = this.machine === 'amiga' ? new EcranAmiga() : new EcranAtari()
       const bloc = this.element.querySelector<HTMLDivElement>('.dbg-ecran-bloc')!
       bloc.hidden = false
       bloc.appendChild(this.ecran.element)
@@ -137,8 +165,8 @@ export class Debogueur {
         )
         .join('') +
       `<span class="dbg-mode">${snap.supervisor ? 'superviseur' : 'utilisateur'}${snap.stopped ? ' · STOP' : ''}</span>` +
-      `<div class="dbg-temps" title="Approximation : 4 cycles par accès mémoire, plus les calculs longs (MUL, DIV, décalages). Un ST tourne à 8 MHz et affiche 50 images par seconde (160 256 cycles par image).">` +
-      `${cpu.cycles.toLocaleString('fr-FR')} cycles · ${(cpu.cycles / 8010.612).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} ms · image n° ${Math.floor(cpu.cycles / 160256)}</div>`
+      `<div class="dbg-temps" title="${this.titreTemps()}">` +
+      `${cpu.cycles.toLocaleString('fr-FR')} cycles · ${(cpu.cycles / (MACHINES[this.machine].cpuHz / 1000)).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} ms · image n° ${Math.floor(cpu.cycles / MACHINES[this.machine].cyclesParImage)}${this.faisceau(cpu)}</div>`
 
     const lignesPile: string[] = []
     for (let i = 0; i < 6; i++) {
@@ -154,6 +182,22 @@ export class Debogueur {
     this.sortieEl.textContent = cpu.output.replace(/\r/g, '')
     this.ecran?.draw(cpu)
     this.precedent = snap
+  }
+
+  private titreTemps(): string {
+    const m = MACHINES[this.machine]
+    return (
+      'Approximation : 4 cycles par accès mémoire, plus les calculs longs (MUL, DIV, décalages). ' +
+      `Un ${m.modele} tourne à ${(m.cpuHz / 1e6).toLocaleString('fr-FR', { maximumFractionDigits: 2 })} MHz et affiche 50 images par seconde (${m.cyclesParImage.toLocaleString('fr-FR')} cycles par image).`
+    )
+  }
+
+  /** Amiga : position du faisceau (ligne, position horizontale), comme VHPOSR. */
+  private faisceau(cpu: Cpu): string {
+    const m = this.machine === 'amiga' ? materielAmiga(cpu) : undefined
+    if (!m) return ''
+    const { v, h } = m.faisceau()
+    return ` · faisceau : ligne $${v.toString(16).toUpperCase()}, h $${h.toString(16).toUpperCase()}`
   }
 
   /** Les instructions à partir du PC, telles que le processeur va les lire. */
@@ -181,6 +225,10 @@ export class Debogueur {
     const contenu = this.materielEl.querySelector<HTMLDivElement>('.dbg-materiel-contenu')!
     const cle = (nom: string, valeur: string, titre = ''): string =>
       `<div class="dbg-pile-ligne" title="${titre}"><span>${nom}</span><code>${valeur}</code></div>`
+    if (this.machine === 'amiga') {
+      contenu.innerHTML = this.materielAmiga(cpu, cle)
+      return
+    }
     const parties: string[] = ['<h5>Vecteurs</h5>']
     for (const [adresse, nom] of VECTEURS) parties.push(cle(`${hex(adresse, 3)} ${nom}`, hex(mem.readU32(adresse), 6)))
     parties.push('<h5>Variables système</h5>')
@@ -197,6 +245,37 @@ export class Debogueur {
       parties.push('</div>')
     }
     contenu.innerHTML = parties.join('')
+  }
+
+  private materielAmiga(cpu: Cpu, cle: (nom: string, valeur: string, titre?: string) => string): string {
+    const mem = cpu.memory
+    const parties: string[] = ['<h5>Vecteurs</h5>']
+    for (const [adresse, nom] of VECTEURS_AMIGA) parties.push(cle(`${hex(adresse, 3)} ${nom}`, hex(mem.readU32(adresse), 6)))
+    const m = materielAmiga(cpu)
+    if (!m) return parties.join('')
+    const lireLong = (d: number): number => ((m.regs[d >> 1] << 16) | m.regs[(d >> 1) + 1]) >>> 0
+    const bits = (v: number, noms: string[]): string => noms.filter((n, i) => v & (1 << i)).join(' ') || '—'
+    parties.push('<h5>DMA et interruptions</h5>')
+    parties.push(cle('DMACON', hex(m.dmacon(), 4), bits(m.dmacon(), BITS_DMA)))
+    parties.push(cle('INTENA', hex(m.intena(), 4), bits(m.intena(), BITS_INT)))
+    parties.push(cle('INTREQ', hex(m.intreq(), 4), bits(m.intreq(), BITS_INT)))
+    parties.push(cle('COP1LC', hex(lireLong(R.COP1LCH), 6), 'Liste Copper relue à chaque image'))
+    parties.push(cle('Blitter', m.blitterOccupe() ? 'occupé' : 'libre'))
+    parties.push('<h5>Affichage</h5><div class="dbg-grille">')
+    for (const d of REGISTRES_AMIGA) parties.push(cle(nomRegistre(d), hex(m.regs[d >> 1], 4), `$DFF${d.toString(16).toUpperCase().padStart(3, '0')}`))
+    parties.push('</div><h5>Couleurs (COLOR00 à COLOR31)</h5><div class="dbg-couleurs">')
+    for (let i = 0; i < 32; i++) {
+      const c = m.regs[(R.COLOR00 >> 1) + i] & 0xfff
+      parties.push(`<span class="dbg-couleur" style="background:#${c.toString(16).padStart(3, '0')}" title="COLOR${String(i).padStart(2, '0')} = ${hex(c, 3)}"></span>`)
+    }
+    const timers = (nom: string, t: { ta: number; tb: number; taMarche: boolean; tbMarche: boolean }): string =>
+      `<h5>${nom}</h5><div class="dbg-grille">` +
+      cle('Timer A', hex(t.ta, 4), t.taMarche ? 'en marche' : 'arrêté') +
+      cle('Timer B', hex(t.tb, 4), t.tbMarche ? 'en marche' : 'arrêté') +
+      '</div>'
+    parties.push('</div>', timers('CIA-A ($BFE001)', m.ciaA.etatTimers()), timers('CIA-B ($BFD000)', m.ciaB.etatTimers()))
+    if (m.alertes.length) parties.push('<h5>Remarques</h5>' + m.alertes.map((a) => `<p class="dbg-alerte">⚠ ${a.replace(/</g, '&lt;')}</p>`).join(''))
+    return parties.join('')
   }
 
   private renderMemoire(writes: MemoryWrite[]): void {
