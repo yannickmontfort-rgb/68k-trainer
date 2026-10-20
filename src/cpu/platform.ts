@@ -71,4 +71,10 @@ export interface Platform {
    * périphérique renvoie son numéro de vecteur (MFP du ST), ou `undefined` pour l'auto-vecteur.
    */
   acknowledgeInterrupt?(cpu: Cpu, level: number): number | undefined
+
+  /**
+   * Ce que la machine affiche pour une exception non traitée (bombes du TOS, Guru Meditation de
+   * l'Amiga) : texte ajouté au message d'erreur. Sans ce hook : les bombes de l'Atari ST.
+   */
+  describeException?(vector: number): string
 }

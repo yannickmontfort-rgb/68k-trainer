@@ -36,6 +36,12 @@ export function combinePlatforms(...blocks: Platform[]): Platform {
           }
         }
       : {}),
+    ...(blocks.some((b) => b.describeException)
+      ? {
+          describeException: (vector: number) =>
+            blocks.map((b) => b.describeException?.(vector)).find((t) => t !== undefined) ?? ''
+        }
+      : {}),
     acknowledgeInterrupt: (cpu: Cpu, level: number) => {
       for (const b of blocks) {
         const v = b.acknowledgeInterrupt?.(cpu, level)

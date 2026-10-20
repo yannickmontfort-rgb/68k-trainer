@@ -240,7 +240,9 @@ export class Cpu {
     const where = `à l'adresse $${exception.pc.toString(16).toUpperCase()}`
     const access =
       exception.accessAddress !== undefined ? ` (accès à $${exception.accessAddress.toString(16).toUpperCase()})` : ''
-    const bombText = bombs > 0 ? ` — sur Atari ST : ${bombs} bombe${bombs > 1 ? 's' : ''}` : ''
+    const bombText =
+      this.platform?.describeException?.(exception.vector) ??
+      (bombs > 0 ? ` — sur Atari ST : ${bombs} bombe${bombs > 1 ? 's' : ''}` : '')
     const advice = exceptionAdvice(exception.vector)
     return `${exception.name} ${where}${access}${bombText}.${advice ? ' ' + advice : ''}`
   }

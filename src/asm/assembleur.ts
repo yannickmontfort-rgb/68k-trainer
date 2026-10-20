@@ -48,6 +48,8 @@ export interface ResultatAssemblage {
   relocs: number[]
   /** OPT D+ : le source demande une table de symboles (débogage avec MONST). */
   debogage: boolean
+  /** Sections à charger en Chip RAM sur Amiga (`SECTION nom,DATA_C`…). */
+  chip: Record<NomSection, boolean>
 }
 
 interface LigneSrc {
@@ -128,6 +130,7 @@ class Assembleur {
   private etiquetteSeule: { nom: string; adresse: number; ligne: number } | null = null
   private profondeurInclude = 0
   private debogage = false
+  private chip: Record<NomSection, boolean> = { TEXT: false, DATA: false, BSS: false }
 
   constructor(source: string, private readonly options: OptionsAssemblage) {
     this.base = options.base ?? 0x1000
@@ -166,6 +169,7 @@ class Assembleur {
     this.compteurMacro = 0
     this.rs = 0
     this.debogage = false
+    this.chip = { TEXT: false, DATA: false, BSS: false }
     this.dernierGlobal = ''
     this.adresseVersLigne = {}
     this.relocs = []
@@ -642,11 +646,21 @@ class Assembleur {
       case 'TEXT':
       case 'DATA':
       case 'BSS': {
-        let section = nom === 'SECTION' ? (op?.texte.split(',')[0].trim().toUpperCase() ?? '') : nom
+        // Atari (Devpac ST) : SECTION TEXT|DATA|BSS. Amiga : SECTION nom,CODE|DATA|BSS, avec _C
+        // (Chip RAM) ou _F (Fast RAM) : c'est alors le type, pas le nom, qui choisit la section.
+        const parties = nom === 'SECTION' ? (op?.texte.split(',') ?? ['']).map((p) => p.trim().toUpperCase()) : [nom]
+        let section = parties.length > 1 ? parties[1] : parties[0]
+        const enChip = /_C$/.test(section)
+        section = section.replace(/_[CFP]$/, '')
         if (section === 'CODE') section = 'TEXT'
         if (section !== 'TEXT' && section !== 'DATA' && section !== 'BSS') {
-          throw new AsmErreur(`Section « ${section} » inconnue : sur Atari ST, les sections sont TEXT, DATA et BSS.`, op?.col ?? mnemo.col, op?.texte.length ?? 7)
+          throw new AsmErreur(
+            `Section « ${section} » inconnue : les sections sont TEXT, DATA et BSS (Atari), ou SECTION nom,CODE|DATA|BSS (Amiga, avec _C pour la Chip RAM).`,
+            op?.col ?? mnemo.col,
+            op?.texte.length ?? 7
+          )
         }
+        if (enChip) this.chip[section] = true
         if (this.absolu) {
           // Programme à adresse fixe (ORG) : les sections sont simplement mises bout à bout
           if (etiquette) this.definirEtiquetteIci(etiquette)
@@ -828,7 +842,8 @@ class Assembleur {
       relogeable: !this.absolu,
       sections: { text, data, bss },
       relocs,
-      debogage: this.debogage
+      debogage: this.debogage,
+      chip: { ...this.chip }
     }
   }
 }
