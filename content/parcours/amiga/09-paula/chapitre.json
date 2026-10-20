@@ -1,0 +1,103 @@
+{
+  "id": "amiga-ch09",
+  "titre": "Paula, le son",
+  "plateforme": "amiga",
+  "resume": "L'Amiga ne fabrique pas ses sons, il les **joue** : Paula lit des échantillons en Chip RAM sur **4 voies** stéréo. Tu vas calculer la **période** d'une note, régler le volume, lancer et arrêter une voie, enchaîner des notes, jouer un bruitage **une seule fois** grâce aux demandes d'interruption de Paula, puis faire un accord en stéréo. Coche 🔊 sous l'écran et lance **🎬 Temps réel** pour entendre.",
+  "notions": [
+    {
+      "id": "amiga-ch09-n1",
+      "titre": "Jouer une note",
+      "contenus": [
+        { "type": "cours", "id": "amiga-ch09-cours-paula", "titre": "Échantillons, période, volume, DMA", "fichier": "01-paula.md", "aRelire": true, "source": "Rédigé pour 68k Trainer d'après le Hardware Reference Manual (chap. 5) et Amiga Intern (Abacus, chap. 11)" },
+        {
+          "type": "exemple", "id": "amiga-ch09-ex-la", "titre": "Un la pendant une seconde", "aRelire": true,
+          "introduction": "Une onde carrée de 32 octets jouée à 440 Hz pendant 50 images. Coche 🔊, lance **🎬 Temps réel** et écoute ; ouvre « Vecteurs et matériel » pour voir AUD0EN dans DMACON.",
+          "code": "@code.s#la-exemple",
+          "machine": { "ecran": true },
+          "explications": [
+            { "ligne": 3, "texte": "AUD0LC : l'adresse de l'onde, en Chip RAM (`SECTION son,DATA_C`) : Paula ne lit que la Chip RAM." },
+            { "ligne": 4, "texte": "AUD0LEN se compte en **mots** : 32 octets = 16 mots." },
+            { "ligne": 5, "texte": "La période : Paula envoie un octet tous les 252 tops de son horloge à 3,55 MHz." },
+            { "ligne": 7, "texte": "DMACON : SET + DMAEN + AUD0EN. La voie 0 joue l'onde, en boucle." },
+            { "ligne": 11, "texte": "AUD0EN à 0 (bit 15 à 0) : silence." }
+          ],
+          "conclusion": "Une note tenue, c'est une onde courte rejouée en boucle par le DMA : le 68000 n'a rien à faire pendant qu'elle sonne."
+        },
+        {
+          "type": "prediction", "id": "amiga-ch09-pred-periode", "titre": "Calculer une période", "aRelire": true,
+          "introduction": "La période d'un la (440 Hz) avec une onde de 32 octets, calculée par le 68000.",
+          "code": "@code.s#periode-prediction",
+          "questions": [
+            { "id": "q1", "enonce": "Que vaut D0 ?", "choix": ["251 ($FB)", "252 ($FC)", "440 ($1B8)"], "bonne": 0, "explication": "3 546 895 ÷ 14 080 = 251,9… DIVU garde la partie entière : 251. Pour arrondir, on ajoute la moitié du diviseur avant de diviser, ce qui donne 252.", "verification": { "D0": "$000000FB" } },
+            { "id": "q2", "enonce": "Pour la même onde, la période d'un la une octave plus haut (880 Hz) ?", "choix": ["Deux fois plus petite : environ 126", "Deux fois plus grande : environ 504", "La même"], "bonne": 0, "explication": "Fréquence double = octets deux fois plus rapprochés : la période est divisée par deux. Elle reste au-dessus du minimum de 124." }
+          ]
+        },
+        { "type": "exercice", "id": "amiga-ch09-exo-volume", "titre": "Le volume", "variante": "completer", "niveau": 1, "aRelire": true,
+          "enonce": "Le programme lance un la… qu'on n'entend pas : le volume est à 0. Mets-le au **maximum**.",
+          "indices": ["AUD0VOL va de 0 à 64.", "`MOVE.W #64,$A8(A5)`"],
+          "codeDepart": "@code.s#volume-depart", "solution": "@code.s#volume-solution",
+          "check": { "type": "custom", "maxSteps": 400000, "terminer": true, "expected": { "AUD0VOL": "$0040", "AUD0PER": "$00FC" } },
+          "machine": { "ecran": true } },
+        { "type": "exercice", "id": "amiga-ch09-exo-muet", "titre": "La voie qui ne démarre pas", "variante": "corriger", "niveau": 2, "aRelire": true,
+          "enonce": "Le programme lance la voie 0 et attend que Paula l'ait démarrée… pour toujours. Et l'écran devient noir ! Trouve l'erreur dans l'écriture de DMACON.",
+          "indices": ["Quel est le bit 15 de `$0201` ? Que fait DMACON des bits à 1 quand il vaut 0 ?", "`$8201` : SET + DMAEN + AUD0EN. (`$0201` a éteint DMAEN, donc aussi l'écran.)"],
+          "codeDepart": "@code.s#muet-depart", "solution": "@code.s#muet-solution",
+          "check": { "type": "registers", "maxSteps": 200000, "terminer": true, "expected": { "D7": "$00000001" } } },
+        { "type": "exercice", "id": "amiga-ch09-exo-notes", "titre": "Do, mi, sol", "variante": "ecrire", "niveau": 3, "aRelire": true,
+          "enonce": "Joue **do** (période 423), **mi** (336) puis **sol** (283) sur la voie 0, une demi-seconde chacune (25 images), puis arrête la voie.",
+          "indices": ["Lance la voie une fois (LC, LEN, VOL, PER du do, DMACON) ; pour changer de note, écris seulement une nouvelle période.", "Une table `DC.W 423,336,283` et `MOVE.W (A0)+,$A6(A5)` ; 25 `attendre_vbl` par note ; `MOVE.W #$0001,$96(A5)` à la fin."],
+          "codeDepart": "@code.s#notes-depart", "solution": "@code.s#notes-solution",
+          "check": { "type": "custom", "maxSteps": 1500000, "terminer": true, "expected": { "AUD0PER": "$011B", "AUD0VOL": "$0040", "DMACON": "$03E0" } },
+          "machine": { "ecran": true } }
+      ]
+    },
+    {
+      "id": "amiga-ch09-n2",
+      "titre": "Enchaîner, et jouer une seule fois",
+      "contenus": [
+        { "type": "cours", "id": "amiga-ch09-cours-enchainer", "titre": "Les demandes de Paula, le son unique, le filtre", "fichier": "02-enchainer.md", "aRelire": true, "source": "Rédigé pour 68k Trainer d'après le Hardware Reference Manual (chap. 5) et les lecteurs de musique (RamJam)" },
+        {
+          "type": "exemple", "id": "amiga-ch09-ex-unefois", "titre": "Un bip, une seule fois", "aRelire": true,
+          "introduction": "Un bip de 1600 octets joué une fois : dès que Paula a noté le bloc, on lui donne un bloc de silence d'un mot pour la suite.",
+          "code": "@code.s#unefois-exemple",
+          "machine": { "ecran": true },
+          "explications": [
+            { "ligne": 7, "texte": "On efface une éventuelle vieille demande AUD0 (bit 7 de INTREQ, bit 15 à 0)." },
+            { "ligne": 8, "texte": "La voie démarre : Paula recopie LC et LEN dans ses compteurs et demande aussitôt l'interruption AUD0." },
+            { "ligne": 10, "texte": "INTREQR (octet bas en `$DFF01F`), bit 7 : la demande est là, Paula joue le bip." },
+            { "ligne": 12, "texte": "Le bloc suivant : un seul mot de zéros. À la fin du bip, Paula le rejouera en boucle : du silence." },
+            { "ligne": 17, "texte": "On arrête la voie quand on veut : on n'entend plus rien depuis longtemps." }
+          ],
+          "conclusion": "Paula prend toujours le bloc suivant dans AUDxLC et AUDxLEN : en les changeant dès sa demande, on enchaîne des sons sans trou, ou on la fait taire après un seul passage."
+        },
+        { "type": "exercice", "id": "amiga-ch09-exo-silence", "titre": "Le bip qui se répète", "variante": "completer", "niveau": 2, "aRelire": true,
+          "enonce": "Le bip doit être joué une seule fois, mais la longueur du « bloc de silence » est fausse : après le bip, Paula joue 800 mots de ce qui suit le silence en mémoire. Corrige-la.",
+          "indices": ["Le bloc de silence ne fait qu'un mot.", "`MOVE.W #1,$A4(A5)`"],
+          "codeDepart": "@code.s#silence-depart", "solution": "@code.s#silence-solution",
+          "check": { "type": "custom", "maxSteps": 600000, "terminer": true, "expected": { "AUD0LEN": "$0001" } },
+          "machine": { "ecran": true } }
+      ]
+    }
+  ],
+  "qcm": {
+    "id": "amiga-ch09-qcm",
+    "seuil": 0.7,
+    "questions": [
+      { "id": "q1", "enonce": "Combien de voies a Paula ?", "choix": ["4, en stéréo", "3", "8"], "bonne": 0, "explication": "Voies 0 et 3 à gauche, 1 et 2 à droite." },
+      { "id": "q2", "enonce": "Un échantillon est une suite d'octets…", "choix": ["signés, en Chip RAM", "non signés, n'importe où", "de 16 bits"], "bonne": 0, "explication": "−128 à +127, et Paula ne lit que la Chip RAM." },
+      { "id": "q3", "enonce": "AUD0LEN se compte en…", "choix": ["mots", "octets", "échantillons par seconde"], "bonne": 0, "explication": "Paula lit un mot (deux octets) à la fois." },
+      { "id": "q4", "enonce": "Plus la période est grande, la note est…", "choix": ["plus grave", "plus aiguë", "plus forte"], "bonne": 0, "explication": "Les octets sont lus plus lentement : la fréquence baisse." },
+      { "id": "q5", "enonce": "Quel est le volume maximum ?", "choix": ["64", "255", "15"], "bonne": 0, "explication": "AUDxVOL va de 0 à 64." },
+      { "id": "q6", "enonce": "Que fait cette instruction ?", "code": "@code.s#qcm-dma", "choix": ["Elle fait jouer les voies 0 et 1", "Elle arrête tout le son", "Elle joue la voie 3"], "bonne": 0, "explication": "SET + DMAEN + AUD0EN + AUD1EN." },
+      { "id": "q7", "enonce": "Quand Paula demande-t-elle l'interruption d'une voie ?", "choix": ["Quand elle a recopié LC et LEN, au début de chaque bloc", "À la fin du programme", "Jamais"], "bonne": 0, "explication": "C'est le signal pour préparer le bloc suivant." },
+      { "id": "q8", "enonce": "Comment jouer un bruitage une seule fois ?", "choix": ["Dès la demande de Paula, donner un bloc suivant de silence d'un mot", "Mettre AUDxLEN à 0", "Couper le DMA tout de suite"], "bonne": 0, "explication": "La voie rejouera le silence en boucle, sans bruit." }
+    ]
+  },
+  "bonus": [
+    { "type": "exercice", "id": "amiga-ch09-bonus-stereo", "titre": "Un accord en stéréo", "variante": "ecrire", "niveau": 3, "aRelire": true,
+      "enonce": "Défi : un **la** (période 252) sur la voie 0, à gauche, et un **mi** (période 336) sur la voie 1, à droite, lancés **ensemble**. Attends que Paula ait démarré **les deux** voies (bits 7 et 8 de INTREQR), mets 3 dans D7, puis arrête les deux voies.",
+      "indices": ["Les registres de la voie 1 sont 16 octets après ceux de la voie 0 : `$B0`, `$B4`, `$B6`, `$B8`.", "DMACON = `$8203` ; puis lis INTREQR (`$1E(A5)`), garde `$0180` et compare."],
+      "codeDepart": "@code.s#bonus-stereo-depart", "solution": "@code.s#bonus-stereo-solution",
+      "check": { "type": "registers", "maxSteps": 200000, "terminer": true, "expected": { "D7": "$00000003" } } }
+  ]
+}

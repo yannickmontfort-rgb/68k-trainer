@@ -82,7 +82,7 @@ function verifierParcours(parcours: Parcours): void {
               const machine = interactif
                 ? { ...c.machine, interactif: false, evenements: [...(c.machine?.evenements ?? []), { image: 6, boutonGauche: true }] }
                 : c.machine
-              const { cpu, last } = executer(c.code, parcours.plateforme, machine, interactif ? 2000000 : 100000)
+              const { cpu, last } = executer(c.code, parcours.plateforme, machine, parcours.plateforme === 'amiga' ? 2000000 : 100000)
               expect(last.error, last.error).toBeUndefined()
               expect(cpu.halted).toBe(true)
               const nbLignes = c.code.split('\n').length
