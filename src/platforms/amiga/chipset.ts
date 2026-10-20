@@ -152,6 +152,8 @@ export function createChipset(options: ChipsetOptions = {}): Platform {
   let sourisY = 0
   let gauche = false
   let droit = false
+  let appuiGauche = 0
+  let appuiDroit = 0
   let joy = 0
   const frappes: string[] = []
   const clavier: number[] = []
@@ -636,8 +638,21 @@ export function createChipset(options: ChipsetOptions = {}): Platform {
         souris: deplacer,
         compteursSouris: () => (sourisY << 8) | sourisX,
         boutons: (g, d) => {
-          gauche = g
-          droit = d
+          // Un appui dure au moins deux images : un clic très bref reste visible du programme
+          const maintenant = cpu.cycles
+          if (g && !gauche) appuiGauche = maintenant
+          if (d && !droit) appuiDroit = maintenant
+          const relacher = (finAppui: number, faire: () => void): void => {
+            if (maintenant >= finAppui) faire()
+            else {
+              actions.push({ cycle: finAppui, faire })
+              actions.sort((a, b) => a.cycle - b.cycle)
+            }
+          }
+          if (g) gauche = true
+          else if (gauche) relacher(appuiGauche + 2 * CYCLES_PAR_IMAGE, () => (gauche = false))
+          if (d) droit = true
+          else if (droit) relacher(appuiDroit + 2 * CYCLES_PAR_IMAGE, () => (droit = false))
         },
         joystick: (e) => (joy = e),
         touche: toucher,
