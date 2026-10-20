@@ -414,6 +414,8 @@ class Assembleur {
       if (mnemo === 'REPT') {
         const fin = this.finDeBloc(lignes, i, 'REPT', 'ENDR')
         try {
+          // « tableau: REPT 4 » : l'étiquette désigne le début du bloc répété (comme Devpac et vasm)
+          if (d.etiquette) this.definirEtiquetteIci(d.etiquette)
           const n = d.operandes ? this.evaluerImmediat(d.operandes, 'Le nombre de répétitions') : 0
           const corps = lignes.slice(i + 1, fin)
           for (let k = 0; k < n; k++) this.executerLignes(corps)
