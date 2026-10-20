@@ -73,6 +73,11 @@ function brouillon(machine: Machine, texte: string | null): string | null {
 
 const cleProgramme = (m: Machine): string => (m === 'atari' ? 'bac-a-sable:programme' : `bac-a-sable:programme:${m}`)
 const CLE_MODE = 'bac-a-sable:mode-utilisateur'
+const cleFichier = (m: Machine): string => `bac-a-sable:fichier:${m}`
+const cleEnregistre = (m: Machine): string => `bac-a-sable:enregistre:${m}`
+
+/** Nom du fichier sans le dossier. */
+const nomCourt = (chemin: string): string => chemin.split(/[\\/]/).pop() ?? chemin
 
 /** Rend le bac à sable : éditeur libre + débogueur complet. Retourne une fonction de nettoyage. */
 export function renderTrainer(container: HTMLElement, initialProgram?: string): () => void {
@@ -80,6 +85,10 @@ export function renderTrainer(container: HTMLElement, initialProgram?: string): 
   const CLE_PROGRAMME = cleProgramme(machine)
   container.innerHTML = `
     <div class="toolbar">
+      <button id="btn-ouvrir" title="Ouvrir un source .s (Ctrl+O)">Ouvrir…</button>
+      <button id="btn-enregistrer" title="Enregistrer le source (Ctrl+S)">Enregistrer</button>
+      <button id="btn-enregistrer-sous" title="Enregistrer le source sous un autre nom">Enregistrer sous…</button>
+      <span class="toolbar-fichier" id="fichier"></span>
       <button id="btn-exemple" title="Remettre le programme d'exemple dans l'éditeur">Exemple</button>
       <button id="btn-assemble">Assembler</button>
       <button id="btn-step" disabled>Pas</button>
@@ -109,7 +118,55 @@ export function renderTrainer(container: HTMLElement, initialProgram?: string): 
     contextmenu: false,
     automaticLayout: true
   })
-  editor.onDidChangeModelContent(() => ecrire(CLE_PROGRAMME, editor.getValue()))
+  // Fichier source associé (Ouvrir / Enregistrer) et texte au dernier enregistrement
+  let fichier: string | null = initialProgram ? null : lire(cleFichier(machine))
+  let enregistre: string | null = fichier ? lire(cleEnregistre(machine)) : null
+  const fichierEl = container.querySelector('#fichier') as HTMLSpanElement
+  function afficherFichier(): void {
+    const modifie = enregistre !== editor.getValue()
+    fichierEl.textContent = fichier ? `${nomCourt(fichier)}${modifie ? ' ●' : ''}` : 'Sans nom'
+    fichierEl.title = fichier ? `${fichier}${modifie ? ' (modifié, pas encore enregistré)' : ''}` : 'Pas encore enregistré dans un fichier'
+  }
+  function associer(chemin: string | null): void {
+    fichier = chemin
+    ecrire(cleFichier(machine), chemin ?? '')
+    enregistre = chemin ? editor.getValue() : null
+    ecrire(cleEnregistre(machine), enregistre ?? '')
+    afficherFichier()
+  }
+  if (fichier === '') fichier = null
+  afficherFichier()
+
+  editor.onDidChangeModelContent(() => {
+    ecrire(CLE_PROGRAMME, editor.getValue())
+    afficherFichier()
+  })
+
+  async function enregistrer(sous: boolean): Promise<void> {
+    const nom = fichier ? nomCourt(fichier) : machine === 'amiga' ? 'programme.s' : 'PROGRAMM.S'
+    const r = await window.api.enregistrerSource(editor.getValue(), sous ? null : fichier, machine, nom)
+    if (!r.ok) return
+    associer(r.chemin!)
+    statusEl.textContent = `Enregistré : ${nomCourt(r.chemin!)}`
+  }
+  async function ouvrir(): Promise<void> {
+    if (enregistre !== editor.getValue() && editor.getValue() !== PROGRAMMES[machine]) {
+      const oui = await confirmer('Ouvrir un autre source ? Les modifications non enregistrées seront perdues (Ctrl+Z pour revenir en arrière).', 'Ouvrir')
+      if (!oui) return
+    }
+    const r = await window.api.ouvrirSource(machine)
+    if (!r.ok) return
+    editor.pushUndoStop()
+    editor.executeEdits('ouvrir', [{ range: editor.getModel()!.getFullModelRange(), text: r.texte! }])
+    editor.pushUndoStop()
+    associer(r.chemin!)
+    statusEl.textContent = `Ouvert : ${nomCourt(r.chemin!)}`
+  }
+  container.querySelector('#btn-ouvrir')!.addEventListener('click', () => void ouvrir())
+  container.querySelector('#btn-enregistrer')!.addEventListener('click', () => void enregistrer(false))
+  container.querySelector('#btn-enregistrer-sous')!.addEventListener('click', () => void enregistrer(true))
+  editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => void enregistrer(false))
+  editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyO, () => void ouvrir())
   container.querySelector('#btn-exemple')!.addEventListener('click', () => {
     const remettre = (): void => {
       // Comme une frappe : Ctrl+Z rend le programme d'avant
@@ -119,7 +176,10 @@ export function renderTrainer(container: HTMLElement, initialProgram?: string): 
     }
     if (editor.getValue() === PROGRAMMES[machine]) return
     void confirmer("Remplacer ton programme par l'exemple ? (Ctrl+Z pour revenir en arrière)", 'Remplacer').then((oui) => {
-      if (oui) remettre()
+      if (oui) {
+        remettre()
+        associer(null)
+      }
     })
   })
 

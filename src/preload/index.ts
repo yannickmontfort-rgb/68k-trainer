@@ -37,6 +37,14 @@ const api = {
     ipcRenderer.invoke(IPC.tableauProfils),
   enregistrerPrg: (octets: Uint8Array, nom: string, format: 'prg' | 'hunk' = 'prg'): Promise<{ ok: boolean; chemin?: string }> =>
     ipcRenderer.invoke(IPC.enregistrerPrg, octets, nom, format),
+  ouvrirSource: (machine: 'atari' | 'amiga'): Promise<{ ok: boolean; chemin?: string; texte?: string }> =>
+    ipcRenderer.invoke(IPC.ouvrirSource, machine),
+  enregistrerSource: (
+    texte: string,
+    chemin: string | null,
+    machine: 'atari' | 'amiga',
+    nom: string
+  ): Promise<{ ok: boolean; chemin?: string }> => ipcRenderer.invoke(IPC.enregistrerSource, texte, chemin, machine, nom),
   fabriquerPrg: (source: string, format: 'prg' | 'hunk' = 'prg'): Promise<{ octets?: Uint8Array; raison?: string }> =>
     ipcRenderer.invoke(IPC.fabriquerPrg, source, format),
   exporterPdf: (html: string, nom: string): Promise<{ ok: boolean; chemin?: string }> =>

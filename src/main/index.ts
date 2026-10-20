@@ -129,6 +129,52 @@ app.whenReady().then(() => {
     await writeFile(choix.filePath, Buffer.from(octets))
     return { ok: true, chemin: choix.filePath }
   })
+  // Sources du bac à sable : rangées par défaut dans le dossier de partage de la machine
+  // (Documents\68k Trainer\Atari ou Amiga), lisibles directement par l'émulateur
+  const filtresSource = [
+    { name: 'Source assembleur 68000', extensions: ['s', 'asm', 'i'] },
+    { name: 'Tous les fichiers', extensions: ['*'] }
+  ]
+  ipcMain.handle(IPC.ouvrirSource, async (event, machine: 'atari' | 'amiga') => {
+    const dossier = emulateurs.dossierPartage(machine)
+    mkdirSync(dossier, { recursive: true })
+    const choix = await dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender)!, {
+      title: 'Ouvrir un source assembleur',
+      defaultPath: dossier,
+      filters: filtresSource,
+      properties: ['openFile']
+    })
+    if (choix.canceled || choix.filePaths.length === 0) return { ok: false }
+    const octets = await readFile(choix.filePaths[0])
+    // UTF-8 si le fichier en est, sinon Latin-1 (sources venus d'un vrai ST, de Devpac, d'un Amiga…)
+    let texte: string
+    try {
+      texte = new TextDecoder('utf-8', { fatal: true }).decode(octets)
+    } catch {
+      texte = new TextDecoder('latin1').decode(octets)
+    }
+    return { ok: true, chemin: choix.filePaths[0], texte: texte.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n') }
+  })
+  ipcMain.handle(
+    IPC.enregistrerSource,
+    async (event, texte: string, chemin: string | null, machine: 'atari' | 'amiga', nom: string) => {
+      let cible = chemin
+      if (!cible) {
+        const dossier = emulateurs.dossierPartage(machine)
+        mkdirSync(dossier, { recursive: true })
+        const choix = await dialog.showSaveDialog(BrowserWindow.fromWebContents(event.sender)!, {
+          title: 'Enregistrer le source',
+          defaultPath: join(dossier, nom),
+          filters: filtresSource
+        })
+        if (choix.canceled || !choix.filePath) return { ok: false }
+        cible = choix.filePath
+      }
+      // Fins de ligne CR LF : celles de Devpac, de l'Atari et de Windows
+      await writeFile(cible, texte.replace(/\r?\n/g, '\r\n'), 'utf-8')
+      return { ok: true, chemin: cible }
+    }
+  )
   ipcMain.handle(IPC.emulateursEtat, () => emulateurs.etatEmulateurs())
   ipcMain.handle(IPC.emulateurInstaller, (_e, id: 'hatari' | 'winuae') => installerEmulateur(id))
   ipcMain.handle(IPC.emulateurDesinstaller, (_e, id: 'hatari' | 'winuae') => emulateurs.desinstaller(id))

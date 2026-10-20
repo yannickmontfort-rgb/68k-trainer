@@ -187,6 +187,8 @@ export const IPC = {
   importerProfil: '68k:importerProfil',
   tableauProfils: '68k:tableauProfils',
   enregistrerPrg: '68k:enregistrerPrg',
+  ouvrirSource: '68k:ouvrirSource',
+  enregistrerSource: '68k:enregistrerSource',
   fabriquerPrg: '68k:fabriquerPrg',
   exporterPdf: '68k:exporterPdf',
   emulateursEtat: '68k:emulateursEtat',
