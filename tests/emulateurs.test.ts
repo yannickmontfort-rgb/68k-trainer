@@ -44,7 +44,8 @@ describe('catalogue des émulateurs', () => {
 
   it('la configuration WinUAE monte AROS: et PARTAGE:', () => {
     const c = emu.configUae('C:\\x\\aros', 'C:\\Docs\\68k Trainer\\Amiga')
-    expect(c).toContain('kickstart_rom_file=C:\\x\\aros\\boot\\amiga\\aros-rom.bin')
+    // Séparateur du système (le test tourne aussi sous Linux et macOS dans la CI)
+    expect(c).toContain('kickstart_rom_file=' + join('C:\\x\\aros', 'boot', 'amiga', 'aros-rom.bin'))
     expect(c).toContain('filesystem2=rw,DH1:PARTAGE:C:\\Docs\\68k Trainer\\Amiga,-128')
     expect(c).toContain('cpu_type=68020')
   })
