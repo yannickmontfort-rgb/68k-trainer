@@ -42,6 +42,12 @@ describe('catalogue des émulateurs', () => {
     expect(emu.installationsDemandees()).toEqual([])
   })
 
+  it('installation automatique sous Windows seulement (les paquets sont des versions Windows)', async () => {
+    const windows = process.platform === 'win32'
+    expect(emu.etatEmulateurs().every((e) => e.disponible === windows)).toBe(true)
+    if (!windows) await expect(emu.installer('hatari')).rejects.toThrow(/Windows/)
+  })
+
   it('la configuration WinUAE monte AROS: et PARTAGE:', () => {
     const c = emu.configUae('C:\\x\\aros', 'C:\\Docs\\68k Trainer\\Amiga')
     // Séparateur du système (le test tourne aussi sous Linux et macOS dans la CI)

@@ -175,6 +175,8 @@ export interface EtatEmulateurPublic {
   taille: number
   dossierPartage: string
   enCours: boolean
+  /** Installation automatique possible sur ce système (Windows seulement pour l'instant). */
+  disponible: boolean
 }
 
 export const IPC = {

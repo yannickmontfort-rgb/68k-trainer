@@ -65,6 +65,12 @@ async function exporterAmiga(source: string, nom: string, dossier?: string): Pro
 export async function essayerDansEmulateur(source: string, nom: string, plateforme: Plateforme = 'atari', dossier?: string): Promise<ResultatExport> {
   const id = plateforme === 'amiga' ? 'winuae' : 'hatari'
   const etat = (await window.api.emulateursEtat()).find((e) => e.id === id)
+  if (etat && !etat.disponible) {
+    return {
+      ok: false,
+      message: `L'essai automatique dans ${etat.nom} n'existe que sous Windows pour l'instant : exporte ton programme (bouton Exporter) et lance-le dans ton émulateur.`
+    }
+  }
   if (!etat?.installe) {
     return { ok: false, message: `${etat?.nom ?? id} n'est pas installé : installe-le depuis l'onglet « Émulateurs ».` }
   }

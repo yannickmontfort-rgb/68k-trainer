@@ -33,6 +33,8 @@ export interface EtatEmulateur {
   dossierPartage: string
   /** Installation en cours (lancée depuis l'interface ou demandée par l'installateur). */
   enCours: boolean
+  /** Les paquets sont des versions Windows : ailleurs, l'utilisateur installe lui-même son émulateur. */
+  disponible: boolean
 }
 
 export type Progression = (fait: number, total: number, etape: string) => void
@@ -87,7 +89,8 @@ export function etatEmulateurs(): EtatEmulateur[] {
     embarque: e.paquets.every((p) => existsSync(join(dossierPaquetsEmbarques(), p.fichier))),
     taille: e.paquets.reduce((s, p) => s + p.taille, 0),
     dossierPartage: dossierPartage(e.machine),
-    enCours: enCours.has(e.id)
+    enCours: enCours.has(e.id),
+    disponible: windows
   }))
 }
 
@@ -167,6 +170,7 @@ function deplacer(source: string, cible: string, exclure: string[]): void {
 
 export async function installer(id: IdEmulateur, progression: Progression = () => {}): Promise<void> {
   const e = EMULATEURS[id]
+  if (!windows) throw new Error(`L'installation automatique de ${e.nom} n'existe que sous Windows pour l'instant.`)
   if (enCours.has(id)) throw new Error(`${e.nom} est déjà en cours d'installation.`)
   const dest = dossierEmulateur(id)
   const temp = join(tmpdir(), `68k-trainer-${id}-${Date.now()}`)

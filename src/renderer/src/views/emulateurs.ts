@@ -34,7 +34,11 @@ export function renderEmulateurs(container: HTMLElement): () => void {
         <p class="apropos-texte">${echapper(e.description)}</p>
         <p class="emulateur-licence">Licence : ${echapper(e.licence)}</p>
         <p class="emulateur-etat">${
-          e.installe
+          !e.disponible
+            ? `L'installation automatique n'existe que sous Windows pour l'instant. Sur ce système, installe ${
+                e.id === 'hatari' ? 'Hatari (paquet « hatari » de ta distribution, ou hatari-emu.org)' : 'FS-UAE (fs-uae.net)'
+              } toi-même ; le bouton « Exporter » du bac à sable fabrique le programme à y lancer.`
+            : e.installe
             ? `✅ Installé${e.versionInstallee && e.versionInstallee !== e.version ? ` (version ${echapper(e.versionInstallee)} : une mise à jour est disponible)` : ''}`
             : e.embarque
               ? `Pas encore installé — livré avec 68k Trainer (${mo(e.taille)}), pas besoin d'Internet`
@@ -44,7 +48,9 @@ export function renderEmulateurs(container: HTMLElement): () => void {
         ${occupe ? `<progress id="progression-${e.id}" max="1" value="0"></progress><p class="emulateur-etape" id="etape-${e.id}">Préparation…</p>` : ''}
         <div class="profils-form-boutons">
           ${
-            e.installe
+            !e.disponible
+              ? ''
+              : e.installe
               ? `<button data-action="lancer" ${occupe ? 'disabled' : ''}>Lancer ${echapper(e.nom)}</button>
                  ${e.versionInstallee !== e.version ? `<button data-action="installer" ${occupe ? 'disabled' : ''}>Mettre à jour</button>` : ''}`
               : `<button data-action="installer" ${occupe ? 'disabled' : ''}>Installer ${echapper(e.nom)}</button>`
