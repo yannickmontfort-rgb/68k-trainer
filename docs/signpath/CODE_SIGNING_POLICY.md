@@ -26,7 +26,7 @@ required by Hatari). It is **not signed**.
 
 | Role | Members |
 |---|---|
-| Committers and reviewers | [Yannick Montfort](https://github.com/yannickmontfort-rgb) |
+| Authors (committers) and reviewers | [Yannick Montfort](https://github.com/yannickmontfort-rgb) |
 | Approvers | [Yannick Montfort](https://github.com/yannickmontfort-rgb) |
 
 Changes from contributors outside the team are reviewed by a team member before being merged.
@@ -47,6 +47,9 @@ when the user asks for it (checkbox in the installer, or "Install" button in the
 | AROS (free Amiga system) | the releases of this repository |
 
 Each package is checked against a SHA-256 hash pinned in the source code before being installed.
+These downloads are plain file requests to the sites above (no account, no data sent by 68k Trainer);
+they are subject to those sites' own privacy policies. The emulators themselves, once installed,
+run offline.
 Learner profiles, progress and code drafts are stored only on the local computer, in the
 application's data folder (`%APPDATA%\trainer-68k` on Windows); the emulators are installed in
 `%LOCALAPPDATA%\68k Trainer`, and their shared folders in `Documents\68k Trainer`.
