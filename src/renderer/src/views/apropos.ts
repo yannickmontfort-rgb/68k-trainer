@@ -22,6 +22,8 @@ export function renderApropos(container: HTMLElement): () => void {
         <p class="apropos-version">Version ${info.version} — ${info.year}</p>
         <p class="apropos-authors">Développé par Yannick Montfort avec Claude (Anthropic)</p>
         <p class="apropos-texte">Logiciel libre sous licence GNU GPL v3 ou ultérieure.</p>
+        <p class="apropos-soutien">68k Trainer est gratuit. Pour encourager son développement :
+        <a href="https://paypal.me/YMONTFORT" target="_blank" rel="noopener">☕ Soutenir le projet (PayPal)</a></p>
         ${info.builtAt ? `<p class="apropos-built">Compilé le ${new Date(info.builtAt).toLocaleString('fr-FR')}</p>` : '<p class="apropos-built">Version de développement</p>'}
         <h3>Sous le capot</h3>
         <p class="apropos-texte">Assembleur et désassembleur 68000 écrits pour 68k Trainer, compatibles Devpac (vérifiés octet par octet contre vasm, de Volker Barthelmann et Frank Wille).

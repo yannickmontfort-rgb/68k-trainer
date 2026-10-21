@@ -520,6 +520,16 @@ html, body, #app {
   margin: 4px 0;
 }
 
+.apropos-soutien {
+  margin: 12px 0 4px;
+  color: #ccc;
+}
+
+.apropos-soutien a {
+  color: #ffd479;
+  font-weight: 600;
+}
+
 .apropos-built {
   color: #888;
   font-size: 12px;
