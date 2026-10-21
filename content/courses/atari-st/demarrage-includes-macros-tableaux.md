@@ -77,6 +77,9 @@ PILE:                           ; l'étiquette APRÈS la réservation
 
 Un programme simple qui n'appelle ni `Malloc` ni `Pexec` peut se passer de `Mshrink`.
 
+> Le simulateur de 68k Trainer ne gère pas `Mshrink` (ni `Malloc`, ni `Pexec`) : cette routine de
+> démarrage s'essaie avec le bouton **« Essayer dans Hatari »**.
+
 ## Inclusions : `INCLUDE` et `INCBIN`
 
 Deux directives d'assembleur (pas des instructions 68000) pour garder les sources gérables :

@@ -23,6 +23,12 @@ simulés, pas à pas. À notre connaissance, c'est le premier outil qui réunit 
 - Son **propre assembleur 68000**, compatible Devpac (vérifié octet par octet contre vasm), un
   **désassembleur**, l'**export en .PRG** (Hatari, vrai ST) et en **exécutable AmigaDOS**
   (WinUAE, FS-UAE, vrai Amiga).
+- Des **émulateurs d'étude** installés à la demande (Windows) : **Hatari** avec EmuTOS et
+  **WinUAE** avec le Kickstart libre AROS, aucune ROM sous droits ; un dossier de partage dans les
+  Documents, et un bouton **« Essayer dans l'émulateur »**.
+- Un **bac à sable** qui est un vrai éditeur (ouvrir, enregistrer, `INCLUDE` à côté du source), des
+  **fiches de référence** (68000, TOS, MFP, Ligne A et GEM, bibliothèques et puces de l'Amiga) et
+  tous les exercices du parcours en **exercices libres**.
 
 Les choix pédagogiques s'appuient sur la recherche : exemples résolus puis retrait progressif de
 l'aide, une difficulté à la fois, lire et prédire avant d'écrire, enseignement explicite du
@@ -46,7 +52,8 @@ npm install
 npm run dev        # lance l'application en mode développement
 npm test           # tests : émulateur, TOS simulé, et exécution réelle de tout le contenu
 npm run typecheck
-npm run dist:win   # Windows : installeur + version portable dans dist/
+npm run dist:win   # Windows : installeur + version portable (légers : émulateurs téléchargés) dans dist/
+npm run dist:win:complet # Windows : les mêmes avec Hatari et WinUAE embarqués (télécharge les paquets)
 npm run dist:linux # Linux : AppImage + .deb (à lancer sous Linux)
 npm run dist:mac   # macOS : .dmg universel (à lancer sous macOS)
 ```

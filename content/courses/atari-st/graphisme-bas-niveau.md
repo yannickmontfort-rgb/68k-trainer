@@ -193,9 +193,9 @@ on échange les deux **pendant le retour du faisceau** (VBL, 50 fois par seconde
 puis `log`.) Le second écran se réserve dans la section BSS (32 000 octets + 255 pour l'aligner sur
 256 octets).
 
-> Dans le simulateur de 68k Trainer, l'écran est en basse résolution à l'adresse `$F8000`, et la
-> palette en `$FF8240` est visible dans le débogueur ; `Vsync` et le double tampon demandent
-> Hatari (bouton « Essayer dans Hatari »).
+> Dans le simulateur de 68k Trainer, l'écran est en basse résolution à l'adresse `$F8000`, la
+> palette en `$FF8240` est visible dans le débogueur, et `Setscreen` comme `Vsync` sont simulés :
+> le double tampon s'y essaie directement.
 
 > Fiche complétée et corrigée le 21/10/2026 (Claude) : basse et moyenne résolutions (plans
 > entrelacés), palette, double tampon ; `AND.W ~masque` (syntaxe invalide) remplacé ; routine

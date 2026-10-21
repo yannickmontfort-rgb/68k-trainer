@@ -1,7 +1,9 @@
 # 68k Trainer — guide de l'utilisateur
 
-68k Trainer apprend l'assembleur du **Motorola 68000** en programmant un **Atari ST simulé**.
-Pas besoin de vrai ST, ni d'émulateur, ni de Devpac : tout est dans l'application.
+68k Trainer apprend l'assembleur du **Motorola 68000** en programmant un **Atari ST** ou un
+**Amiga 500** simulés. Pas besoin de vraie machine, ni d'émulateur, ni de Devpac : tout est dans
+l'application. Pour aller plus loin, elle sait aussi installer deux émulateurs d'étude (Hatari et
+WinUAE) et y lancer tes programmes.
 
 ## Installer
 
@@ -9,9 +11,17 @@ Les fichiers sont sur la page des *releases* du projet GitHub.
 
 **Windows**, au choix :
 
-- **`68k Trainer Setup x.y.z.exe`** : un installeur classique (raccourci sur le bureau) ;
-- **`68k Trainer x.y.z.exe`** : la version **portable**, qui se lance sans installation (par
-  exemple depuis une clé USB).
+- **`68k Trainer Setup x.y.z complet.exe`** : l'installeur avec les **émulateurs d'étude
+  embarqués** (Hatari et WinUAE, environ 150 Mo) : ils s'installent sans Internet ;
+- **`68k Trainer Setup x.y.z.exe`** : l'installeur **léger** (environ 100 Mo) : les émulateurs
+  choisis sont téléchargés depuis leurs sites officiels au premier lancement ;
+- **`68k Trainer x.y.z complet.exe`** / **`68k Trainer x.y.z.exe`** : les versions **portables**
+  (sans installation, par exemple sur une clé USB) ; les émulateurs s'y installent depuis l'onglet
+  **Émulateurs**.
+
+L'installeur propose une page **« Émulateurs d'étude »** : coche Hatari (Atari ST), WinUAE
+(Amiga), les deux ou aucun. Tu pourras toujours les installer ou les retirer plus tard depuis
+l'onglet **Émulateurs**.
 
 L'application n'est pas encore signée : au premier lancement, Windows SmartScreen peut afficher
 « Windows a protégé votre ordinateur ». Clique sur **Informations complémentaires**, puis
@@ -32,11 +42,14 @@ fait par un **clic droit → Ouvrir** (puis « Ouvrir » dans la fenêtre d'aver
 
 | Onglet | À quoi il sert |
 |---|---|
-| **Parcours** | Le cours guidé en 8 chapitres, du premier MOVE à une intro façon démo. C'est là qu'on commence. |
-| **Bac à sable** | Un éditeur libre pour essayer tes propres programmes, avec l'écran de l'Atari. |
-| **Fiches** | Les fiches de référence de la première version (registres, pile, GEMDOS, Ligne A, MFP…). |
-| **Exercices libres** | Les exercices de la première version, rangés par niveau. |
-| **À propos** | Version, crédits, remise à zéro de la progression. |
+| **Parcours** | Le cours guidé de la machine choisie : 8 chapitres pour l'Atari ST, 10 pour l'Amiga (les 3 premiers, le 68000, sont communs). C'est là qu'on commence. |
+| **Bac à sable** | Un vrai éditeur pour tes propres programmes : **Ouvrir**, **Enregistrer** (Ctrl+O, Ctrl+S), assembler, exécuter pas à pas, exporter, essayer dans l'émulateur. Le bouton **Exemple** remet le programme d'exemple. |
+| **Fiches** | Tous les **cours du parcours**, rangés par chapitre, à relire quand tu veux, et les **fiches de référence** (68000, TOS, MFP, Ligne A et GEM, registres matériels ; Exec, bibliothèques, puces custom de l'Amiga). |
+| **Exercices libres** | Tous les **exercices du parcours** (défis bonus compris), dans l'ordre que tu veux, et des exercices d'entraînement par niveau. Un exercice réussi ici compte aussi dans le parcours. |
+| **Émulateurs** | Installer, lancer ou retirer Hatari et WinUAE, ouvrir leur dossier de partage. |
+| **À propos** | Version, crédits, gestion du profil. |
+
+La machine (Atari ST ou Amiga 500) se change à tout moment en haut à droite.
 
 ## Le parcours
 
@@ -109,12 +122,38 @@ manette branchée sur l'ordinateur marche aussi. La case « 🔊 Son » coupe ou
   chargé en `$1000`, avec de vraies sections `TEXT`, `DATA` et `BSS` (dans cet ordre en mémoire, comme
   sous TOS). Macros, `REPT`, `IF…`, `RS`, `INCLUDE` et `INCBIN` sont pris en charge. Comme Devpac, l'assembleur assemble exactement ce que tu écris (aucune instruction remplacée par une autre) et aligne automatiquement les instructions et les données `.W`/`.L` sur une adresse paire, avec un avertissement. Une étiquette seule sur sa ligne n'est pas déplacée : pense à `EVEN`.
 
-## Exporter vers un vrai Atari (ou Hatari)
+## Exporter, et essayer dans un émulateur
 
-Le bouton **Exporter .PRG** (bac à sable, et exercices réussis) fabrique un vrai programme TOS.
-Lance-le dans l'émulateur [Hatari](https://hatari-emu.org) ou copie-le sur la disquette ou le
-disque d'un vrai ST. Pense à terminer ton programme par `Pterm0` (`CLR.W -(SP)` puis `TRAP #1`)
-pour revenir proprement au bureau.
+Le bouton **Exporter** (bac à sable, et exercices réussis) fabrique un vrai programme : un `.PRG`
+pour l'Atari ST, un exécutable AmigaDOS pour l'Amiga. Copie-le sur la disquette ou le disque d'une
+vraie machine, ou dans le dossier de partage d'un émulateur. Sur l'Atari, termine ton programme par
+`Pterm0` (`CLR.W -(SP)` puis `TRAP #1`) ; sur l'Amiga, par `RTS` avec un code de retour dans D0
+(`MOVEQ #0,D0`).
+
+Le bouton **Essayer dans Hatari / WinUAE** fait tout d'un coup : il assemble, dépose le programme
+dans le dossier de partage, (re)démarre l'émulateur et y lance le programme.
+
+## Les émulateurs d'étude
+
+68k Trainer installe deux émulateurs libres, **réglés pour l'étude** (pas pour les jeux), avec des
+systèmes libres : **aucune ROM d'origine** (TOS, Kickstart) n'est fournie, elles sont protégées par
+le droit d'auteur.
+
+| Émulateur | Machine | Système | Dossier de partage (dans tes Documents) |
+|---|---|---|---|
+| **Hatari** 2.6.1 | Atari ST, 1 Mo | EmuTOS | `68k Trainer\Atari` = le disque **C:** de l'Atari |
+| **WinUAE** 6.0.3 | Amiga 68020 (AGA) | AROS (le Kickstart libre ; il demande un 68020) | `68k Trainer\Amiga` = le disque **PARTAGE:** de l'Amiga |
+
+- Sur l'Atari, le programme essayé se lance dès que le bureau d'EmuTOS est prêt, puis attend une
+  touche avant de revenir au bureau.
+- Sur l'Amiga, AROS démarre en une vingtaine de secondes, puis le programme s'ouvre dans une fenêtre
+  console qui reste affichée.
+- Un seul exemplaire de chaque émulateur tourne à la fois : un nouvel essai le redémarre.
+- Les émulateurs s'installent dans ton dossier utilisateur (`%LOCALAPPDATA%\68k Trainer`), sans
+  droits d'administrateur ; leurs réglages sont à part de ceux d'un Hatari ou d'un WinUAE que tu
+  aurais déjà. Désinstaller 68k Trainer les retire, mais garde tes dossiers de partage.
+- Pour l'instant, cette installation automatique existe sous **Windows** ; sous Linux et macOS,
+  installe Hatari ou FS-UAE toi-même.
 
 ## Les profils
 

@@ -83,8 +83,9 @@ Exemple : attendre une touche et la garder dans D7.
 ```
 
 > **Dans le simulateur de 68k Trainer**, une partie de ces fonctions est simulée : GEMDOS 0, 1, 2, 7,
-> 8, 9, 11, 32, 76 ; BIOS 1, 2, 3, 5, 11 ; XBIOS 2 à 7, 17, 28, 32, 34, 38. Les fichiers (`Fopen`…),
-> `Malloc` et `Vsync`, eux, demandent un vrai TOS : utilise le bouton **« Essayer dans Hatari »**.
+> 8, 9, 11, 32, 76 ; BIOS 1, 2, 3, 5, 11 ; XBIOS 2 à 7, 17, 28, 32, 34, 37, 38. Les fichiers
+> (`Fopen`…) et la mémoire (`Malloc`, `Mshrink`), eux, demandent un vrai TOS : utilise le bouton
+> **« Essayer dans Hatari »**.
 
 ## Passer en mode superviseur
 
