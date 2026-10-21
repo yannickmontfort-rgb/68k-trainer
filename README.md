@@ -34,6 +34,12 @@ Les choix pédagogiques s'appuient sur la recherche : exemples résolus puis ret
 l'aide, une difficulté à la fois, lire et prédire avant d'écrire, enseignement explicite du
 débogage.
 
+## ☕ Soutenir le projet
+
+68k Trainer est gratuit et libre. Si tu veux encourager son développement (de nouveaux chapitres,
+les versions Linux et macOS des émulateurs…), tu peux faire un don par PayPal :
+**[paypal.me/YMONTFORT](https://paypal.me/YMONTFORT)**. Merci !
+
 ## Tu as trouvé une erreur ?
 
 Les cours et les exercices sont là pour être améliorés : une explication fausse, un exercice
