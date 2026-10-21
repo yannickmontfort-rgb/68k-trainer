@@ -42,11 +42,11 @@ dedans) que l'application légère et signée saurait importer.
 | Pas d'outil de piratage | ✅ (les tutos de cracking des sources ne sont pas dans le dépôt ; les émulateurs sont réglés pour l'étude, **aucune ROM sous droits** n'est fournie ni téléchargée) | — |
 | Vie privée : pas de transfert de données sans demande | ✅ **aucune donnée envoyée**. Seul accès réseau : le **téléchargement d'un émulateur**, quand l'utilisateur le demande (case cochée dans l'installeur ou bouton « Installer »), depuis les sites officiels (framagit.org pour Hatari, download.abime.net pour WinUAE, les releases GitHub du projet pour AROS), fichiers vérifiés par SHA-256 | Le dire dans la politique (fait dans `CODE_SIGNING_POLICY.md`) |
 | Désinstallation fournie | ✅ désinstalleur NSIS (retire aussi les émulateurs installés, garde les documents de l'utilisateur) | — |
-| **MFA** pour tous les membres (GitHub et SignPath) | ❓ **à vérifier** sur le compte GitHub `yannickmontfort-rgb` (non lisible avec le jeton actuel) | Settings → Password and authentication → Two-factor authentication |
+| **MFA** pour tous les membres (GitHub et SignPath) | ✅ double authentification activée sur GitHub (confirmé par Yannick le 21/10/2026) | L'activer aussi sur le compte SignPath, à sa création |
 | Rôles définis (auteurs, relecteurs, approbateurs) | ✅ prêt dans `CODE_SIGNING_POLICY.md` (Yannick dans les trois rôles ; des copains pourront être relecteurs) | — |
 | **Page « Code signing policy »** sur l'accueil et la page de téléchargement | ⬜ prête : `docs/signpath/CODE_SIGNING_POLICY.md` | La publier à la racine du dépôt et la lier depuis le README et les notes de release **une fois acceptés** |
 | Nom et version du produit identiques dans les métadonnées | ✅ electron-builder écrit « 68k Trainer » et la version de `package.json` | — |
-| **Builds vérifiables** (construits par une CI depuis les sources) | ⚠️ `.github/workflows/release.yml` construit les paquets des trois systèmes à chaque tag. Les tags v1.1.0 ont échoué sous Linux et macOS à cause d'un test (chemins Windows en dur) : **corrigé** le 21/10/2026 — les tests passent maintenant sur les trois systèmes dans la CI ; la construction des paquets est à vérifier au prochain tag. La 1.1.0 publiée a été construite **localement** | Pour une release signée : publier les binaires **produits par la CI**, pas ceux construits sur le PC |
+| **Builds vérifiables** (construits par une CI depuis les sources) | ✅ depuis la 1.1.1 : le tag `v1.1.1` a produit par GitHub Actions les paquets des trois systèmes (release en brouillon) | Ne publier que les binaires de la CI |
 | Approbation manuelle de chaque signature | ⬜ | Se fait dans l'interface SignPath ; Yannick approuve |
 | Coopérer en cas de plainte | ✅ engagement | — |
 | Dons | ✅ autorisés (bouton GitHub « Sponsor » vers PayPal, lien dans À propos) : la GPL et SignPath ne s'y opposent pas | — |
@@ -54,9 +54,8 @@ dedans) que l'application légère et signée saurait importer.
 ## 3. Ordre des étapes, le jour venu
 
 1. ~~Remplacer vasm~~ (fait en 1.0.0).
-2. Activer (ou vérifier) la **double authentification** sur GitHub.
-3. Vérifier qu'un tag `vX.Y.Z` produit bien, **par la CI**, les paquets dans une release en
-   brouillon (les tests passent sur les trois systèmes depuis le 21/10).
+2. ~~Double authentification sur GitHub~~ (faite).
+3. ~~Release construite par la CI~~ (v1.1.1, 21/10/2026).
 4. Publier `CODE_SIGNING_POLICY.md` à la racine et le lier depuis le README et la page des releases.
 5. Remplir le formulaire <https://signpath.org/apply> avec les réponses du § 4, **en signalant
    d'emblée** que seule la version légère est concernée (§ 1).
