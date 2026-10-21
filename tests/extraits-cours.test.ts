@@ -41,3 +41,21 @@ describe('extraits de code des cours', () => {
     }
   }
 })
+
+// Les fiches de référence (onglet « Fiches ») : mêmes règles
+const FICHES = join(__dirname, '..', 'content', 'courses')
+
+describe('extraits de code des fiches de référence', () => {
+  for (const fichier of fichiersMarkdown(FICHES)) {
+    const texte = readFileSync(fichier, 'utf-8').replace(/\r\n/g, '\n')
+    const blocs = [...texte.matchAll(/```asm\n([\s\S]*?)```/g)].map((m) => m[1])
+    blocs.forEach((bloc, i) => {
+      it(`${fichier.slice(FICHES.length + 1)} — extrait ${i + 1}`, () => {
+        const asm = assemble(bloc)
+        // Les fichiers d'INCLUDE/INCBIN cités en exemple n'existent pas
+        const vraies = asm.errors.filter((e) => !/n'est défini nulle part|introuvable pour INC/.test(e.message))
+        expect(vraies, JSON.stringify(vraies)).toEqual([])
+      })
+    })
+  }
+})
