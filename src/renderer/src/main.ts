@@ -45,7 +45,7 @@ function demarrer(profil: ProfilPublic): void {
   oublierProgression()
   app.innerHTML = `
     <nav class="app-nav">
-      <span class="app-title">68k Trainer</span>
+      <span class="app-title">68k Trainer 2</span>
       ${VIEWS.map((v) => `<button class="nav-tab" data-view="${v.id}" title="${v.title}">${v.label}</button>`).join('')}
       <span class="nav-espace"></span>
       <span class="nav-machine" id="nav-machine" title="La machine simulée : chaque machine a son parcours (les chapitres du 68000 sont communs)">
