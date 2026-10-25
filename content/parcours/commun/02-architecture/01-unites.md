@@ -1,7 +1,7 @@
 ## Trois tailles
 
-Le 68000 travaille sur trois tailles de données. On choisit la taille avec le suffixe de
-l'instruction.
+Le 68000 travaille sur trois tailles de données, que l'on choisit avec le suffixe de l'instruction.
+Ses registres font 32 bits, et leurs bits se numérotent de droite à gauche à partir de 0.
 
 | Suffixe | Nom | Bits | Non signé | Signé |
 |---|---|---|---|---|
@@ -9,12 +9,11 @@ l'instruction.
 | `.W` | mot | 16 | 0 à 65 535 | −32 768 à 32 767 |
 | `.L` | mot long | 32 | 0 à 4 294 967 295 | −2 147 483 648 à 2 147 483 647 |
 
-Ses registres font 32 bits. Les bits se numérotent de droite à gauche, à partir de 0.
-
 ## L'hexadécimal
 
-Un chiffre hexadécimal vaut 4 bits. Un octet s'écrit donc avec 2 chiffres, un mot avec 4, un long
-avec 8. On convertit chiffre par chiffre :
+Un chiffre hexadécimal représente exactement 4 bits : un octet s'écrit donc avec deux chiffres, un
+mot avec quatre et un mot long avec huit, et l'on passe du binaire à l'hexadécimal chiffre par
+chiffre.
 
 ```
 %1010 0011  =  $A3
@@ -26,13 +25,16 @@ avec 8. On convertit chiffre par chiffre :
 
 ## Les nombres négatifs
 
-Un nombre est négatif quand son bit de poids fort vaut 1 : c'est le complément à deux. Sur un
-octet, `$FF` vaut −1 et `$80` vaut −128.
+Le 68000 code les nombres signés en complément à deux : un nombre est négatif quand son bit de
+poids fort vaut 1. Sur un octet, `$FF` vaut ainsi −1 et `$80` vaut −128.
 
-Le processeur ne sait pas si `$FF` veut dire 255 ou −1. C'est toi qui choisis, par les
+Le processeur ne sait pas si `$FF` signifie 255 ou −1 ; c'est toi qui le décides, par les
 instructions que tu utilises ensuite.
 
 ## Une opération ne touche que sa taille
+
+Quand une instruction travaille en `.B` ou en `.W` sur un registre de données, seule la partie
+basse du registre change et le reste est conservé.
 
 ```asm
     MOVE.L  #$12345678,D0   ; D0 = $12345678
@@ -40,5 +42,5 @@ instructions que tu utilises ensuite.
     MOVE.W  #$ABCD,D0       ; D0 = $1234ABCD
 ```
 
-En `.B` ou en `.W`, le reste du registre ne bouge pas. Si tu relis ensuite ce registre en `.L`,
-les anciens bits sont toujours là.
+Si tu relis ensuite ce registre en `.L`, ses anciens bits sont toujours là : c'est une erreur
+classique.
