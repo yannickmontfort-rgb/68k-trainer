@@ -111,17 +111,20 @@ app.whenReady().then(() => {
   })
   ipcMain.handle(IPC.enregistrerPrg, async (event, octets: Uint8Array, nom: string, format: 'prg' | 'hunk' = 'prg') => {
     const fenetre = BrowserWindow.fromWebContents(event.sender)!
+    // Proposé dans le dossier de partage de la machine (Documents\68k Trainer\Atari ou Amiga)
+    const dossier = emulateurs.dossierPartage(format === 'hunk' ? 'amiga' : 'atari')
+    mkdirSync(dossier, { recursive: true })
     const choix = await dialog.showSaveDialog(
       fenetre,
       format === 'hunk'
         ? {
             title: 'Exporter pour un émulateur Amiga (WinUAE, FS-UAE) ou un vrai Amiga',
-            defaultPath: nom,
+            defaultPath: join(dossier, nom),
             filters: [{ name: 'Programme Amiga (sans extension)', extensions: ['*'] }]
           }
         : {
             title: 'Exporter pour Hatari ou un vrai Atari ST',
-            defaultPath: `${nom}.PRG`,
+            defaultPath: join(dossier, `${nom}.PRG`),
             filters: [{ name: 'Programme Atari ST', extensions: ['PRG', 'TOS', 'TTP'] }]
           }
     )
@@ -191,7 +194,11 @@ app.whenReady().then(() => {
     if (!exe.octets) return { ok: false, erreur: exe.raison }
     const lanceur = id === 'hatari' ? fabriquerPrg(emulateurs.sourceLanceurAtari(`${nom}.PRG`)).octets : undefined
     try {
-      return { ok: true, chemin: await emulateurs.essayer(id, exe.octets, nom, lanceur) }
+      const fenetre = BrowserWindow.fromWebContents(_e.sender)
+      const chemin = await emulateurs.essayer(id, exe.octets, nom, lanceur, (fin) => {
+        if (fenetre && !fenetre.isDestroyed()) fenetre.webContents.send(IPC.emulateurFin, fin)
+      })
+      return { ok: true, chemin }
     } catch (e) {
       return { ok: false, erreur: (e as Error).message }
     }

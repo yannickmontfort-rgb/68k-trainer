@@ -199,4 +199,4 @@ GEM, MFP) est dans les autres fiches de référence Atari ST.
 > Fiche complétée et corrigée le 21/10/2026 (Claude) : Setexec est la fonction BIOS 5 (elle était
 > donnée en XBIOS) ; le vecteur 35 est bien un trap ; l'affirmation sur l'imbrication des traps était
 > fausse (remplacée par la non-réentrance du GEMDOS) ; tableau des fonctions, superviseur, variables
-> système — à relire.
+> système.

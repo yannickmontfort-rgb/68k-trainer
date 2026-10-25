@@ -114,4 +114,4 @@ Quand une exception non prévue survient, le TOS affiche autant de **bombes** qu
 > l'ACIA du clavier sont simulés ; le son DMA et le Blitter du STE, non (Hatari les émule, en mode
 > STE).
 
-> Fiche créée le 21/10/2026 (Claude) — à relire.
+> Fiche créée le 21/10/2026 (Claude).

@@ -199,4 +199,4 @@ puis `log`.) Le second écran se réserve dans la section BSS (32 000 octets + 2
 
 > Fiche complétée et corrigée le 21/10/2026 (Claude) : basse et moyenne résolutions (plans
 > entrelacés), palette, double tampon ; `AND.W ~masque` (syntaxe invalide) remplacé ; routine
-> `setpixel` simplifiée avec `BSET` — à relire.
+> `setpixel` simplifiée avec `BSET`.

@@ -196,4 +196,4 @@ on ouvre un **poste de travail virtuel** (`v_opnvwk`, VDI 100) qui rend son prop
 
 > Fiche complétée et corrigée le 21/10/2026 (Claude) : les paramètres de la Ligne A passent surtout
 > par ses **variables** (rendues par `$A000`), pas seulement par 5 tableaux ; table des 16
-> fonctions, exemple pixel + ligne, appel `TRAP #2` (D0/D1), premier programme GEM — à relire.
+> fonctions, exemple pixel + ligne, appel `TRAP #2` (D0/D1), premier programme GEM.

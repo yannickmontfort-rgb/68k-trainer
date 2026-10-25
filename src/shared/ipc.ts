@@ -201,6 +201,7 @@ export const IPC = {
   emulateurLancer: '68k:emulateurLancer',
   emulateurEssayer: '68k:emulateurEssayer',
   emulateurProgression: '68k:emulateurProgression',
+  emulateurFin: '68k:emulateurFin',
   ouvrirPartage: '68k:ouvrirPartage',
   assemble: '68k:assemble',
   loadProgress: '68k:loadProgress',

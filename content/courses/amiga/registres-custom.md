@@ -124,4 +124,4 @@ interruptions de la CIA A arrivent au **niveau 2** (`PORTS`), celles de la CIA B
 (`EXTER`).
 
 > Fiche créée le 21/10/2026 (Claude) à partir des registres du simulateur (vérifiés dans le Hardware
-> Reference Manual) — à relire.
+> Reference Manual).

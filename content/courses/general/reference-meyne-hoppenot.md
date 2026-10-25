@@ -358,4 +358,4 @@ d'une seule position.
 
 > Fiche complétée et corrigée le 21/10/2026 (Claude) : notation `&` retirée, note fausse sur la
 > retenue des soustractions corrigée (sur le 68000, C = emprunt), boucle `DBEQ` de temporisation
-> remplacée, modes relatifs au PC, `DBRA`, `Scc`, tableau récapitulatif — à relire.
+> remplacée, modes relatifs au PC, `DBRA`, `Scc`, tableau récapitulatif.

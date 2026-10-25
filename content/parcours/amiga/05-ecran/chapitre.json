@@ -8,9 +8,9 @@
       "id": "amiga-ch05-n1",
       "titre": "Les registres des puces",
       "contenus": [
-        { "type": "cours", "id": "amiga-ch05-cours-puces", "titre": "Agnus, Denise, Paula et leurs registres", "fichier": "01-puces.md", "aRelire": true, "source": "Rédigé pour 68k Trainer d'après Amiga Intern (Abacus, chap. 1 et 11) et La Bible de l'Amiga" },
+        { "type": "cours", "id": "amiga-ch05-cours-puces", "titre": "Agnus, Denise, Paula et leurs registres", "fichier": "01-puces.md", "source": "Rédigé pour 68k Trainer d'après Amiga Intern (Abacus, chap. 1 et 11) et La Bible de l'Amiga" },
         {
-          "type": "exemple", "id": "amiga-ch05-ex-raster", "titre": "Une bande rouge au passage du faisceau", "aRelire": true,
+          "type": "exemple", "id": "amiga-ch05-ex-raster", "titre": "Une bande rouge au passage du faisceau",
           "introduction": "Le 68000 guette la position du faisceau et change la couleur du fond au bon moment, à chaque image. Lance **🎬 Temps réel**, regarde la bande, puis **clique sur l'écran** (bouton gauche) pour arrêter.",
           "code": "@code.s#raster-exemple",
           "machine": { "ecran": true, "interactif": true },
@@ -26,7 +26,7 @@
           "conclusion": "Changer un registre à un moment précis du balayage : c'est le principe de tous les effets de l'Amiga. Le Copper, au chapitre suivant, le fera sans occuper le 68000."
         },
         {
-          "type": "prediction", "id": "amiga-ch05-pred-setclr", "titre": "Mettre à 1, mettre à 0", "aRelire": true,
+          "type": "prediction", "id": "amiga-ch05-pred-setclr", "titre": "Mettre à 1, mettre à 0",
           "introduction": "Dans 68k Trainer, le système allume les canaux DMAEN, BPLEN, COPEN, BLTEN et SPREN (`DMACONR` = `$03E0`). On touche au bit du Blitter.",
           "code": "@code.s#setclr-prediction",
           "questions": [
@@ -34,19 +34,19 @@
             { "id": "q2", "enonce": "Et D1 ?", "choix": ["$000003E0", "$00008040", "$000083E0"], "bonne": 0, "explication": "Bit 15 à 1 : le bit 6 repasse à 1. DMACONR ne contient jamais le bit 15 : il n'existe qu'à l'écriture.", "verification": { "D1": "$000003E0" } }
           ]
         },
-        { "type": "exercice", "id": "amiga-ch05-exo-verte", "titre": "La bande verte", "variante": "completer", "niveau": 1, "aRelire": true,
+        { "type": "exercice", "id": "amiga-ch05-exo-verte", "titre": "La bande verte", "variante": "completer", "niveau": 1,
           "enonce": "Ce programme doit afficher une **bande verte** de la ligne `$A0` à la ligne `$B0`, jusqu'au clic. Complète la ligne de départ et la couleur.",
           "indices": ["`CMP.B #$A0,$06(A5)` attend la ligne `$A0`.", "Vert vif : `$00F0` (pas de rouge, vert au maximum, pas de bleu)."],
           "codeDepart": "@code.s#verte-depart", "solution": "@code.s#verte-solution",
           "check": { "type": "image", "maxSteps": 400000, "terminer": true, "image": 3, "expected": { "10,120": "$00F0", "200,130": "$00F0", "10,136": "$005A", "10,110": "$005A" } },
           "machine": { "ecran": true, "evenements": [{ "image": 5, "boutonGauche": true }] } },
-        { "type": "exercice", "id": "amiga-ch05-exo-fin-bande", "titre": "La bande qui déborde", "variante": "corriger", "niveau": 1, "aRelire": true,
+        { "type": "exercice", "id": "amiga-ch05-exo-fin-bande", "titre": "La bande qui déborde", "variante": "corriger", "niveau": 1,
           "enonce": "La bande jaune devrait faire 8 lignes (de `$70` à `$78`), mais tout le bas de l'écran devient jaune. Corrige.",
           "indices": ["Que fait le programme quand le faisceau arrive à la ligne `$78` ?", "À la fin de la bande, il faut remettre le bleu du Workbench : `$005A`."],
           "codeDepart": "@code.s#fin-bande-depart", "solution": "@code.s#fin-bande-solution",
           "check": { "type": "image", "maxSteps": 400000, "terminer": true, "image": 3, "expected": { "10,70": "$0FF0", "10,78": "$005A", "10,200": "$005A" } },
           "machine": { "ecran": true, "evenements": [{ "image": 5, "boutonGauche": true }] } },
-        { "type": "exercice", "id": "amiga-ch05-exo-deux-bandes", "titre": "Deux bandes", "variante": "ecrire", "niveau": 2, "aRelire": true,
+        { "type": "exercice", "id": "amiga-ch05-exo-deux-bandes", "titre": "Deux bandes", "variante": "ecrire", "niveau": 2,
           "enonce": "À chaque image, jusqu'au clic gauche : une bande **rouge** (`$F00`) de la ligne `$60` à `$68`, puis une bande **jaune** (`$FF0`) de `$C0` à `$C8`. Le reste du fond garde le bleu du Workbench (`$05A`).",
           "indices": ["Quatre attentes de ligne à la suite dans la même boucle : $60, $68, $C0, $C8.", "Après la dernière, teste le bouton (`BTST #6,$BFE001`) et reboucle avec `BNE`."],
           "codeDepart": "@code.s#deux-bandes-depart", "solution": "@code.s#deux-bandes-solution",
@@ -58,9 +58,9 @@
       "id": "amiga-ch05-n2",
       "titre": "Prendre la main, et la rendre",
       "contenus": [
-        { "type": "cours", "id": "amiga-ch05-cours-prendre", "titre": "Couper le système proprement, et le rétablir", "fichier": "02-prendre-main.md", "aRelire": true, "source": "Rédigé pour 68k Trainer d'après Amiga Intern (Abacus), les startups de démos (Stash of Code) et le manuel Amiga (chap. 5, corrigé)" },
+        { "type": "cours", "id": "amiga-ch05-cours-prendre", "titre": "Couper le système proprement, et le rétablir", "fichier": "02-prendre-main.md", "source": "Rédigé pour 68k Trainer d'après Amiga Intern (Abacus), les startups de démos (Stash of Code) et le manuel Amiga (chap. 5, corrigé)" },
         {
-          "type": "exemple", "id": "amiga-ch05-ex-prendre", "titre": "Le squelette complet", "aRelire": true,
+          "type": "exemple", "id": "amiga-ch05-ex-prendre", "titre": "Le squelette complet",
           "introduction": "Voici l'essentiel de `amiga-systeme.s` (le fichier gère en plus la table des vecteurs des 68010 et plus, voir le chapitre 6) : un programme qui prend la main, affiche sa propre liste Copper (orange en haut, bleu nuit en bas), attend un clic, puis rend tout. Avance pas à pas dans `prendre`, puis lance **🎬 Temps réel** et clique sur l'écran.",
           "code": "@code.s#prendre-exemple",
           "machine": { "ecran": true, "interactif": true },
@@ -87,7 +87,7 @@
           "conclusion": "Prendre la main, c'est noter l'état du système puis tout couper ; la rendre, c'est tout couper à nouveau puis remettre exactement ce qu'on a noté, bit 15 compris. Désormais, `INCLUDE \"amiga-systeme.s\"` te donnera `prendre` et `rendre` tout faits."
         },
         {
-          "type": "prediction", "id": "amiga-ch05-pred-bit15", "titre": "Le piège du bit 15", "aRelire": true,
+          "type": "prediction", "id": "amiga-ch05-pred-bit15", "titre": "Le piège du bit 15",
           "introduction": "On sauvegarde DMACONR puis on le réécrit dans DMACON, d'abord tel quel, puis avec le bit 15.",
           "code": "@code.s#bit15-prediction",
           "questions": [
@@ -95,19 +95,19 @@
             { "id": "q2", "enonce": "Et D1 (avec `OR.W #$8000`) ?", "choix": ["$000003E0", "$00000000", "$00008000"], "bonne": 0, "explication": "Bit 15 à 1 : les mêmes bits repassent à 1, le système retrouve ses canaux.", "verification": { "D1": "$000003E0" } }
           ]
         },
-        { "type": "exercice", "id": "amiga-ch05-exo-copinit", "titre": "Remettre la liste du système", "variante": "completer", "niveau": 1, "aRelire": true,
+        { "type": "exercice", "id": "amiga-ch05-exo-copinit", "titre": "Remettre la liste du système", "variante": "completer", "niveau": 1,
           "enonce": "Ce programme prend la main à sa façon (Forbid, DMA coupé, sa liste Copper), puis la rend au clic. Mais il remet une mauvaise adresse dans COP1LC : le bilan le signale. Complète le décalage de **gb_copinit** dans GfxBase.",
           "indices": ["La base de graphics est dans A4.", "gb_copinit est à 38 octets : `MOVE.L 38(A4),$80(A5)`."],
           "codeDepart": "@code.s#copinit-depart", "solution": "@code.s#copinit-solution",
           "check": { "type": "registers", "maxSteps": 400000, "terminer": true, "systemeRendu": true, "expected": { "D0": "$00000000" } },
           "machine": { "ecran": true, "evenements": [{ "image": 3, "boutonGauche": true }] } },
-        { "type": "exercice", "id": "amiga-ch05-exo-bit15", "titre": "L'écran resté noir", "variante": "corriger", "niveau": 2, "aRelire": true,
+        { "type": "exercice", "id": "amiga-ch05-exo-bit15", "titre": "L'écran resté noir", "variante": "corriger", "niveau": 2,
           "enonce": "Après le clic, l'écran du Workbench devrait revenir… mais il reste noir, et le bilan se plaint du DMA. Corrige en ajoutant **une** instruction.",
           "indices": ["Que fait l'écriture d'une valeur dont le bit 15 vaut 0 dans DMACON ?", "`OR.W #$8000,D7` avant `MOVE.W D7,$96(A5)`."],
           "codeDepart": "@code.s#bit15-depart", "solution": "@code.s#bit15-solution",
           "check": { "type": "registers", "maxSteps": 400000, "terminer": true, "systemeRendu": true, "expected": { "D0": "$00000000" } },
           "machine": { "ecran": true, "evenements": [{ "image": 3, "boutonGauche": true }] } },
-        { "type": "exercice", "id": "amiga-ch05-exo-orange", "titre": "Ton premier écran", "variante": "ecrire", "niveau": 2, "aRelire": true,
+        { "type": "exercice", "id": "amiga-ch05-exo-orange", "titre": "Ton premier écran", "variante": "ecrire", "niveau": 2,
           "enonce": "Avec `prendre` et `rendre` (le fichier `amiga-systeme.s` est déjà inclus), affiche un écran entièrement **orange** (`$F80`) grâce à **ta propre liste Copper**, jusqu'au clic gauche.",
           "indices": ["La liste : `DC.W $0100,$0200` (aucun plan), `DC.W $0180,$0F80`, puis la fin `DC.W $FFFF,$FFFE`.", "Après `prendre` : l'adresse de la liste dans COP1LC (`$80(A5)`), un mot dans COPJMP1 (`$88(A5)`), puis `MOVE.W #$8280,$96(A5)`."],
           "codeDepart": "@code.s#orange-depart", "solution": "@code.s#orange-solution",
@@ -119,9 +119,9 @@
       "id": "amiga-ch05-n3",
       "titre": "Les plans de bits",
       "contenus": [
-        { "type": "cours", "id": "amiga-ch05-cours-plans", "titre": "Plans de bits, fenêtre et pointeurs", "fichier": "03-plans.md", "aRelire": true, "source": "Rédigé pour 68k Trainer d'après Amiga Intern (Abacus, chap. 11) et le Hardware Reference Manual" },
+        { "type": "cours", "id": "amiga-ch05-cours-plans", "titre": "Plans de bits, fenêtre et pointeurs", "fichier": "03-plans.md", "source": "Rédigé pour 68k Trainer d'après Amiga Intern (Abacus, chap. 11) et le Hardware Reference Manual" },
         {
-          "type": "exemple", "id": "amiga-ch05-ex-plan", "titre": "Un écran d'un plan", "aRelire": true,
+          "type": "exemple", "id": "amiga-ch05-ex-plan", "titre": "Un écran d'un plan",
           "introduction": "Un écran de 320 × 256 en deux couleurs : une ligne horizontale et une diagonale. Regarde la **liste Copper** à la fin du programme, puis lance **🎬 Temps réel** et clique pour finir.",
           "code": "@code.s#plan-exemple",
           "machine": { "ecran": true, "interactif": true },
@@ -139,7 +139,7 @@
           "conclusion": "Un écran Amiga, c'est un plan en Chip RAM et une liste Copper qui règle la fenêtre, la palette, BPLCON0 et les pointeurs. Le 68000, lui, n'a plus qu'à dessiner dans le plan."
         },
         {
-          "type": "prediction", "id": "amiga-ch05-pred-pixel", "titre": "Où est le pixel (100, 10) ?", "aRelire": true,
+          "type": "prediction", "id": "amiga-ch05-pred-pixel", "titre": "Où est le pixel (100, 10) ?",
           "introduction": "Le calcul d'adresse d'un pixel dans un plan de 40 octets par ligne.",
           "code": "@code.s#pixel-prediction",
           "questions": [
@@ -147,19 +147,19 @@
             { "id": "q2", "enonce": "Et D3 (le numéro du bit) ?", "choix": ["3", "4", "7"], "bonne": 0, "explication": "100 mod 8 = 4, et 7 − 4 = 3 : le pixel le plus à gauche de l'octet est le bit 7.", "verification": { "D3": "$00000003" } }
           ]
         },
-        { "type": "exercice", "id": "amiga-ch05-exo-un-plan", "titre": "Le plan invisible", "variante": "completer", "niveau": 1, "aRelire": true,
+        { "type": "exercice", "id": "amiga-ch05-exo-un-plan", "titre": "Le plan invisible", "variante": "completer", "niveau": 1,
           "enonce": "Le programme dessine 16 pixels blancs au début de la ligne 20 et règle tout l'écran… mais il reste noir. Dans la liste Copper, BPLCON0 ne déclare aucun plan : corrige sa valeur pour **un** plan.",
           "indices": ["Le nombre de plans va dans les bits 14-12 de BPLCON0 ; le bit 9 (`$0200`) reste à 1.", "Un plan : `$1200`."],
           "codeDepart": "@code.s#un-plan-depart", "solution": "@code.s#un-plan-solution",
           "check": { "type": "image", "maxSteps": 600000, "terminer": true, "systemeRendu": true, "image": 8, "expected": { "0,20": "$0FFF", "15,20": "$0FFF", "16,20": "$0000", "0,21": "$0000" } },
           "machine": { "ecran": true, "evenements": [{ "image": 12, "boutonGauche": true }] } },
-        { "type": "exercice", "id": "amiga-ch05-exo-horizontale", "titre": "Une ligne horizontale", "variante": "ecrire", "niveau": 2, "aRelire": true,
+        { "type": "exercice", "id": "amiga-ch05-exo-horizontale", "titre": "Une ligne horizontale", "variante": "ecrire", "niveau": 2,
           "enonce": "Tout est prêt (écran, liste Copper, prendre et rendre) : trace une ligne blanche sur **toute la largeur** de l'écran, à la ligne **y = 100**.",
           "indices": ["La ligne 100 commence 100 × 40 octets après le début du plan : `LEA 100*40(A0),A1`.", "40 octets à `$FF` : une boucle `MOVE.B #$FF,(A1)+` / `DBF` de 40 tours."],
           "codeDepart": "@code.s#horizontale-depart", "solution": "@code.s#horizontale-solution",
           "check": { "type": "image", "maxSteps": 600000, "terminer": true, "systemeRendu": true, "image": 8, "expected": { "0,100": "$0FFF", "319,100": "$0FFF", "160,100": "$0FFF", "0,99": "$0000", "0,101": "$0000" } },
           "machine": { "ecran": true, "evenements": [{ "image": 12, "boutonGauche": true }] } },
-        { "type": "exercice", "id": "amiga-ch05-exo-diagonale", "titre": "La diagonale", "variante": "ecrire", "niveau": 3, "aRelire": true,
+        { "type": "exercice", "id": "amiga-ch05-exo-diagonale", "titre": "La diagonale", "variante": "ecrire", "niveau": 3,
           "enonce": "Dessine les 100 pixels (0, 0), (1, 1)… (99, 99) en blanc, avec la formule du cours.",
           "indices": ["Une boucle sur D0 de 0 à 99 ; pour chaque point, x = y = D0.", "Octet : `MULU #40` de y, plus x ÷ 8 (`LSR.W #3`). Bit : `NOT.B` de x, puis `BSET Dn,0(A0,D1.W)`."],
           "codeDepart": "@code.s#diagonale-depart", "solution": "@code.s#diagonale-solution",
@@ -171,9 +171,9 @@
       "id": "amiga-ch05-n4",
       "titre": "Plusieurs plans, plus de couleurs",
       "contenus": [
-        { "type": "cours", "id": "amiga-ch05-cours-couleurs", "titre": "Empiler les plans : 2, 4… 32 couleurs", "fichier": "04-couleurs.md", "aRelire": true, "source": "Rédigé pour 68k Trainer d'après Amiga Intern (Abacus, chap. 11) et La Bible de l'Amiga" },
+        { "type": "cours", "id": "amiga-ch05-cours-couleurs", "titre": "Empiler les plans : 2, 4… 32 couleurs", "fichier": "04-couleurs.md", "source": "Rédigé pour 68k Trainer d'après Amiga Intern (Abacus, chap. 11) et La Bible de l'Amiga" },
         {
-          "type": "exemple", "id": "amiga-ch05-ex-bandes", "titre": "Quatre bandes, deux plans", "aRelire": true,
+          "type": "exemple", "id": "amiga-ch05-ex-bandes", "titre": "Quatre bandes, deux plans",
           "introduction": "Deux plans, donc quatre couleurs : noir, rouge, vert, bleu. Chaque bande de 80 pixels montre un numéro de couleur, de 0 à 3. Mets l'adresse de `plan1` puis de `plan2` dans la vue **Mémoire** pour voir leurs bits.",
           "code": "@code.s#bandes-exemple",
           "machine": { "ecran": true, "interactif": true },
@@ -188,7 +188,7 @@
           "conclusion": "La couleur d'un pixel, c'est son numéro écrit en binaire à travers les plans : le plan 1 donne le bit 0, le plan 2 le bit 1, et ainsi de suite. Les registres COLORxx disent quelle teinte correspond à chaque numéro."
         },
         {
-          "type": "prediction", "id": "amiga-ch05-pred-couleur", "titre": "Quel numéro de couleur ?", "aRelire": true,
+          "type": "prediction", "id": "amiga-ch05-pred-couleur", "titre": "Quel numéro de couleur ?",
           "introduction": "Un pixel a son bit à 1 dans les plans 1 et 3, à 0 dans le plan 2.",
           "code": "@code.s#couleur-prediction",
           "questions": [
@@ -196,13 +196,13 @@
             { "id": "q2", "enonce": "Quel registre donne sa teinte (D1) ?", "choix": ["$DFF18A (COLOR05)", "$DFF185", "$DFF190"], "bonne": 0, "explication": "Les registres de couleur sont des mots : $DFF180 + 2 × 5 = $DFF18A.", "verification": { "D1": "$00DFF18A" } }
           ]
         },
-        { "type": "exercice", "id": "amiga-ch05-exo-carre2", "titre": "Un carré vert", "variante": "ecrire", "niveau": 2, "aRelire": true,
+        { "type": "exercice", "id": "amiga-ch05-exo-carre2", "titre": "Un carré vert", "variante": "ecrire", "niveau": 2,
           "enonce": "L'écran a deux plans (couleur 1 rouge, 2 vert, 3 bleu). Dessine un carré de **32 × 32** en **couleur 2**, coin en haut à gauche en **(64, 64)**.",
           "indices": ["Couleur 2 = bit 1 seulement : on n'écrit que dans le plan 2.", "Le coin : `LEA 64*40+64/8(A1),A2` ; 32 lignes de `MOVE.L #$FFFFFFFF,(A2)` séparées de 40 octets."],
           "codeDepart": "@code.s#carre2-depart", "solution": "@code.s#carre2-solution",
           "check": { "type": "image", "maxSteps": 600000, "terminer": true, "systemeRendu": true, "image": 8, "expected": { "64,64": "$00F0", "95,95": "$00F0", "63,64": "$0000", "96,64": "$0000", "64,96": "$0000" } },
           "machine": { "ecran": true, "evenements": [{ "image": 12, "boutonGauche": true }] } },
-        { "type": "exercice", "id": "amiga-ch05-exo-carre3", "titre": "Le carré qui n'est pas bleu", "variante": "corriger", "niveau": 3, "aRelire": true,
+        { "type": "exercice", "id": "amiga-ch05-exo-carre3", "titre": "Le carré qui n'est pas bleu", "variante": "corriger", "niveau": 3,
           "enonce": "Ce programme veut dessiner un carré de 16 × 16 en **couleur 3** (bleu) en (16, 40), mais il apparaît rouge. Corrige-le.",
           "indices": ["Rouge, c'est la couleur 1 : seul le bit du plan 1 est allumé.", "La couleur 3 demande le bit du plan 1 **et** celui du plan 2 : dessine aussi dans `plan2`."],
           "codeDepart": "@code.s#carre3-depart", "solution": "@code.s#carre3-solution",
@@ -228,7 +228,7 @@
     ]
   },
   "bonus": [
-    { "type": "exercice", "id": "amiga-ch05-bonus-drapeau", "titre": "Le drapeau français", "variante": "ecrire", "niveau": 3, "aRelire": true,
+    { "type": "exercice", "id": "amiga-ch05-bonus-drapeau", "titre": "Le drapeau français", "variante": "ecrire", "niveau": 3,
       "enonce": "Défi : le drapeau français sur tout l'écran, en deux plans : **bleu** de x = 0 à 105 (couleur 1), **blanc** de 106 à 213 (couleur 2), **rouge** de 214 à 319 (couleur 3). La palette et la liste Copper sont prêtes.",
       "indices": ["Pour chaque ligne et chaque x, choisis les plans selon la bande : bleu = plan 1, blanc = plan 2, rouge = les deux.", "La frontière 106 ne tombe pas sur un octet entier : prépare une « ligne type » de 40 octets par plan (avec `DCB.B`), en traitant à part les deux octets qui contiennent une frontière, puis recopie-la 256 fois."],
       "codeDepart": "@code.s#bonus-drapeau-depart", "solution": "@code.s#bonus-drapeau-solution",

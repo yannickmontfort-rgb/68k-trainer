@@ -8,9 +8,9 @@
       "id": "amiga-ch08-n1",
       "titre": "Les sprites matériels",
       "contenus": [
-        { "type": "cours", "id": "amiga-ch08-cours-sprites", "titre": "Format, position, couleurs et priorité", "fichier": "01-sprites.md", "aRelire": true, "source": "Rédigé pour 68k Trainer d'après le Hardware Reference Manual (chap. 4) et Amiga Intern (Abacus, chap. 11)" },
+        { "type": "cours", "id": "amiga-ch08-cours-sprites", "titre": "Format, position, couleurs et priorité", "fichier": "01-sprites.md", "source": "Rédigé pour 68k Trainer d'après le Hardware Reference Manual (chap. 4) et Amiga Intern (Abacus, chap. 11)" },
         {
-          "type": "exemple", "id": "amiga-ch08-ex-sprite", "titre": "Une balle sur un décor", "aRelire": true,
+          "type": "exemple", "id": "amiga-ch08-ex-sprite", "titre": "Une balle sur un décor",
           "introduction": "Une balle de 16 × 16 (sprite 0) posée sur un décor à rayures. Elle ne touche pas au plan : le décor reste intact dessous. Lance **🎬 Temps réel**, puis clique pour finir.",
           "code": "@code.s#sprite-exemple",
           "machine": { "ecran": true, "interactif": true },
@@ -27,7 +27,7 @@
           "conclusion": "Un sprite, c'est deux mots de contrôle, deux mots par ligne, et un pointeur remis par le Copper. Le décor dessous n'est jamais touché."
         },
         {
-          "type": "prediction", "id": "amiga-ch08-pred-pos", "titre": "Les mots de contrôle", "aRelire": true,
+          "type": "prediction", "id": "amiga-ch08-pred-pos", "titre": "Les mots de contrôle",
           "introduction": "Le calcul des deux mots de contrôle d'un sprite de 16 lignes en x = 100, y = 80.",
           "code": "@code.s#pos-prediction",
           "questions": [
@@ -35,19 +35,19 @@
             { "id": "q2", "enonce": "Et D1 (le second mot) ?", "choix": ["$00008C01", "$00008C00", "$00007C01"], "bonne": 0, "explication": "VSTOP = $7C + 16 = $8C ; le bit 0 de HSTART ($E5 est impair) va dans le bit 0.", "verification": { "D1": "$00008C01" } }
           ]
         },
-        { "type": "exercice", "id": "amiga-ch08-exo-placer", "titre": "Placer le sprite", "variante": "completer", "niveau": 1, "aRelire": true,
+        { "type": "exercice", "id": "amiga-ch08-exo-placer", "titre": "Placer le sprite", "variante": "completer", "niveau": 1,
           "enonce": "Le carré rouge (sprite 0) doit apparaître en **x = 100, y = 80**. Son second mot de contrôle (`$8C01`) est juste ; complète le premier.",
           "indices": ["VSTART = $2C + 80 = $7C dans l'octet fort ; (HSTART = $81 + 100) ÷ 2 dans l'octet faible.", "`$7C72`"],
           "codeDepart": "@code.s#placer-depart", "solution": "@code.s#placer-solution",
           "check": { "type": "image", "maxSteps": 600000, "terminer": true, "systemeRendu": true, "image": 8, "expected": { "100,80": "$0F00", "115,95": "$0F00", "99,80": "$0444", "116,80": "$0444", "100,96": "$0444" } },
           "machine": { "ecran": true, "evenements": [{ "image": 12, "boutonGauche": true }] } },
-        { "type": "exercice", "id": "amiga-ch08-exo-deplacer", "titre": "Le carré qui avance", "variante": "ecrire", "niveau": 2, "aRelire": true,
+        { "type": "exercice", "id": "amiga-ch08-exo-deplacer", "titre": "Le carré qui avance", "variante": "ecrire", "niveau": 2,
           "enonce": "Avec la routine `placer_sprite` (A0 = le sprite, D0 = x, D1 = y), fais avancer le carré de **2 pixels par image**, **75 fois**, à partir de x = 0 (y = 80). Il doit finir en x = 150.",
           "indices": ["`LEA sprite,A0`, D0 = 0, D1 = 80, puis une boucle de 75 tours (`MOVEQ #74,D7` et `DBF`).", "Dans la boucle : `BSR attendre_vbl`, `ADDQ.W #2,D0`, `BSR placer_sprite`."],
           "codeDepart": "@code.s#deplacer-depart", "solution": "@code.s#deplacer-solution",
           "check": { "type": "image", "maxSteps": 3000000, "terminer": true, "systemeRendu": true, "image": 85, "expected": { "150,80": "$0F00", "165,95": "$0F00", "149,80": "$0444", "166,80": "$0444" } },
           "machine": { "ecran": true, "evenements": [{ "image": 89, "boutonGauche": true }] } },
-        { "type": "exercice", "id": "amiga-ch08-exo-couleurs", "titre": "Deux couleurs", "variante": "ecrire", "niveau": 2, "aRelire": true,
+        { "type": "exercice", "id": "amiga-ch08-exo-couleurs", "titre": "Deux couleurs", "variante": "ecrire", "niveau": 2,
           "enonce": "Dessine le sprite : ses **8 premières lignes** en couleur 1 (rouge), les **8 suivantes** en couleur 3 (blanc).",
           "indices": ["Une ligne = DATA puis DATB : couleur 1 = DATA à 1 seul ; couleur 3 = les deux à 1.", "`DCB.L 8,$FFFF0000` puis `DCB.L 8,$FFFFFFFF`."],
           "codeDepart": "@code.s#deux-couleurs-depart", "solution": "@code.s#deux-couleurs-solution",
@@ -59,9 +59,9 @@
       "id": "amiga-ch08-n2",
       "titre": "Joystick, souris et clavier",
       "contenus": [
-        { "type": "cours", "id": "amiga-ch08-cours-entrees", "titre": "Boutons, JOY1DAT, compteurs de la souris, clavier", "fichier": "02-entrees.md", "aRelire": true, "source": "Rédigé pour 68k Trainer d'après le Hardware Reference Manual (chap. 8 et annexe H) et Amiga Intern (Abacus)" },
+        { "type": "cours", "id": "amiga-ch08-cours-entrees", "titre": "Boutons, JOY1DAT, compteurs de la souris, clavier", "fichier": "02-entrees.md", "source": "Rédigé pour 68k Trainer d'après le Hardware Reference Manual (chap. 8 et annexe H) et Amiga Intern (Abacus)" },
         {
-          "type": "exemple", "id": "amiga-ch08-ex-joystick", "titre": "La balle au joystick", "aRelire": true,
+          "type": "exemple", "id": "amiga-ch08-ex-joystick", "titre": "La balle au joystick",
           "introduction": "La balle obéit au joystick du port 2. Lance **🎬 Temps réel**, coche « Flèches + Espace = joystick » sous l'écran, clique sur l'écran, puis utilise les flèches (ou une manette). Un clic gauche termine.",
           "code": "@code.s#joystick-exemple",
           "machine": { "ecran": true, "interactif": true },
@@ -76,7 +76,7 @@
           "conclusion": "Lire le joystick, c'est lire un mot et quelques bits ; le reste du travail, c'est de déplacer le sprite."
         },
         {
-          "type": "prediction", "id": "amiga-ch08-pred-joy", "titre": "Décoder JOY1DAT", "aRelire": true,
+          "type": "prediction", "id": "amiga-ch08-pred-joy", "titre": "Décoder JOY1DAT",
           "introduction": "JOY1DAT vaut `$0103`.",
           "code": "@code.s#joy-prediction",
           "questions": [
@@ -84,19 +84,19 @@
             { "id": "q2", "enonce": "Vers où pousse-t-on le joystick ?", "choix": ["En haut à droite", "En bas à droite", "À gauche"], "bonne": 0, "explication": "Bit 1 de $0103 : droite. Bit 0 de D1 à 0 : pas bas. Bit 8 de D1 à 1 : haut." }
           ]
         },
-        { "type": "exercice", "id": "amiga-ch08-exo-feu", "titre": "Feu !", "variante": "completer", "niveau": 1, "aRelire": true,
+        { "type": "exercice", "id": "amiga-ch08-exo-feu", "titre": "Feu !", "variante": "completer", "niveau": 1,
           "enonce": "Le programme doit attendre le **bouton du joystick**, puis mettre 1 dans D7. Il teste le mauvais bit : corrige-le.",
           "indices": ["Dans `$BFE001`, le bit 6 est le bouton de la souris, le bit 7 celui du joystick.", "`BTST #7,$BFE001`"],
           "codeDepart": "@code.s#feu-depart", "solution": "@code.s#feu-solution",
           "check": { "type": "registers", "maxSteps": 300000, "terminer": true, "expected": { "D7": "$00000001" } },
           "machine": { "evenements": [{ "image": 3, "joystick": 128 }] } },
-        { "type": "exercice", "id": "amiga-ch08-exo-souris", "titre": "Le déplacement de la souris", "variante": "ecrire", "niveau": 2, "aRelire": true,
+        { "type": "exercice", "id": "amiga-ch08-exo-souris", "titre": "Le déplacement de la souris", "variante": "ecrire", "niveau": 2,
           "enonce": "Lis le compteur horizontal de la souris (l'octet **faible** de JOY0DAT, en `$DFF00B`), attends **5 images** (`attendre_vbl`), relis-le, et range la **différence**, en nombre signé sur 32 bits, dans D7. Pendant l'exercice, la souris va de 10 vers la droite puis de 3 vers la gauche.",
           "indices": ["`MOVE.B $DFF00B,D6` au début, `MOVE.B $DFF00B,D7` à la fin, puis `SUB.B D6,D7`.", "La différence est sur 8 bits : `EXT.W D7` puis `EXT.L D7` pour la rendre signée sur 32 bits."],
           "codeDepart": "@code.s#souris-depart", "solution": "@code.s#souris-solution",
           "check": { "type": "registers", "maxSteps": 400000, "terminer": true, "expected": { "D7": "$00000007" } },
           "machine": { "evenements": [{ "image": 1, "souris": { "dx": 10, "dy": 0 } }, { "image": 3, "souris": { "dx": -3, "dy": 0 } }] } },
-        { "type": "exercice", "id": "amiga-ch08-exo-clavier", "titre": "Le clavier à la main", "variante": "ecrire", "niveau": 3, "aRelire": true,
+        { "type": "exercice", "id": "amiga-ch08-exo-clavier", "titre": "Le clavier à la main", "variante": "ecrire", "niveau": 3,
           "enonce": "Le système est coupé (`prendre`) : attends un octet du clavier à la **CIA-A**, remets-le à l'endroit, range le **code de la touche** (bits 6-0) dans D7, fais la poignée de main, puis rends la main. Pendant l'exercice, on appuie sur **Échap** (code `$45`).",
           "indices": ["Attendre : bit 3 de l'ICR (`BTST #3,$BFED01`). Lire : `MOVE.B $BFEC01,D0`, puis `NOT.B D0` et `ROR.B #1,D0`.", "Poignée de main : `BSET #6,$BFEE01`, une petite pause (une boucle `DBF`), puis `BCLR #6,$BFEE01`."],
           "codeDepart": "@code.s#clavier-depart", "solution": "@code.s#clavier-solution",
@@ -121,7 +121,7 @@
     ]
   },
   "bonus": [
-    { "type": "exercice", "id": "amiga-ch08-bonus-attache", "titre": "Le sprite attaché", "variante": "corriger", "niveau": 3, "aRelire": true,
+    { "type": "exercice", "id": "amiga-ch08-bonus-attache", "titre": "Le sprite attaché", "variante": "corriger", "niveau": 3,
       "enonce": "Défi : les sprites 0 et 1 sont posés au même endroit. **Attachés**, ils forment un seul sprite de 15 couleurs, dont les 4 bits par pixel donnent les couleurs 16 à 31. Attache le sprite 1 au sprite 0 pour que le carré prenne la couleur **21** (violet).",
       "indices": ["Le bit 7 du second mot de contrôle du sprite **impair** l'attache au sprite pair.", "Sprite 0 donne les bits 0-1 (%01), sprite 1 les bits 2-3 (%01) : %0101 = 5, couleur 16 + 5 = 21. Second mot : `$8C81`."],
       "codeDepart": "@code.s#bonus-attache-depart", "solution": "@code.s#bonus-attache-solution",

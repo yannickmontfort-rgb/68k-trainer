@@ -181,4 +181,4 @@ MA_VBL: ADDQ.W  #1,COMPTEUR
 
 > Fiche complétée et corrigée le 21/10/2026 (Claude) : le TOS utilise la fin d'interruption
 > **logicielle** (`VR` = `$48`), pas automatique ; `BCLR #5,ISRA` avec la vraie adresse ; table des
-> 16 canaux, registres, timers, VBL — à relire.
+> 16 canaux, registres, timers, VBL.

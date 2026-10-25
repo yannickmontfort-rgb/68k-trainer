@@ -180,4 +180,4 @@ appelle le système par `JSR` dans les bibliothèques et non par `TRAP`
 (voir [la fiche système Amiga](../amiga/systeme-et-hardware.md)).
 
 > Fiche complétée et corrigée le 21/10/2026 (Claude) : exemple de passage par la pile recalculé,
-> MOVEM, LINK/UNLK, exceptions et table des vecteurs — à relire.
+> MOVEM, LINK/UNLK, exceptions et table des vecteurs.

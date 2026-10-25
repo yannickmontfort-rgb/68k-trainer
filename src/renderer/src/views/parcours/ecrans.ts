@@ -384,7 +384,9 @@ export function ecranExercice(el: HTMLElement, ex: ContenuExercice, ctx: Context
   })
   const btnEssayer = el.querySelector<HTMLButtonElement>('#btn-essayer')!
   btnEssayer.addEventListener('click', () => {
-    void essayerDansEmulateur(sourceActuel(), ex.id.split('-').pop() ?? ex.id, ctx.plateforme).then((r) => {
+    void essayerDansEmulateur(sourceActuel(), ex.id.split('-').pop() ?? ex.id, ctx.plateforme, undefined, (fin) => {
+      exportEl.textContent = fin
+    }).then((r) => {
       exportEl.hidden = false
       exportEl.textContent = r.message
     })

@@ -163,4 +163,4 @@ tester D0 avant de s'en servir.
 - Sauvegarder l'état d'origine **avant** de le modifier, et le restaurer dans l'ordre inverse.
 
 > Fiche complétée et corrigée le 21/10/2026 (Claude) : constantes, en-têtes, code relogeable,
-> optimisations sûres, sortie propre — à relire.
+> optimisations sûres, sortie propre.

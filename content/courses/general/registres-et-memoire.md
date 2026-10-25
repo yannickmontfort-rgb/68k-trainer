@@ -165,4 +165,4 @@ Le détail du positionnement des flags et des branchements qui les testent est d
 dans les chapitres « superviseur et vecteurs » du parcours.
 
 > Fiche complétée et corrigée le 21/10/2026 (Claude) : complément à 2, big endian, EXT/MOVEQ,
-> tableau des flags, modes du processeur — à relire.
+> tableau des flags, modes du processeur.

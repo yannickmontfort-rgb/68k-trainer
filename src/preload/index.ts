@@ -64,6 +64,12 @@ const api = {
     const f = (_e: unknown, p: { id: string; fait: number; total: number; etape: string }): void => rappel(p)
     ipcRenderer.on(IPC.emulateurProgression, f)
     return () => ipcRenderer.removeListener(IPC.emulateurProgression, f)
+  },
+  /** Fin d'un programme lancé par « Essayer dans Hatari / WinUAE » : code de retour et texte affiché. */
+  surFinEssai: (rappel: (f: { id: string; nom: string; code: number; sortie?: string }) => void): (() => void) => {
+    const f = (_e: unknown, fin: { id: string; nom: string; code: number; sortie?: string }): void => rappel(fin)
+    ipcRenderer.on(IPC.emulateurFin, f)
+    return () => ipcRenderer.removeListener(IPC.emulateurFin, f)
   }
 }
 

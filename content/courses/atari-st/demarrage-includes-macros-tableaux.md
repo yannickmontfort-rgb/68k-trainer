@@ -239,4 +239,4 @@ un symbole à chaque tour.
 
 > Fiche complétée et corrigée le 21/10/2026 (Claude) : `MOVE.L PILE,A7` remplacé par `LEA PILE,SP`,
 > macros selon la syntaxe Devpac, `\@`, assemblage conditionnel, table de sauts relogeable,
-> tableaux 2D — à relire.
+> tableaux 2D.

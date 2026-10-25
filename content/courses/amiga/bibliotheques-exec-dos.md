@@ -147,5 +147,4 @@ TAMPON:  DS.B   40
 
 > `%d` lit un **mot** et `%ld` un **long** : se tromper décale toutes les valeurs suivantes.
 
-> Fiche créée le 21/10/2026 (Claude) à partir des décalages vérifiés du simulateur (sources d'AROS)
-> — à relire.
+> Fiche créée le 21/10/2026 (Claude) à partir des décalages vérifiés du simulateur (sources d'AROS).

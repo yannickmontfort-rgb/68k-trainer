@@ -17,6 +17,8 @@ import { createReadStream, existsSync, mkdirSync, readdirSync, readFileSync, ren
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { EMULATEURS, type Emulateur, type IdEmulateur, type Paquet } from './catalogue'
+import { sortieAtari } from './lanceurAtari'
+export { sourceLanceurAtari } from './lanceurAtari'
 
 export interface EtatEmulateur {
   id: IdEmulateur
@@ -283,7 +285,7 @@ export function configUae(aros: string, partage: string): string {
 const processus = new Map<IdEmulateur, ChildProcess>()
 
 /** Arrête l'émulateur lancé par 68k Trainer (s'il tourne), puis le (re)lance : c'est son « reset ». */
-async function lancerProcessus(e: Emulateur, args: string[]): Promise<void> {
+async function lancerProcessus(e: Emulateur, args: string[], surSortie?: (texte: string) => void): Promise<ChildProcess> {
   const exe = join(dossierEmulateur(e.id), e.executable)
   if (!existsSync(exe)) throw new Error(`${e.nom} n'est pas installé.`)
   const ancien = processus.get(e.id)
@@ -294,12 +296,16 @@ async function lancerProcessus(e: Emulateur, args: string[]): Promise<void> {
       setTimeout(fini, 3000)
     })
   }
-  const p = spawn(exe, args, { cwd: dossierEmulateur(e.id), detached: true, stdio: 'ignore' })
+  const p = spawn(exe, args, { cwd: dossierEmulateur(e.id), detached: true, stdio: ['ignore', surSortie ? 'pipe' : 'ignore', 'ignore'] })
+  p.stdout?.setEncoding('latin1')
+  p.stdout?.on('data', (texte: string) => surSortie?.(texte))
+  p.stdout?.on('error', () => {})
   p.unref()
   processus.set(e.id, p)
   p.once('exit', () => {
     if (processus.get(e.id) === p) processus.delete(e.id)
   })
+  return p
 }
 
 function argumentsHatari(): string[] {
@@ -323,58 +329,56 @@ export async function lancer(id: IdEmulateur): Promise<void> {
   }
 }
 
-/**
- * Lanceur Atari (C:\ESSAI68K.PRG) : exécute le programme par Pexec, puis attend une touche avant
- * de rendre la main au bureau d'EmuTOS (sinon son affichage disparaît aussitôt). Le processus
- * principal l'assemble en .PRG.
- */
-export function sourceLanceurAtari(fichier: string): string {
-  return [
-    '    MOVEA.L 4(SP),A5            ; page de base du lanceur',
-    '    LEA     pile,SP',
-    '    MOVE.L  $C(A5),D0           ; rendre au TOS la mémoire inutile (Mshrink)',
-    '    ADD.L   $14(A5),D0',
-    '    ADD.L   $1C(A5),D0',
-    '    ADD.L   #$100,D0',
-    '    MOVE.L  D0,-(SP)',
-    '    MOVE.L  A5,-(SP)',
-    '    CLR.W   -(SP)',
-    '    MOVE.W  #$4A,-(SP)',
-    '    TRAP    #1',
-    '    LEA     12(SP),SP',
-    '    CLR.L   -(SP)               ; Pexec(0, programme, ligne de commande vide, environnement)',
-    '    PEA     vide(PC)',
-    '    PEA     nom(PC)',
-    '    CLR.W   -(SP)',
-    '    MOVE.W  #$4B,-(SP)',
-    '    TRAP    #1',
-    '    LEA     16(SP),SP',
-    '    PEA     message(PC)',
-    '    MOVE.W  #9,-(SP)            ; Cconws',
-    '    TRAP    #1',
-    '    ADDQ.L  #6,SP',
-    '    MOVE.W  #7,-(SP)            ; Crawcin : attendre une touche',
-    '    TRAP    #1',
-    '    ADDQ.L  #2,SP',
-    '    CLR.W   -(SP)               ; Pterm0',
-    '    TRAP    #1',
-    `nom:     DC.B    'C:\\${fichier}',0`,
-    'vide:    DC.B    0,0',
-    "message: DC.B    13,10,'(Appuie sur une touche pour revenir au bureau)',0",
-    '    EVEN',
-    '    SECTION BSS',
-    '    DS.L    256',
-    'pile:',
-    ''
-  ].join('\n')
+/** Ce que le programme essayé a laissé : son code de retour et, sur l'Atari, son texte affiché. */
+export interface FinEssai {
+  id: IdEmulateur
+  nom: string
+  code: number
+  sortie?: string
+}
+
+/** Code de retour écrit par le lanceur : C:\ESSAI68K.RET (long) ou PARTAGE:essai/retour (texte). */
+function fichierRetour(id: IdEmulateur): string {
+  return id === 'hatari' ? join(dossierPartage('atari'), 'ESSAI68K.RET') : join(dossierPartage('amiga'), 'essai', 'retour')
+}
+
+function lireRetour(id: IdEmulateur): number | null {
+  try {
+    const octets = readFileSync(fichierRetour(id))
+    if (id === 'hatari') return octets.length >= 4 ? octets.readInt32BE(0) : null
+    const code = parseInt(octets.toString('latin1').trim(), 10)
+    return Number.isNaN(code) ? null : code
+  } catch {
+    return null
+  }
+}
+
+/** Guette le fichier de retour tant que l'émulateur tourne (au plus 30 minutes). */
+function guetterFin(id: IdEmulateur, nom: string, p: ChildProcess, sortie: () => string, fin: (f: FinEssai) => void): void {
+  const debut = Date.now()
+  const minuterie = setInterval(() => {
+    const code = lireRetour(id)
+    const arrete = p.exitCode !== null || p.signalCode !== null || processus.get(id) !== p
+    if (code === null && !arrete && Date.now() - debut < 30 * 60 * 1000) return
+    clearInterval(minuterie)
+    if (code !== null) fin({ id, nom, code, sortie: id === 'hatari' ? sortieAtari(sortie()) : undefined })
+  }, 500)
 }
 
 /**
  * Essaie un programme : il est rangé dans le dossier de partage (sous son nom) et lancé
  * automatiquement au démarrage de la machine émulée.
  */
-export async function essayer(id: IdEmulateur, octets: Uint8Array, nom: string, lanceurAtari?: Uint8Array): Promise<string> {
+export async function essayer(
+  id: IdEmulateur,
+  octets: Uint8Array,
+  nom: string,
+  lanceurAtari?: Uint8Array,
+  fin?: (f: FinEssai) => void
+): Promise<string> {
   const e = EMULATEURS[id]
+  rmSync(fichierRetour(id), { force: true })
+  let brut = ''
   if (id === 'hatari') {
     const d = preparerPartage('atari')
     const fichier = `${nom}.PRG`
@@ -386,7 +390,11 @@ export async function essayer(id: IdEmulateur, octets: Uint8Array, nom: string, 
       writeFileSync(join(d, 'ESSAI68K.PRG'), lanceurAtari)
       auto = 'ESSAI68K.PRG'
     }
-    await lancerProcessus(e, [...argumentsHatari(), '--auto', 'C:\\' + auto])
+    // --conout 2 : le texte affiché sur la console du ST arrive aussi sur la sortie de Hatari
+    const p = await lancerProcessus(e, [...argumentsHatari(), '--conout', '2', '--auto', 'C:\\' + auto], (t) => {
+      if (brut.length < 200000) brut += t
+    })
+    if (fin && lanceurAtari) guetterFin(id, nom, p, () => brut, fin)
     return join(d, fichier)
   }
   const d = preparerPartage('amiga')
@@ -394,9 +402,15 @@ export async function essayer(id: IdEmulateur, octets: Uint8Array, nom: string, 
   // Le programme s'ouvre dans une fenêtre console qui reste affichée à la fin ; le script s'efface
   writeFileSync(
     join(d, 'essai', 'lancer'),
-    `Delete >NIL: PARTAGE:essai/lancer\nRun >"CON:20/20/600/220/68k Trainer : ${nom}/WAIT/CLOSE" PARTAGE:${nom}\n`
+    `Delete >NIL: PARTAGE:essai/lancer\nRun >"CON:20/20/600/220/68k Trainer : ${nom}/WAIT/CLOSE" Execute PARTAGE:essai/programme\n`
   )
-  await lancerProcessus(e, ['-f', join(dossierEmulateur(id), '68k-trainer.uae')])
+  // Le programme, puis son code de retour (variable RC du Shell), écrit pour 68k Trainer
+  writeFileSync(
+    join(d, 'essai', 'programme'),
+    `FailAt 1000000\nPARTAGE:${nom}\nEcho >PARTAGE:essai/retour "$RC"\nEcho "*N(Code de retour : $RC)"\n`
+  )
+  const p = await lancerProcessus(e, ['-f', join(dossierEmulateur(id), '68k-trainer.uae')])
+  if (fin) guetterFin(id, nom, p, () => '', fin)
   return join(d, nom)
 }
 

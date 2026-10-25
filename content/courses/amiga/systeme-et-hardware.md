@@ -238,4 +238,4 @@ Paula. Les exercices sont aussi dans l'onglet **Exercices libres**.
 > Fiche complétée et corrigée le 21/10/2026 (Claude) : `OpenWindow` est en `-204` (et non `-156`),
 > `DC.L title(pc)` n'était pas valable, somme du bootblock corrigée (`$FFFFFFFF` avec report de
 > retenue), Rob Northen, option « Immediate Blitter » ; ajouts : AllocMem, ExecBase, lancement
-> Shell/Workbench, codes de retour, environnement 68k Trainer — à relire.
+> Shell/Workbench, codes de retour, environnement 68k Trainer.

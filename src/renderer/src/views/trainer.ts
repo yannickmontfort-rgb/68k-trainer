@@ -268,7 +268,10 @@ export function renderTrainer(container: HTMLElement, initialProgram?: string): 
   })
   container.querySelector('#btn-essayer')!.addEventListener('click', () => {
     statusEl.textContent = 'Préparation de l’essai…'
-    void essayerDansEmulateur(editor.getValue(), machine === 'amiga' ? 'bac_a_sable' : 'BACASABL', machine, dossierSource()).then((r) => {
+    void essayerDansEmulateur(editor.getValue(), machine === 'amiga' ? 'bac_a_sable' : 'BACASABL', machine, dossierSource(), (fin) => {
+      statusEl.textContent = 'Programme terminé'
+      errorsEl.textContent = fin
+    }).then((r) => {
       statusEl.textContent = r.ok ? 'Essai lancé' : 'Essai impossible'
       errorsEl.textContent = r.message
     })

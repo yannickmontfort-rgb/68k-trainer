@@ -219,6 +219,7 @@ html, body, #app {
   font-size: 12.5px;
   max-height: 120px;
   overflow-y: auto;
+  white-space: pre-wrap;
   border-top: 1px solid #5a2a2a;
 }
 

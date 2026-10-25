@@ -58,11 +58,26 @@ async function exporterAmiga(source: string, nom: string, dossier?: string): Pro
   return { ok: true, message: `Programme enregistré : ${enregistre.chemin}${conseils.join('\n')}` }
 }
 
+let arreterGuet: (() => void) | undefined
+
+function messageFin(code: number, sortie?: string): string {
+  const texte = sortie ? `
+Il a affiché :
+${sortie}` : ''
+  return `Programme terminé, code de retour ${code}.${texte}`
+}
+
 /**
  * « Essayer dans Hatari / WinUAE » : le programme est assemblé, déposé dans le dossier de partage
  * (Documents\68k Trainer\Atari ou Amiga) et lancé au démarrage de l'émulateur.
  */
-export async function essayerDansEmulateur(source: string, nom: string, plateforme: Plateforme = 'atari', dossier?: string): Promise<ResultatExport> {
+export async function essayerDansEmulateur(
+  source: string,
+  nom: string,
+  plateforme: Plateforme = 'atari',
+  dossier?: string,
+  quandFini?: (message: string) => void
+): Promise<ResultatExport> {
   const id = plateforme === 'amiga' ? 'winuae' : 'hatari'
   const etat = (await window.api.emulateursEtat()).find((e) => e.id === id)
   if (etat && !etat.disponible) {
@@ -74,8 +89,23 @@ export async function essayerDansEmulateur(source: string, nom: string, platefor
   if (!etat?.installe) {
     return { ok: false, message: `${etat?.nom ?? id} n'est pas installé : installe-le depuis l'onglet « Émulateurs ».` }
   }
-  const r = await window.api.emulateurEssayer(id, source, plateforme === 'amiga' ? nomAmiga(nom) : nomTos(nom), dossier)
-  if (!r.ok) return { ok: false, message: r.erreur ?? 'Essai impossible.' }
+  const nomFichier = plateforme === 'amiga' ? nomAmiga(nom) : nomTos(nom)
+  // Un seul essai guetté à la fois : le précédent est oublié
+  arreterGuet?.()
+  arreterGuet = quandFini
+    ? window.api.surFinEssai((fin) => {
+        if (fin.id !== id || fin.nom !== nomFichier) return
+        arreterGuet?.()
+        arreterGuet = undefined
+        quandFini(messageFin(fin.code, fin.sortie))
+      })
+    : undefined
+  const r = await window.api.emulateurEssayer(id, source, nomFichier, dossier)
+  if (!r.ok) {
+    arreterGuet?.()
+    arreterGuet = undefined
+    return { ok: false, message: r.erreur ?? 'Essai impossible.' }
+  }
   return {
     ok: true,
     message:

@@ -256,4 +256,4 @@ sophistiquées : c'est l'origine de la scène démo, toujours vivante aujourd'hu
 > Fiche complétée et corrigée le 21/10/2026 (Claude) : les sprites sont lus par leur DMA (pas par
 > le Copper) et une paire attachée donne 15 couleurs ; EHB demande 6 plans ; ajouts : prendre/rendre
 > la machine, format des instructions Copper, exemple de liste et de copie au Blitter, minterms,
-> table des interruptions, clavier, joystick — à relire.
+> table des interruptions, clavier, joystick.

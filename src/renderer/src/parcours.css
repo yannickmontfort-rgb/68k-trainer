@@ -1282,3 +1282,8 @@
   flex-basis: 100%;
   color: var(--texte-doux);
 }
+
+/* Messages d’export et d’essai : retours à la ligne et texte affiché par le programme */
+.export-prg {
+  white-space: pre-wrap;
+}

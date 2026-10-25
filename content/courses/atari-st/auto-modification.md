@@ -106,4 +106,4 @@ Il faut alors **vider le cache** après la modification :
 
 > Fiche complétée et corrigée le 21/10/2026 (Claude) : `ADD.W #2,AFFICHE+4` remplacé par
 > `ADDQ.L #2,AFFICHE+2` (le long entier), `NOP` = 4 cycles, encodages courants, piège du cache des
-> 68020 et suivants — à relire.
+> 68020 et suivants.
