@@ -233,7 +233,7 @@ de la scène Amiga, pas comme technique à reproduire.
 
 Le parcours Amiga de 68k Trainer met tout cela en exercices : chapitre 4 (le système : exec, dos,
 messages), chapitre 5 (prendre et rendre la machine), puis le Copper, le Blitter, les sprites et
-Paula. Les exercices sont aussi dans l'onglet **Exercices libres**.
+Paula.
 
 > Fiche complétée et corrigée le 21/10/2026 (Claude) : `OpenWindow` est en `-204` (et non `-156`),
 > `DC.L title(pc)` n'était pas valable, somme du bootblock corrigée (`$FFFFFFFF` avec report de

@@ -116,7 +116,8 @@
       { "id": "q5", "enonce": "Quelle expression donne le décalage du groupe qui contient le pixel X ?", "choix": ["X ÷ 2", "(X ÷ 16) × 8", "X × 8"], "bonne": 1, "explication": "Division entière par 16 d'abord, puis × 8. X ÷ 2 ne tombe juste que si X est un multiple de 16." },
       { "id": "q6", "enonce": "Combien de couleurs différentes un ST (STF) peut-il produire ?", "choix": ["16", "512", "4 096"], "bonne": 1, "explication": "3 bits par composante : 8 × 8 × 8 = 512 (dont 16 à l'écran). 4 096, c'est le STE." },
       { "id": "q7", "enonce": "Quelle couleur donne la valeur de palette `$770` ?", "choix": ["Jaune", "Cyan", "Violet"], "bonne": 0, "explication": "Rouge 7 + vert 7 + bleu 0 = jaune." },
-      { "id": "q8", "enonce": "Pourquoi changer la palette est-il si rapide ?", "choix": ["Parce que le Shifter redessine l'écran tout seul", "Parce qu'on modifie un seul registre au lieu de milliers d'octets", "Parce que la palette est en ROM"], "bonne": 1, "explication": "Tous les pixels d'un même numéro changent de couleur en même temps." }
+      { "id": "q8", "enonce": "Pourquoi changer la palette est-il si rapide ?", "choix": ["Parce que le Shifter redessine l'écran tout seul", "Parce qu'on modifie un seul registre au lieu de milliers d'octets", "Parce que la palette est en ROM"], "bonne": 1, "explication": "Tous les pixels d'un même numéro changent de couleur en même temps." },
+      { "id": "q9", "enonce": "Sur un 1040 STF, on écrit `$0FFF` dans un registre de couleur, puis on le relit. Que lit-on ?", "choix": ["$0FFF", "$0777", "$0000"], "bonne": 1, "explication": "Le Shifter du ST ne garde que 3 bits par composante, au format `0RRR0GGG0BBB` : les bits en trop sont perdus et l'on relit `$0777`. Le STE, lui, en garde 4." }
     ]
   },
   "bonus": [

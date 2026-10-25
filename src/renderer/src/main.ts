@@ -8,7 +8,6 @@ import { chargerProgression, choisirMachine, machineActive, oublierProgression }
 import { renderParcours } from './views/parcours'
 import { renderTrainer } from './views/trainer'
 import { renderCours } from './views/cours'
-import { renderExercices } from './views/exercices'
 import { renderApropos } from './views/apropos'
 import { renderEmulateurs } from './views/emulateurs'
 import { renderChoixProfil } from './views/profils'
@@ -16,14 +15,13 @@ import { echapper } from './views/parcours/markdown'
 
 registerM68kLanguage()
 
-type ViewId = 'parcours' | 'trainer' | 'cours' | 'exercices' | 'emulateurs' | 'apropos'
+type ViewId = 'parcours' | 'trainer' | 'cours' | 'emulateurs' | 'apropos'
 
-// « Fiches » et « Exercices libres » : les cours et exercices du parcours de la machine, plus les fiches de référence et exercices d'entraînement.
+// « Fiches » : les cours du parcours de la machine, plus les fiches de référence.
 const VIEWS: { id: ViewId; label: string; title: string; render: (el: HTMLElement) => () => void }[] = [
   { id: 'parcours', label: 'Parcours', title: 'Le parcours guidé, chapitre par chapitre', render: renderParcours },
   { id: 'trainer', label: 'Bac à sable', title: 'Écris et exécute librement ton propre code', render: renderTrainer },
   { id: 'cours', label: 'Fiches', title: 'Tous les cours du parcours, et les fiches de référence', render: renderCours },
-  { id: 'exercices', label: 'Exercices libres', title: 'Tous les exercices du parcours, dans l’ordre que tu veux', render: renderExercices },
   { id: 'emulateurs', label: 'Émulateurs', title: 'Installer et lancer Hatari (Atari ST) et WinUAE (Amiga)', render: renderEmulateurs },
   { id: 'apropos', label: 'À propos', title: 'Version, crédits et gestion de ton profil', render: renderApropos }
 ]
