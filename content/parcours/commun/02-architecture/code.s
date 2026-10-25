@@ -349,3 +349,10 @@ START:
 START:
     LEA     $DFF000,A5
     RTS
+
+;=== rappel
+START:
+    MOVEQ   #7,D0
+    ADD.W   #3,D0
+    SUB.W   #10,D0
+    RTS

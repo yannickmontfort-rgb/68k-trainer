@@ -2,8 +2,24 @@
   "id": "atari-ch02",
   "titre": "Architecture du 68000 et notions fondamentales",
   "plateforme": "commun",
-  "resume": "Ce que le 68000 manipule (bits, octets, mots, mots longs), où il le range (la mémoire, avec sa règle d'or de l'alignement pair), avec quoi il travaille (ses registres) et comment il résume chaque résultat (les flags du registre d'état). On termine par la pile, indispensable dès qu'un programme grandit. [[atari:Correspond au module 1 du manuel Atari ST.|amiga:Correspond au chapitre 1 du manuel Amiga.]]",
+  "resume": "Les tailles de données, la mémoire, les registres, les flags et la pile. [[atari:Module 1 du manuel Atari ST.|amiga:Chapitre 1 du manuel Amiga.]]",
   "notions": [
+    {
+      "id": "atari-ch02-n0",
+      "titre": "Rappel du chapitre 1",
+      "contenus": [
+        {
+          "type": "prediction", "id": "atari-ch02-rappel", "titre": "Ce que tu sais déjà",
+          "introduction": "Trois questions sur le chapitre 1, sans relire le cours. Se tromper ici n'est pas grave : c'est en cherchant qu'on retient.",
+          "code": "@code.s#rappel",
+          "questions": [
+            { "id": "q1", "enonce": "Que vaut D0 à la fin ?", "choix": ["0", "10", "20"], "bonne": 0, "explication": "7 + 3 − 10 = 0.", "verification": { "D0": "$00000000" } },
+            { "id": "q2", "enonce": "On enlève le `#` de `ADD.W #3,D0`. Que se passe-t-il ?", "choix": ["L'assembleur refuse la ligne", "Le 68000 lit un mot à l'adresse 3 : erreur d'adresse", "Rien ne change"], "bonne": 1, "explication": "Sans `#`, 3 est une adresse, pas une valeur. Et un mot à une adresse impaire provoque une erreur d'adresse." },
+            { "id": "q3", "enonce": "`MOVX.W #3,D0` est…", "choix": ["une erreur de syntaxe : l'assembleur la refuse", "une erreur de logique : le programme tourne mais calcule faux"], "bonne": 0, "explication": "`MOVX` n'existe pas : l'assembleur s'arrête avant toute exécution." }
+          ]
+        }
+      ]
+    },
     {
       "id": "atari-ch02-n1",
       "titre": "Bits, octets, mots et mots longs",
@@ -11,20 +27,20 @@
         { "type": "cours", "id": "atari-ch02-cours-unites", "titre": "Tailles, bases et nombres négatifs", "fichier": "01-unites.md", "source": "Reformulé d'après le manuel Atari ST v2 (§ 1.1), le cours EPITA de David Bouchet et notation_hexadecimale.txt" },
         {
           "type": "exemple", "id": "atari-ch02-ex-unites", "titre": "Une opération ne touche que sa taille",
-          "introduction": "Observe D0 à chaque pas : selon la taille de l'instruction, seule une partie du registre change.",
+          "introduction": "Avance pas à pas et regarde D0.",
           "code": "@code.s#unites-exemple",
           "explications": [
             { "ligne": 2, "texte": "En `.L`, les 32 bits de D0 sont remplacés : D0 = `$12345678`." },
-            { "ligne": 3, "texte": "En `.B`, seul l'**octet de poids faible** change : D0 = `$123456FF`. Les 24 autres bits sont intacts." },
-            { "ligne": 4, "texte": "En `.W`, seul le **mot de poids faible** change : D0 = `$1234ABCD`." },
-            { "ligne": 5, "texte": "−1 sur 32 bits, en complément à deux, c'est `$FFFFFFFF` : tous les bits à 1." },
-            { "ligne": 6, "texte": "`%10100011` se lit par paquets de 4 bits : `1010` = A, `0011` = 3. D2 = `$000000A3`." }
+            { "ligne": 3, "texte": "En `.B`, seul l'octet faible change : D0 = `$123456FF`." },
+            { "ligne": 4, "texte": "En `.W`, seul le mot faible change : D0 = `$1234ABCD`." },
+            { "ligne": 5, "texte": "−1 sur 32 bits : `$FFFFFFFF`, tous les bits à 1." },
+            { "ligne": 6, "texte": "`1010` = A, `0011` = 3 : D2 = `$000000A3`." }
           ],
-          "conclusion": "Retiens : `.B` et `.W` ne modifient que la partie basse d'un registre de données. Si tu réutilises ensuite ce registre en `.L`, la partie haute « oubliée » sera toujours là."
+          "conclusion": "`.B` et `.W` ne changent que le bas du registre. Le haut garde ses anciens bits."
         },
         {
           "type": "prediction", "id": "atari-ch02-pred-unites", "titre": "Morceaux de registre",
-          "introduction": "Suis D0 et D1 instruction par instruction, sur papier si besoin.",
+          "introduction": "Suis D0 et D1 sur papier, puis vérifie.",
           "code": "@code.s#unites-prediction",
           "questions": [
             { "id": "q1", "enonce": "Que vaut D0 à la fin ?", "choix": ["$112233AA", "$1122BBCC", "$0000BBCC", "$BBCC33AA"], "bonne": 1, "explication": "`MOVE.B` remplace l'octet faible ($44 → $AA), puis `MOVE.W` remplace tout le mot faible ($33AA → $BBCC). Le mot fort $1122 n'a jamais été touché.", "verification": { "D0": "$1122BBCC" } },
@@ -55,20 +71,20 @@
         { "type": "cours", "id": "atari-ch02-cours-memoire", "titre": "Adresses, big endian et directives DC/DS/EVEN", "fichier": "02-memoire.md", "source": "Reformulé d'après le manuel Atari ST v2 (§ 1.2, 2.1, 6.2), le manuel v1 et le cours EPITA (directives)" },
         {
           "type": "exemple", "id": "atari-ch02-ex-memoire", "titre": "Le poids fort d'abord",
-          "introduction": "La vue **Mémoire** du panneau de droite est placée sur l'adresse `$2000`. Regarde les octets s'écrire, puis être relus un par un.",
+          "introduction": "La vue Mémoire, à droite, montre l'adresse `$2000`. Regarde les octets s'écrire.",
           "code": "@code.s#memoire-exemple",
           "machine": { "memoire": 8192 },
           "explications": [
-            { "ligne": 2, "texte": "Quatre octets s'allument en $2000-$2003 : `12 34 56 78`. L'octet de poids fort est à l'adresse la plus basse (*big endian*)." },
+            { "ligne": 2, "texte": "`12 34 56 78` s'écrit en $2000-$2003 : le poids fort d'abord." },
             { "ligne": 3, "texte": "L'octet en $2000 est `$12` : D0 = `$00000012`." },
             { "ligne": 4, "texte": "L'octet en $2003 est `$78`." },
             { "ligne": 5, "texte": "Le mot en $2002 (adresse paire) est `$5678`." }
           ],
-          "conclusion": "Sur 68000, la mémoire se lit dans l'ordre naturel de l'écriture des nombres. Note que toutes les lectures de mots se font à des adresses **paires**."
+          "conclusion": "La mémoire se lit dans l'ordre où on écrit le nombre. Les mots sont lus à des adresses paires."
         },
         {
           "type": "prediction", "id": "atari-ch02-pred-memoire", "titre": "Trois lectures de la même donnée",
-          "introduction": "Le programme lit les mêmes octets (`$01 $02 $03 $04`) avec trois tailles différentes. `VALEURS` est une adresse paire.",
+          "introduction": "Les mêmes octets, `$01 $02 $03 $04`, lus avec trois tailles. `VALEURS` est une adresse paire.",
           "code": "@code.s#memoire-prediction",
           "questions": [
             { "id": "q1", "enonce": "Que vaut D1 ?", "choix": ["$00000102", "$00000201", "$00000001"], "bonne": 0, "explication": "Un mot, c'est deux octets lus dans l'ordre : $01 puis $02.", "verification": { "D1": "$00000102" } },
@@ -76,7 +92,7 @@
           ]
         },
         { "type": "exercice", "id": "atari-ch02-exo-even", "titre": "[[atari:Les trois bombes|amiga:Le Guru]] de l'étiquette seule", "variante": "corriger", "niveau": 1,
-          "enonce": "Ce programme doit mettre **[[atari:1040|amiga:500]]** dans D0, mais il plante avec une **erreur d'adresse**. L'assembleur a pourtant aligné le `DC.W` (regarde son avertissement)… mais pas l'étiquette `NOMBRE`, seule sur sa ligne. Lance le pas à pas pour voir à quelle adresse `MOVE.W` lit, puis corrige en **ajoutant une seule ligne**.",
+          "enonce": "Ce programme doit mettre [[atari:1040|amiga:500]] dans D0, mais il s'arrête sur une erreur d'adresse. L'assembleur a aligné le `DC.W` (lis son avertissement), mais pas l'étiquette `NOMBRE`, seule sur sa ligne. Regarde en pas à pas à quelle adresse lit `MOVE.W`, puis corrige en ajoutant une ligne.",
           "indices": ["Compte les octets de `'[[atari:ST|amiga:KS]]',0` : à quelle adresse tombe l'étiquette `NOMBRE` ?", "Ajoute `EVEN` juste avant `NOMBRE:` : l'étiquette et la donnée seront toutes les deux à une adresse paire."],
           "codeDepart": "@code.s#memoire-even-depart", "solution": "@code.s#memoire-even-solution",
           "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "D0": "$00000410" } },
@@ -101,20 +117,20 @@
         { "type": "cours", "id": "atari-ch02-cours-registres", "titre": "Données, adresses et compteur de programme", "fichier": "03-registres.md", "source": "Reformulé d'après le manuel Atari ST v2 (§ 1.3), le cours EPITA (II.3) et le cours du Féroce Lapin" },
         {
           "type": "exemple", "id": "atari-ch02-ex-registres", "titre": "Registres de données et d'adresse",
-          "introduction": "Compare le comportement d'un registre de données et d'un registre d'adresse face à une opération en `.W`.",
+          "introduction": "La même opération en `.W` sur un registre de données, puis sur un registre d'adresse.",
           "code": "@code.s#registres-exemple",
           "explications": [
             { "ligne": 2, "texte": "D0 = `$FFFFFFFF`." },
-            { "ligne": 3, "texte": "Registre de **données** en `.W` : seul le mot faible change. D0 = `$FFFF0001`." },
-            { "ligne": 4, "texte": "Registre d'**adresse** en `.W` : tout le registre est rempli. Le bit 15 de `$1234` vaut 0, il est recopié vers le haut : A0 = `$00001234`." },
-            { "ligne": 5, "texte": "Le bit 15 de `$8000` vaut 1 : A1 = `$FFFF8000`. C'est l'**extension de signe**. Les flags, eux, n'ont pas bougé." },
+            { "ligne": 3, "texte": "Registre de données : seul le mot faible change. D0 = `$FFFF0001`." },
+            { "ligne": 4, "texte": "Registre d'adresse : tout le registre est rempli. Le bit 15 de `$1234` vaut 0, recopié vers le haut : A0 = `$00001234`." },
+            { "ligne": 5, "texte": "Le bit 15 de `$8000` vaut 1 : A1 = `$FFFF8000`. Les flags n'ont pas bougé." },
             { "ligne": 6, "texte": "`LEA` charge une adresse : A2 = `[[atari:$000F8000`, le début de l'écran d'un 1040 ST|amiga:$00DFF000`, l'adresse des puces custom de l'Amiga]]." }
           ],
-          "conclusion": "Pour une adresse au-delà de `$7FFF`, utilise `LEA` ou `MOVEA.L`, jamais `MOVEA.W` : l'extension de signe te donnerait une adresse en `$FFFFxxxx`."
+          "conclusion": "Au-delà de `$7FFF`, charge une adresse avec `LEA` ou `MOVEA.L`. `MOVEA.W` donnerait `$FFFFxxxx`."
         },
         {
           "type": "prediction", "id": "atari-ch02-pred-registres", "titre": "Extension ou pas ?",
-          "introduction": "Pense à la différence entre registres de données et registres d'adresse.",
+          "introduction": "Un registre de données, puis un registre d'adresse.",
           "code": "@code.s#registres-prediction",
           "questions": [
             { "id": "q1", "enonce": "Que vaut D1 à la fin ?", "choix": ["$00000005", "$FFFFFF05", "$FFFFFFFE"], "bonne": 1, "explication": "`MOVEQ #-2` donne $FFFFFFFE, puis `MOVE.B #5` ne remplace que l'octet faible : $FFFFFF05.", "verification": { "D1": "$FFFFFF05" } },
@@ -122,7 +138,7 @@
           ]
         },
         { "type": "exercice", "id": "atari-ch02-exo-movea", "titre": "Pas d'octet dans un registre d'adresse", "variante": "corriger", "niveau": 1,
-          "enonce": "Ce programme doit mettre **1** dans A0, mais il ne s'assemble pas. Lis le message d'erreur et corrige.",
+          "enonce": "Ce programme doit mettre 1 dans A0, mais il ne s'assemble pas. Lis le message d'erreur et corrige.",
           "indices": ["Les registres d'adresse n'acceptent que `.W` ou `.L`.", "`MOVEA.L #1,A0` (ou `MOVEA.W #1,A0`)."],
           "codeDepart": "@code.s#registres-corriger-depart", "solution": "@code.s#registres-corriger-solution",
           "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "A0": "$00000001" } } },
@@ -133,11 +149,11 @@
           "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "A0": "$000F8000" } },
           "variantes": { "amiga": {
             "titre": "Pointer sur les puces custom",
-            "enonce": "Tous les registres des puces de l'Amiga (écran, Copper, Blitter, son…) sont rangés à partir de l'adresse `$DFF000`. Les programmeurs de démos gardent cette adresse dans **A5** pour tout le programme. Mets-la dans A5. Attention au piège de l'extension de signe.",
+            "enonce": "Les registres des puces de l'Amiga commencent à l'adresse `$DFF000`. Les programmeurs de démos la gardent dans A5 pendant tout le programme. Mets-la dans A5, sans tomber dans le piège de l'extension de signe.",
             "indices": ["`MOVEA.W` ne convient pas pour une adresse aussi grande.", "`LEA $DFF000,A5` ou `MOVEA.L #$DFF000,A5`."],
             "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "A5": "$00DFF000" } } } } },
         { "type": "exercice", "id": "atari-ch02-exo-extension", "titre": "Utiliser l'extension de signe", "variante": "ecrire", "niveau": 3,
-          "enonce": "Avec **une seule instruction de taille `.W`**, mets `$FFFFFFF0` dans A1.",
+          "enonce": "Avec une seule instruction en `.W`, mets `$FFFFFFF0` dans A1.",
           "indices": ["Quel mot de 16 bits, étendu en signe, donne $FFFFFFF0 ?", "`MOVEA.W #$FFF0,A1` (ou `#-16`)."],
           "codeDepart": "@code.s#registres-extension-depart", "solution": "@code.s#registres-extension-solution",
           "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "A1": "$FFFFFFF0" } } }
@@ -150,21 +166,21 @@
         { "type": "cours", "id": "atari-ch02-cours-sr", "titre": "SR, CCR et les cinq flags", "fichier": "04-sr.md", "source": "Reformulé d'après le manuel Atari ST v2 (§ 1.4), le cours EPITA (II.3.4) et le M68000PRM" },
         {
           "type": "exemple", "id": "atari-ch02-ex-flags", "titre": "Les flags en action",
-          "introduction": "Garde un œil sur la ligne **Registre d'état** : les flags allumés sont en bleu.",
+          "introduction": "Regarde la ligne Registre d'état : un flag à 1 est en bleu.",
           "code": "@code.s#sr-exemple",
           "explications": [
             { "ligne": 2, "texte": "Le résultat vaut 0 : **Z = 1**." },
-            { "ligne": 3, "texte": "`$80` a son bit 7 à 1 : en signé, c'est négatif. **N = 1**, Z = 0." },
-            { "ligne": 4, "texte": "D2 = `$7F` = +127, le plus grand octet signé positif. N = 0." },
-            { "ligne": 5, "texte": "127 + 1 = 128 ne tient pas dans un octet signé : le résultat `$80` se lit −128. **V = 1** (débordement signé) et **N = 1**. En non signé, 128 est juste : C = 0." },
+            { "ligne": 3, "texte": "`$80` a son bit 7 à 1 : N = 1." },
+            { "ligne": 4, "texte": "D2 = `$7F`, soit 127 : le plus grand octet signé." },
+            { "ligne": 5, "texte": "127 + 1 donne `$80`, qui se lit −128 en signé : V = 1. En non signé, 128 est juste : C = 0." },
             { "ligne": 6, "texte": "D3 = `$FF` (255, ou −1 en signé)." },
-            { "ligne": 7, "texte": "255 + 1 = 256 ne tient pas dans un octet : le résultat est `$00` avec une **retenue**. **C = 1**, **X = 1**, **Z = 1**. En signé, −1 + 1 = 0 est juste : V = 0." }
+            { "ligne": 7, "texte": "255 + 1 donne `$00` avec une retenue : C = X = Z = 1. En signé, −1 + 1 = 0 est juste : V = 0." }
           ],
-          "conclusion": "**C** signale qu'un résultat **non signé** est faux, **V** qu'un résultat **signé** est faux. Le processeur calcule les deux à chaque fois : c'est à toi de regarder le bon."
+          "conclusion": "C dit qu'un résultat non signé est faux, V qu'un résultat signé est faux. Le processeur calcule les deux ; à toi de lire le bon."
         },
         {
           "type": "prediction", "id": "atari-ch02-pred-flags", "titre": "3 − 5 sur un octet",
-          "introduction": "Prédis le résultat et les flags de cette soustraction, puis vérifie.",
+          "introduction": "Prédis le résultat et les flags, puis vérifie.",
           "code": "@code.s#sr-prediction",
           "questions": [
             { "id": "q1", "enonce": "Que vaut D0 à la fin ?", "choix": ["$00000002", "$000000FE", "$FFFFFFFE"], "bonne": 1, "explication": "3 − 5 = −2, soit `$FE` sur un octet. Seul l'octet faible de D0 est écrit.", "verification": { "D0": "$000000FE" } },
@@ -173,17 +189,17 @@
           ]
         },
         { "type": "exercice", "id": "atari-ch02-exo-z", "titre": "Allume le flag Z", "variante": "completer", "niveau": 1,
-          "enonce": "Remplace le `0` de la soustraction pour que le flag **Z** soit à 1 à la fin.",
+          "enonce": "Remplace le `0` de la soustraction pour que Z vaille 1 à la fin.",
           "indices": ["Z vaut 1 quand le résultat est nul.", "5 − 5 = 0."],
           "codeDepart": "@code.s#sr-completer-depart", "solution": "@code.s#sr-completer-solution",
           "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "Z": "$1" } } },
         { "type": "exercice", "id": "atari-ch02-exo-v", "titre": "Provoque un débordement", "variante": "ecrire", "niveau": 2,
-          "enonce": "Écris deux instructions qui terminent avec le flag **V = 1**, grâce à une addition en `.B`.",
+          "enonce": "Écris deux instructions qui finissent avec V = 1, grâce à une addition en `.B`.",
           "indices": ["Les octets signés vont de −128 à +127.", "Additionne deux positifs dont la somme dépasse 127, par exemple $70 + $20."],
           "codeDepart": "@code.s#sr-debordement-depart", "solution": "@code.s#sr-debordement-solution",
           "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "V": "$1" } } },
         { "type": "exercice", "id": "atari-ch02-exo-c", "titre": "Retenue sans débordement", "variante": "ecrire", "niveau": 3,
-          "enonce": "Avec une addition en `.W`, termine avec **C = 1** mais **V = 0** : un résultat faux en non signé, mais juste en signé.",
+          "enonce": "Avec une addition en `.W`, finis avec C = 1 et V = 0 : faux en non signé, juste en signé.",
           "indices": ["Quel mot vaut à la fois 65 535 en non signé et −1 en signé ?", "$FFFF + 1."],
           "codeDepart": "@code.s#sr-retenue-depart", "solution": "@code.s#sr-retenue-solution",
           "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "C": "$1", "V": "$0" } } }
@@ -196,16 +212,16 @@
         { "type": "cours", "id": "atari-ch02-cours-pile", "titre": "Empiler, dépiler, rester équilibré", "fichier": "05-pile.md", "source": "Reformulé d'après le manuel Atari ST v1 (§ 1.5) et le cours EPITA (VI)" },
         {
           "type": "exemple", "id": "atari-ch02-ex-pile", "titre": "Dernier entré, premier sorti",
-          "introduction": "Regarde la colonne **Pile** : le sommet (A7) descend à chaque empilement et remonte à chaque dépilement.",
+          "introduction": "Regarde la colonne Pile et la valeur de A7.",
           "code": "@code.s#pile-exemple",
           "explications": [
-            { "ligne": 2, "texte": "A7 diminue de 4, puis `$11111111` est écrit au nouveau sommet. Juste en dessous (adresse plus haute), on voit l'adresse de retour vers [[atari:le TOS|amiga:le CLI]]." },
-            { "ligne": 3, "texte": "A7 diminue encore de 4 : `$22222222` est maintenant au sommet." },
-            { "ligne": 4, "texte": "On dépile **la dernière valeur posée** : D0 = `$22222222`, A7 remonte de 4." },
-            { "ligne": 5, "texte": "Puis la première : D1 = `$11111111`. La pile est revenue à son état de départ." },
-            { "ligne": 6, "texte": "`RTS` trouve bien l'adresse de retour au sommet : fin propre." }
+            { "ligne": 2, "texte": "A7 recule de 4, puis `$11111111` est écrit au sommet. Juste après, on voit l'adresse de retour vers [[atari:le TOS|amiga:le CLI]]." },
+            { "ligne": 3, "texte": "`$22222222` est maintenant au sommet." },
+            { "ligne": 4, "texte": "On reprend la dernière valeur posée : D0 = `$22222222`." },
+            { "ligne": 5, "texte": "Puis la première : D1 = `$11111111`." },
+            { "ligne": 6, "texte": "La pile est revenue à son départ : `RTS` trouve l'adresse de retour." }
           ],
-          "conclusion": "Les valeurs ressortent dans l'**ordre inverse** de leur entrée. Et comme on a dépilé autant qu'empilé, `RTS` a retrouvé son adresse de retour."
+          "conclusion": "Les valeurs ressortent dans l'ordre inverse."
         },
         {
           "type": "prediction", "id": "atari-ch02-pred-pile", "titre": "Deux mots, un long",
@@ -217,17 +233,17 @@
           ]
         },
         { "type": "exercice", "id": "atari-ch02-exo-echange", "titre": "Échanger deux registres", "variante": "completer", "niveau": 1,
-          "enonce": "D0 et D1 ont été empilés. Ajoute deux instructions pour qu'à la fin **D0 = `$BBBB`** et **D1 = `$AAAA`**.",
+          "enonce": "D0 et D1 ont été empilés. Ajoute deux instructions pour finir avec D0 = `$BBBB` et D1 = `$AAAA`.",
           "indices": ["La première valeur dépilée est la dernière empilée (D1).", "`MOVE.L (SP)+,D0` puis `MOVE.L (SP)+,D1`."],
           "codeDepart": "@code.s#pile-echange-depart", "solution": "@code.s#pile-echange-solution",
           "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "D0": "$0000BBBB", "D1": "$0000AAAA" } } },
         { "type": "exercice", "id": "atari-ch02-exo-desequilibre", "titre": "La pile déséquilibrée", "variante": "corriger", "niveau": 2,
-          "enonce": "Ce programme calcule bien **D2 = 10**… puis plante sur `RTS`. Explique pourquoi avec le pas à pas (regarde le sommet de la pile juste avant `RTS`), puis corrige.",
+          "enonce": "Ce programme calcule bien D2 = 10, puis plante sur `RTS`. En pas à pas, regarde le sommet de la pile juste avant `RTS`, puis corrige.",
           "indices": ["Au moment du `RTS`, quelle valeur est au sommet de la pile ?", "Il faut retirer les 4 octets empilés : `ADDQ.L #4,SP` avant `RTS`."],
           "codeDepart": "@code.s#pile-desequilibre-depart", "solution": "@code.s#pile-desequilibre-solution",
           "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "D2": "$0000000A" } } },
         { "type": "exercice", "id": "atari-ch02-exo-rotation", "titre": "Inverser trois registres", "variante": "ecrire", "niveau": 3,
-          "enonce": "Au départ D0 = 1, D1 = 2, D2 = 3. En passant **par la pile**, obtiens D0 = 3, D1 = 2, D2 = 1.",
+          "enonce": "Au départ, D0 = 1, D1 = 2, D2 = 3. En passant par la pile, obtiens D0 = 3, D1 = 2, D2 = 1.",
           "indices": ["Empile les trois registres dans l'ordre D0, D1, D2.", "Dépile ensuite dans D0, D1, D2 : l'ordre s'inverse tout seul."],
           "codeDepart": "@code.s#pile-rotation-depart", "solution": "@code.s#pile-rotation-solution",
           "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "D0": "$00000003", "D1": "$00000002", "D2": "$00000001" } } }
@@ -253,7 +269,7 @@
   "bonus": [
     {
       "type": "exercice", "id": "atari-ch02-bonus-ligne", "titre": "Seize pixels d'un coup", "variante": "ecrire", "niveau": 2,
-      "enonce": "L'écran du 1040 ST commence à l'adresse **`$F8000`**. En basse résolution, le premier **mot** de cette mémoire contient 16 pixels (un bit par pixel du premier plan de couleur). Allume les **16 premiers pixels** de la ligne du haut, puis admire le résultat dans le pas à pas. On décortiquera tout ça au chapitre « Graphisme ».",
+      "enonce": "L'écran du 1040 ST commence en `$F8000`. En basse résolution, son premier mot contient 16 pixels, un bit chacun. Allume les 16 premiers pixels de la ligne du haut. Le chapitre Graphisme expliquera le reste.",
       "indices": ["16 pixels allumés = 16 bits à 1.", "`MOVE.W #$FFFF,$F8000`"],
       "codeDepart": "@code.s#bonus-ligne-depart", "solution": "@code.s#bonus-ligne-solution",
       "check": { "type": "pixels", "maxSteps": 50, "terminer": true, "expected": { "0,0": "1", "15,0": "1", "16,0": "0" } },
@@ -261,7 +277,7 @@
       "variantes": {
         "amiga": {
           "titre": "La version du Kickstart",
-          "enonce": "Sur l'Amiga, une seule adresse est fixe : le mot long en **`$4`** contient l'adresse d'**ExecBase**, la structure centrale du système. Dans cette structure, le **mot** situé **20 octets plus loin** est le numéro de version d'exec : 34 pour le Kickstart 1.3.\n\nMets l'adresse d'ExecBase dans **A6**, puis le numéro de version dans **D0** (en mot, après avoir mis D0 à zéro).",
+          "enonce": "Sur l'Amiga, le mot long en `$4` contient l'adresse d'ExecBase, la structure centrale du système. Le mot situé 20 octets plus loin est la version d'exec : 34 pour le Kickstart 1.3.\n\nMets l'adresse d'ExecBase dans A6, puis la version dans D0 (mets D0 à zéro avant).",
           "indices": ["`MOVEA.L 4.W,A6` lit le mot long à l'adresse 4.", "Adressage avec déplacement : `MOVE.W 20(A6),D0` lit le mot 20 octets après l'adresse contenue dans A6. N'oublie pas `MOVEQ #0,D0` avant."],
           "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "D0": "$00000022" } },
           "machine": {}

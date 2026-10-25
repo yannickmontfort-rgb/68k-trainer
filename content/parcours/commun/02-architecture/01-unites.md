@@ -1,26 +1,23 @@
-## Bits, octets, mots et mots longs
+## Trois tailles
 
-Le 68000 est un processeur **16/32 bits** : ses registres font 32 bits, mais il échange les données
-avec la mémoire par paquets de 16 bits. Il sait travailler sur trois tailles, que l'on choisit avec
-le suffixe de l'instruction :
+Le 68000 travaille sur trois tailles de données. On choisit la taille avec le suffixe de
+l'instruction.
 
-| Suffixe | Nom | Bits | Non signé | Signé (complément à deux) |
+| Suffixe | Nom | Bits | Non signé | Signé |
 |---|---|---|---|---|
-| `.B` | octet (*byte*) | 8 | 0 à 255 | −128 à +127 |
-| `.W` | mot (*word*) | 16 | 0 à 65 535 | −32 768 à +32 767 |
-| `.L` | mot long (*long word*) | 32 | 0 à 4 294 967 295 | −2 147 483 648 à +2 147 483 647 |
+| `.B` | octet | 8 | 0 à 255 | −128 à 127 |
+| `.W` | mot | 16 | 0 à 65 535 | −32 768 à 32 767 |
+| `.L` | mot long | 32 | 0 à 4 294 967 295 | −2 147 483 648 à 2 147 483 647 |
 
-Les bits sont numérotés **de droite à gauche**, à partir de 0 : le bit 0 est le bit de **poids
-faible**, le bit 7 (ou 15, ou 31) le bit de **poids fort**.
+Ses registres font 32 bits. Les bits se numérotent de droite à gauche, à partir de 0.
 
-## Pourquoi l'hexadécimal ?
+## L'hexadécimal
 
-Un chiffre hexadécimal représente exactement **4 bits**. Un octet s'écrit donc toujours avec deux
-chiffres hexa, un mot avec quatre, un long avec huit, et la conversion se fait de tête, chiffre par
-chiffre :
+Un chiffre hexadécimal vaut 4 bits. Un octet s'écrit donc avec 2 chiffres, un mot avec 4, un long
+avec 8. On convertit chiffre par chiffre :
 
 ```
-%1010 0011  =  $A3        (1010 = A, 0011 = 3)
+%1010 0011  =  $A3
 ```
 
 | Hexa | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | A | B | C | D | E | F |
@@ -29,23 +26,19 @@ chiffre :
 
 ## Les nombres négatifs
 
-Le 68000 code les entiers signés en **complément à deux** : un nombre est négatif quand son bit de
-poids fort vaut 1. Sur un octet, `$FF` vaut −1, `$80` vaut −128 et `$7F` vaut +127. Sur un mot
-long, −1 s'écrit `$FFFFFFFF`.
+Un nombre est négatif quand son bit de poids fort vaut 1 : c'est le complément à deux. Sur un
+octet, `$FF` vaut −1 et `$80` vaut −128.
 
-C'est **toi** qui décides si une valeur est signée ou non : les mêmes bits `$FF` valent 255 ou −1
-selon l'instruction que tu utilises ensuite (on le verra avec les comparaisons).
+Le processeur ne sait pas si `$FF` veut dire 255 ou −1. C'est toi qui choisis, par les
+instructions que tu utilises ensuite.
 
 ## Une opération ne touche que sa taille
 
-Quand une instruction travaille en `.B` ou en `.W` sur un registre de données, **seule la partie
-basse** du registre change ; le reste est conservé :
-
 ```asm
     MOVE.L  #$12345678,D0   ; D0 = $12345678
-    MOVE.B  #$FF,D0         ; D0 = $123456FF  (seul l'octet faible change)
-    MOVE.W  #$ABCD,D0       ; D0 = $1234ABCD  (seul le mot faible change)
+    MOVE.B  #$FF,D0         ; D0 = $123456FF
+    MOVE.W  #$ABCD,D0       ; D0 = $1234ABCD
 ```
 
-C'est une source d'erreurs classique : un registre « sale » dans sa partie haute donne des résultats
-faux dès qu'on le réutilise en `.L`.
+En `.B` ou en `.W`, le reste du registre ne bouge pas. Si tu relis ensuite ce registre en `.L`,
+les anciens bits sont toujours là.
