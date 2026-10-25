@@ -2,7 +2,7 @@
   "id": "atari-ch02",
   "titre": "Architecture du 68000 et notions fondamentales",
   "plateforme": "commun",
-  "resume": "Les tailles de données, la mémoire, les registres, les flags et la pile. [[atari:Module 1 du manuel Atari ST.|amiga:Chapitre 1 du manuel Amiga.]]",
+  "resume": "Le 68000 manipule des bits, des octets, des mots et des mots longs, qu'il range en mémoire en respectant l'alignement pair. Il travaille avec ses registres et résume chaque résultat dans les flags du registre d'état. Dès qu'un programme grandit, la pile devient indispensable. [[atari:Module 1 du manuel Atari ST.|amiga:Chapitre 1 du manuel Amiga.]]",
   "notions": [
     {
       "id": "atari-ch02-n0",
