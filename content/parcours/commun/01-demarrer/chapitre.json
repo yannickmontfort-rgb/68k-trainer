@@ -2,7 +2,7 @@
   "id": "atari-ch01",
   "titre": "Démarrer : l'atelier et ton premier programme",
   "plateforme": "commun",
-  "resume": "Avant d'écrire du code, il faut savoir **l'assembler, l'exécuter et l'observer**. Ce chapitre te présente l'atelier (l'équivalent de [[atari:Devpac et MONST|amiga:Devpac ou ASM-One]]), la forme d'une ligne d'assembleur, ton premier programme… et la méthode pour trouver tes erreurs. [[atari:Sur l'Atari ST, ces outils n'arrivaient qu'à la fin du manuel : ici, on commence par eux.|amiga:Ces outils sont souvent présentés à la fin des livres : ici, on commence par eux.]]",
+  "resume": "Avant d'écrire du code, on apprend à l'assembler, à l'exécuter et à l'observer dans l'atelier, l'équivalent de [[atari:Devpac et MONST|amiga:Devpac ou ASM-One]]. On y découvre la forme d'une ligne d'assembleur, un premier programme et la méthode pour trouver ses erreurs. [[atari:Le manuel de l'Atari ST gardait ces outils pour la fin ; ici, on commence par eux.|amiga:Les livres gardent souvent ces outils pour la fin ; ici, on commence par eux.]]",
   "notions": [
     {
       "id": "atari-ch01-n1",
@@ -29,22 +29,22 @@
           "id": "atari-ch01-ex-premier",
           "titre": "Ton premier programme, pas à pas",
 
-          "introduction": "Voici un programme de quatre instructions. Clique sur **Pas suivant** pour exécuter une instruction à la fois : à droite, le registre qui vient de changer s'allume en jaune, et sous le code une explication te dit ce qui s'est passé.",
+          "introduction": "Clique sur Pas suivant pour exécuter une instruction à la fois : le registre qui vient de changer s'allume en jaune, et l'explication de la ligne s'affiche sous le code.",
           "code": "@code.s#premier",
           "explications": [
-            { "ligne": 3, "texte": "`MOVE.W #5,D0` copie la valeur immédiate 5 dans le registre D0. Regarde D0 : il vaut maintenant `$00000005`. Le PC (compteur de programme) a avancé jusqu'à l'instruction suivante." },
-            { "ligne": 4, "texte": "Même chose avec D1, qui reçoit 3. D0 n'a pas bougé : une instruction ne modifie que sa **destination**." },
-            { "ligne": 5, "texte": "`ADD.W D1,D0` additionne la source (D1) à la destination (D0) : D0 = 5 + 3 = 8. D1, la source, garde sa valeur." },
-            { "ligne": 6, "texte": "`RTS` dépile l'adresse de retour (regarde la pile : le sommet contenait l'adresse [[atari:du TOS|amiga:du CLI]]) et rend la main au système. Le programme est terminé." }
+            { "ligne": 3, "texte": "`MOVE.W #5,D0` copie la valeur immédiate 5 dans D0, qui vaut maintenant `$00000005`, et le PC passe à l'instruction suivante." },
+            { "ligne": 4, "texte": "D1 reçoit 3 et D0 ne bouge pas, car une instruction ne modifie que sa destination." },
+            { "ligne": 5, "texte": "`ADD.W D1,D0` ajoute la source D1 à la destination D0 : D0 = 5 + 3 = 8, et D1 garde sa valeur." },
+            { "ligne": 6, "texte": "`RTS` reprend au sommet de la pile l'adresse de retour vers [[atari:le TOS|amiga:le CLI]] et lui rend la main." }
           ],
-          "conclusion": "Tu as vu les trois éléments que tu retrouveras partout : des **registres** qui contiennent les valeurs, des **instructions** qui les transforment une par une, et le **PC** qui avance d'instruction en instruction."
+          "conclusion": "Les registres contiennent les valeurs, les instructions les transforment une à une, et le PC avance de l'une à l'autre."
         },
         {
           "type": "prediction",
           "id": "atari-ch01-pred-sub",
           "titre": "Lis, puis devine",
 
-          "introduction": "Sans exécuter le programme, réponds aux questions. Ensuite seulement, vérifie en l'exécutant. `SUB.W D1,D0` signifie « D0 ← D0 − D1 ».",
+          "introduction": "Réponds sans exécuter le programme, puis vérifie. `SUB.W D1,D0` fait D0 ← D0 − D1.",
           "code": "@code.s#predire-sub",
           "questions": [
             {
@@ -52,7 +52,7 @@
               "enonce": "Que vaut D0 à la fin ?",
               "choix": ["$0000000E (14)", "$00000006 (6)", "$FFFFFFFA (−6)"],
               "bonne": 1,
-              "explication": "SUB.W D1,D0 calcule D0 − D1 = 10 − 4 = 6. L'ordre compte : c'est la **destination** (D0) moins la **source** (D1).",
+              "explication": "10 − 4 = 6 : on retire la source D1 de la destination D0, et l'ordre compte.",
               "verification": { "D0": "$00000006" }
             },
             {
@@ -72,7 +72,7 @@
           "variante": "completer",
           "niveau": 1,
 
-          "enonce": "Le programme ajoute 2 à D0. Remplace le `0` de la première instruction pour que **D0 vaille 9** à la fin.",
+          "enonce": "Le programme ajoute 2 à D0. Remplace le `0` de la première instruction pour que D0 vaille 9 à la fin.",
           "indices": ["Quel nombre, plus 2, donne 9 ?", "`MOVE.W #7,D0`"],
           "codeDepart": "@code.s#completer-depart",
           "solution": "@code.s#completer-solution",
@@ -85,7 +85,7 @@
           "variante": "ordonner",
           "niveau": 1,
 
-          "enonce": "Les instructions ont été mélangées. Avec les flèches, remets-les dans l'ordre pour que **D2 = (6 + 2) × 5 = 40**. `ADDQ` est un `ADD` rapide pour les petites valeurs (1 à 8), `MULU` une multiplication.",
+          "enonce": "Les instructions ont été mélangées. Remets-les dans l'ordre avec les flèches pour obtenir D2 = (6 + 2) × 5 = 40. `ADDQ` est un `ADD` rapide pour les valeurs de 1 à 8, et `MULU` une multiplication.",
           "indices": ["Il faut d'abord une valeur dans D2, et RTS doit être la dernière instruction.", "Addition avant multiplication : (6 + 2), puis × 5."],
           "codeDepart": "",
           "entete": "@code.s#ordonner-entete",
@@ -101,7 +101,7 @@
           "variante": "ecrire",
           "niveau": 2,
 
-          "enonce": "Écris le programme : place **100** dans D1, **25** dans D2, puis soustrais D2 de D1 pour que **D1 = 75** à la fin.",
+          "enonce": "Place 100 dans D1 et 25 dans D2, puis soustrais D2 de D1 pour finir avec D1 = 75.",
           "indices": ["Deux `MOVE.W` pour charger les valeurs.", "La soustraction s'écrit `SUB.W source,destination` : la destination reçoit destination − source."],
           "codeDepart": "@code.s#ecrire-depart",
           "solution": "@code.s#ecrire-solution",
@@ -114,7 +114,7 @@
           "variante": "ecrire",
           "niveau": 3,
 
-          "enonce": "Calcule **D0 = 3 × (4 + 5)** en n'utilisant que `MOVE` et `ADD` (pas de `MULU`).",
+          "enonce": "Calcule D0 = 3 × (4 + 5) avec seulement `MOVE` et `ADD`, sans `MULU`.",
           "indices": ["Calcule d'abord 4 + 5 dans D0.", "Multiplier par 3, c'est ajouter trois fois la même valeur : garde une copie dans un autre registre."],
           "codeDepart": "@code.s#autonome-depart",
           "solution": "@code.s#autonome-solution",
@@ -139,23 +139,23 @@
           "id": "atari-ch01-ex-bug",
           "titre": "Une erreur de logique, traquée pas à pas",
 
-          "introduction": "Ce programme devrait calculer **D0 = 2 × (3 + 4) = 14**. Il s'assemble sans erreur… mais à la fin, D0 vaut 7. Suis la méthode : **hypothèse**, **inspection** pas à pas, **vérification**.",
+          "introduction": "Ce programme devrait calculer D0 = 2 × (3 + 4) = 14. Il s'assemble sans erreur, mais D0 vaut 7 à la fin. Suis la méthode : hypothèse, inspection pas à pas, vérification.",
           "code": "@code.s#bug-logique",
           "explications": [
-            { "ligne": 3, "texte": "D0 = 3. Conforme à ce qu'on attend." },
-            { "ligne": 4, "texte": "D0 = 7. Toujours conforme : 3 + 4." },
-            { "ligne": 5, "texte": "On copie 7 dans D1. Pas d'écart pour l'instant." },
-            { "ligne": 6, "texte": "**Voilà l'écart** : D1 passe à 14, mais D0 reste à 7. On a doublé D1 au lieu d'ajouter D1 à D0. Correction : `ADD.W D1,D0`." },
-            { "ligne": 7, "texte": "Fin du programme : D0 = 7 au lieu de 14. L'inspection a montré **la première ligne** où la réalité s'écarte de l'attendu : c'est elle qu'on corrige." }
+            { "ligne": 3, "texte": "D0 = 3, comme prévu." },
+            { "ligne": 4, "texte": "D0 = 3 + 4 = 7, toujours comme prévu." },
+            { "ligne": 5, "texte": "D1 reçoit une copie de 7, sans écart pour l'instant." },
+            { "ligne": 6, "texte": "C'est ici que l'écart apparaît : D1 passe à 14 mais D0 reste à 7, car on a doublé D1 au lieu de l'ajouter à D0. La correction est `ADD.W D1,D0`." },
+            { "ligne": 7, "texte": "Le programme finit avec D0 = 7 au lieu de 14 ; on corrige la première ligne où la réalité s'est écartée de l'attendu." }
           ],
-          "conclusion": "Ne corrige jamais « au hasard ». Avance pas à pas en prédisant chaque ligne : la première surprise désigne l'erreur."
+          "conclusion": "En avançant pas à pas et en prédisant chaque ligne, la première surprise désigne l'erreur."
         },
         {
           "type": "prediction",
           "id": "atari-ch01-pred-crash",
           "titre": "Que va-t-il se passer ?",
 
-          "introduction": "Ce programme s'assemble sans erreur. Lis-le attentivement, en particulier l'adresse de destination.",
+          "introduction": "Ce programme s'assemble sans erreur. Regarde bien l'adresse de destination.",
           "code": "@code.s#predire-crash",
           "questions": [
             {
@@ -163,7 +163,7 @@
               "enonce": "Quand on l'exécute…",
               "choix": ["il écrit $1234 à l'adresse $3001 et se termine normalement", "il s'arrête sur une erreur d'adresse ([[atari:3 bombes sur un ST|amiga:Guru Meditation #00000003 sur l'Amiga]])", "l'assembleur refuse le programme"],
               "bonne": 1,
-              "explication": "Un mot (`.W`) doit toujours être lu ou écrit à une adresse **paire**. $3001 est impaire : le 68000 déclenche une erreur d'adresse (exception n° 3, [[atari:donc 3 bombes|amiga:d'où le Guru #00000003]]). L'assembleur ne peut pas le voir : c'est une erreur d'**exécution**."
+              "explication": "Un mot se lit et s'écrit toujours à une adresse paire. Comme $3001 est impaire, le 68000 déclenche une erreur d'adresse, l'exception n° 3, [[atari:d'où les 3 bombes|amiga:d'où le Guru #00000003]]. L'assembleur ne peut pas le voir : c'est une erreur d'exécution."
             }
           ]
         },
@@ -174,7 +174,7 @@
           "variante": "corriger",
           "niveau": 1,
 
-          "enonce": "Ce programme doit mettre **5 + 7 = 12** dans D2, mais il ne s'assemble pas. Clique sur **Vérifier**, lis le message, et corrige la ligne fautive.",
+          "enonce": "Ce programme doit mettre 5 + 7 = 12 dans D2, mais il ne s'assemble pas. Clique sur Vérifier, lis le message et corrige la ligne fautive.",
           "indices": ["Le message parle d'une instruction inconnue.", "L'addition s'écrit `ADD`, avec un seul D."],
           "codeDepart": "@code.s#corriger-syntaxe-depart",
           "solution": "@code.s#corriger-syntaxe-solution",
@@ -187,7 +187,7 @@
           "variante": "corriger",
           "niveau": 2,
 
-          "enonce": "Ce programme s'assemble, mais **D3** devrait valoir **30** à la fin, et ce n'est pas le cas. Utilise le pas à pas pour trouver la ligne fautive.",
+          "enonce": "Ce programme s'assemble, mais D3 ne vaut pas 30 à la fin comme prévu. Trouve la ligne fautive en pas à pas.",
           "indices": ["Regarde quel registre change sur la ligne de l'addition.", "Dans `ADD.W source,destination`, c'est la destination qui reçoit le résultat."],
           "codeDepart": "@code.s#corriger-logique-depart",
           "solution": "@code.s#corriger-logique-solution",
@@ -200,7 +200,7 @@
           "variante": "corriger",
           "niveau": 3,
 
-          "enonce": "On voulait **D5 = $1001**. Le programme s'assemble et s'exécute sans planter, mais D5 contient une valeur étrange. Explique-toi pourquoi avant de corriger (indice : que trouve-t-on à l'adresse `$1000` ?).",
+          "enonce": "On voulait D5 = $1001. Le programme s'assemble et tourne sans planter, mais D5 contient une valeur étrange. Avant de corriger, cherche ce que l'on trouve à l'adresse `$1000`.",
           "indices": ["Sans `#`, `$1000` est une adresse, pas une valeur.", "À l'adresse $1000, il y a… le code de ta propre première instruction !"],
           "codeDepart": "@code.s#corriger-diese-depart",
           "solution": "@code.s#corriger-diese-solution",
@@ -233,7 +233,7 @@
       "variante": "ecrire",
       "niveau": 2,
 
-      "enonce": "Sur l'Atari ST, la couleur du fond de l'écran est la **couleur n° 0** de la palette. Elle se règle en écrivant un mot à l'adresse matérielle **`$FF8240`**, au format `$0RVB` : chaque composante va de 0 à 7. Rouge vif = `$700`.\n\nÉcris un programme qui peint le fond en rouge. Lance ensuite le **pas à pas** pour voir l'écran changer.",
+      "enonce": "Sur l'Atari ST, le fond de l'écran prend la couleur n° 0 de la palette, que l'on règle en écrivant un mot à l'adresse matérielle `$FF8240`, au format `$0RVB`, chaque composante allant de 0 à 7 : le rouge vif s'écrit `$700`.\n\nPeins le fond en rouge, puis regarde l'écran changer en pas à pas.",
       "indices": ["Une seule instruction suffit : un `MOVE.W` d'une valeur immédiate vers une adresse.", "`MOVE.W #$700,$FF8240`"],
       "codeDepart": "@code.s#bonus-fond-depart",
       "solution": "@code.s#bonus-fond-solution",
@@ -241,7 +241,7 @@
       "machine": { "ecran": true },
       "variantes": {
         "amiga": {
-          "enonce": "Sur l'Amiga, la couleur du fond est la **couleur n° 0**, le registre **`COLOR00`** de la puce Denise, à l'adresse **`$DFF180`**. Une couleur s'écrit `$0RVB`, chaque composante allant de 0 à 15 (`$F`) : rouge vif = `$F00`.\n\nMais attention : 50 fois par seconde, le **Copper** (un petit processeur des puces) repeint le fond avec la couleur du Workbench. Un seul `MOVE` ne dure donc qu'un instant ! Écris un programme qui repeint le fond en rouge **en boucle**, jusqu'à ce qu'on clique avec le **bouton gauche de la souris** (bit 6 de l'octet `$BFE001` : il passe à 0 quand le bouton est enfoncé). Lance-le en **Temps réel** et clique sur l'écran pour finir.",
+          "enonce": "Sur l'Amiga, le fond de l'écran prend la couleur n° 0, le registre `COLOR00` de la puce Denise, à l'adresse `$DFF180`. Une couleur s'écrit `$0RVB`, chaque composante allant de 0 à 15 : le rouge vif s'écrit `$F00`.\n\nComme le Copper, un petit processeur des puces, repeint le fond 50 fois par seconde avec la couleur du Workbench, un seul `MOVE` ne dure qu'un instant. Repeins donc le fond en rouge en boucle, jusqu'à un clic du bouton gauche de la souris : le bit 6 de l'octet `$BFE001` passe alors à 0. Lance le programme en Temps réel et clique sur l'écran pour finir.",
           "indices": ["Une boucle : `MOVE.W #$F00,$DFF180`, puis `BTST #6,$BFE001` et `BNE` vers le début de la boucle.", "`BTST` met Z à 1 quand le bit vaut 0 : `BNE` reboucle tant que le bouton n'est pas enfoncé."],
           "check": { "type": "image", "maxSteps": 400000, "terminer": true, "image": 3, "expected": { "100,100": "$0F00", "10,200": "$0F00" } },
           "machine": { "ecran": true, "evenements": [{ "image": 5, "boutonGauche": true }] }

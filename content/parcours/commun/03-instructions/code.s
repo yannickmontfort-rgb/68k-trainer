@@ -630,3 +630,10 @@ FIN:
 START:
     MOVEQ   #0,D0           ; au lancement, l'Amiga met dans D0 la longueur de la ligne de commande
     MOVE.L  #$FFFFFFF6,D1
+
+;=== rappel
+START:
+    MOVE.L  #$11223344,D0
+    MOVE.W  #$FFFF,D0
+    ADDQ.W  #1,D0
+    RTS

@@ -198,6 +198,11 @@
           "indices": ["Les octets signés vont de −128 à +127.", "Additionne deux positifs dont la somme dépasse 127, par exemple $70 + $20."],
           "codeDepart": "@code.s#sr-debordement-depart", "solution": "@code.s#sr-debordement-solution",
           "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "V": "$1" } } },
+        { "type": "exercice", "id": "atari-ch02-exo-negatif", "titre": "Un résultat négatif", "variante": "corriger", "niveau": 2,
+          "enonce": "Ce programme doit calculer 5 − 8 dans D0 et finir avec N = 1, mais N vaut 0 à la fin. Corrige une seule instruction.",
+          "indices": ["Quel registre reçoit le résultat de la soustraction ?", "`SUB.W D1,D0` calcule D0 − D1."],
+          "codeDepart": "@code.s#sr-negatif-depart", "solution": "@code.s#sr-negatif-solution",
+          "check": { "type": "registers", "maxSteps": 50, "terminer": true, "expected": { "D0": "$0000FFFD", "N": "$1" } } },
         { "type": "exercice", "id": "atari-ch02-exo-c", "titre": "Retenue sans débordement", "variante": "ecrire", "niveau": 3,
           "enonce": "Avec une addition en `.W`, finis avec C = 1 et V = 0 : faux en non signé, juste en signé.",
           "indices": ["Quel mot vaut à la fois 65 535 en non signé et −1 en signé ?", "$FFFF + 1."],
@@ -263,7 +268,9 @@
       { "id": "q7", "enonce": "Que vaut D0 après ces instructions, et quels flags sont à 1 ?", "code": "@code.s#qcm-flags", "choix": ["$00000100, aucun flag", "$00000000, Z et C (et X)", "$000000FF, N"], "bonne": 1, "explication": "255 + 1 = 256 ne tient pas dans un octet : il reste $00 avec une retenue. Z = 1, C = X = 1. Seul l'octet faible de D0 est écrit." },
       { "id": "q8", "enonce": "Quel flag indique que le résultat d'un calcul **signé** est faux ?", "choix": ["C", "V", "Z"], "bonne": 1, "explication": "V (débordement) concerne le signé ; C (retenue) concerne le non signé." },
       { "id": "q9", "enonce": "Que fait `MOVE.L (SP)+,D0` ?", "choix": ["SP augmente de 4, puis lecture", "Lecture à l'adresse SP, puis SP augmente de 4", "Écriture de D0 sur la pile"], "bonne": 1, "explication": "Postincrémentation : on lit d'abord, on avance ensuite. C'est un dépilement." },
-      { "id": "q10", "enonce": "Pourquoi faut-il dépiler tout ce qu'on a empilé avant `RTS` ?", "choix": ["Pour libérer de la mémoire", "Parce que RTS prend l'adresse de retour au sommet de la pile", "Ce n'est pas obligatoire"], "bonne": 1, "explication": "Si une valeur oubliée est au sommet, RTS la prend pour une adresse de retour et le programme saute n'importe où." }
+      { "id": "q10", "enonce": "Pourquoi faut-il dépiler tout ce qu'on a empilé avant `RTS` ?", "choix": ["Pour libérer de la mémoire", "Parce que RTS prend l'adresse de retour au sommet de la pile", "Ce n'est pas obligatoire"], "bonne": 1, "explication": "Si une valeur oubliée est au sommet, RTS la prend pour une adresse de retour et le programme saute n'importe où." },
+      { "id": "q11", "enonce": "Après `SUB.W D1,D0`, quel registre contient le résultat ?", "choix": ["D0", "D1", "les deux"], "bonne": 0, "explication": "Le résultat va dans la destination, D0, qui reçoit D0 − D1." },
+      { "id": "q12", "enonce": "Pourquoi une instruction ne commence-t-elle jamais en première colonne ?", "choix": ["L'assembleur la prendrait pour une étiquette", "Elle serait ignorée comme un commentaire", "Elle serait exécutée deux fois"], "bonne": 0, "explication": "La première colonne est réservée aux étiquettes." }
     ]
   },
   "bonus": [
