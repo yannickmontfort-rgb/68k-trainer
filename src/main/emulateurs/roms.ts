@@ -19,6 +19,8 @@ export interface RomReconnue {
   modele: 'st' | 'ste' | 'a500' | 'a1200'
   /** Amiga : le Shell de la ROM contient Execute, If, Echo, Run… (Kickstart 2.0 et plus). */
   shellEnRom?: boolean
+  /** Le contenu à garder : une ROM de 256 Ko copiée deux fois dans un fichier de 512 Ko est ramenée à 256 Ko. */
+  contenu: Uint8Array
 }
 
 export interface RomRefusee {
@@ -39,7 +41,12 @@ function versionKickstart(version: number): string {
 }
 
 /** Reconnaît une ROM d'après sa taille et ses premiers octets. */
-export function analyserRom(octets: Uint8Array, machine: MachineRom): RomReconnue | RomRefusee {
+export function analyserRom(fichier: Uint8Array, machine: MachineRom): RomReconnue | RomRefusee {
+  // Un Kickstart de 256 Ko copié deux fois (fichier de 512 Ko) : on garde une seule copie
+  const moitie = fichier.length / 2
+  const double =
+    fichier.length === 512 * Ko && fichier.subarray(0, moitie).every((o, i) => o === fichier[moitie + i])
+  const octets = double ? fichier.subarray(0, moitie) : fichier
   const taille = octets.length
   const mot = (i: number): number => (octets[i] << 8) | octets[i + 1]
   if (machine === 'amiga') {
@@ -65,7 +72,8 @@ export function analyserRom(octets: Uint8Array, machine: MachineRom): RomReconnu
       nom: `Kickstart ${versionKickstart(version)} (${version}.${revision})`,
       taille,
       modele: taille === 512 * Ko ? 'a1200' : 'a500',
-      shellEnRom: version >= 36
+      shellEnRom: version >= 36,
+      contenu: octets
     }
   }
   if (taille !== 192 * Ko && taille !== 256 * Ko && taille !== 512 * Ko) {
@@ -84,7 +92,8 @@ export function analyserRom(octets: Uint8Array, machine: MachineRom): RomReconnu
     nom: `TOS ${version >> 8}.${(version & 0xff).toString(16).padStart(2, '0')}`,
     taille,
     // Les TOS de 256 Ko (1.06, 1.62, 2.06) sont ceux du STE
-    modele: taille === 256 * Ko ? 'ste' : 'st'
+    modele: taille === 256 * Ko ? 'ste' : 'st',
+    contenu: octets
   }
 }
 

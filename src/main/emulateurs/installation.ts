@@ -346,7 +346,7 @@ export function importerRom(machine: MachineRom, chemin: string): { ok: boolean;
   if (!rom.ok) return { ok: false, erreur: rom.raison }
   const fichier = join(dossierRoms(dossierEmulateurs()), machine === 'atari' ? 'tos.img' : 'kickstart.rom')
   mkdirSync(dossierRoms(dossierEmulateurs()), { recursive: true })
-  writeFileSync(fichier, octets)
+  writeFileSync(fichier, rom.contenu)
   const roms = romsUtilisateur()
   roms[machine] = { fichier, nom: rom.nom, taille: rom.taille, modele: rom.modele, shellEnRom: rom.shellEnRom, actif: true, adf: roms[machine]?.adf }
   ecrireRoms(roms)
@@ -408,7 +408,7 @@ function configWinuae(): string {
   mkdirSync(join(demarrage, 'S'), { recursive: true })
   writeFileSync(join(demarrage, 'S', 'Startup-sequence'), STARTUP_KICKSTART)
   const fichier = join(dossierEmulateur('winuae'), '68k-trainer-rom.uae')
-  const reconnue: RomReconnue = { ok: true, machine: 'amiga', nom: rom.nom, taille: rom.taille, modele: rom.modele, shellEnRom: rom.shellEnRom }
+  const reconnue: RomReconnue = { ok: true, machine: 'amiga', nom: rom.nom, taille: rom.taille, modele: rom.modele, shellEnRom: rom.shellEnRom, contenu: new Uint8Array() }
   writeFileSync(fichier, configUaeKickstart(reconnue, rom.fichier, preparerPartage('amiga'), demarrage, rom.adf), 'utf-8')
   return fichier
 }

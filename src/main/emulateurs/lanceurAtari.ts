@@ -66,15 +66,24 @@ export function sourceLanceurAtari(fichier: string): string {
   ].join('\n')
 }
 
-/** Texte affiché par le programme : ce qui suit l'écran de démarrage d'EmuTOS, sans les messages de Hatari. */
+/**
+ * Texte affiché par le programme : ce qui suit l'écran de démarrage (EmuTOS, ou le test de la
+ * mémoire d'un vrai TOS), sans les messages de Hatari ni celui du lanceur.
+ */
 export function sortieAtari(brut: string): string {
-  return brut
-    .replace(/\r/g, '')
+  let texte = brut.replace(/\r/g, '')
+  // Un retour arrière efface le caractère précédent, comme sur l'écran du ST
+  while (/[^\b\n]\x08/.test(texte)) texte = texte.replace(/[^\b\n]\x08/g, '')
+  return texte
+    .replace(/\x08/g, '')
     .split('Hold <Shift> to pause this screen')
+    .pop()!
+    .split('Memory Test Complete.')
     .pop()!
     .split('(Appuie sur une touche')[0]
     .split('\n')
     .filter((l) => !/^(WARN|INFO|DEBUG|ERROR|TODO|FATAL)\b/.test(l))
+    .map((l) => l.trimEnd())
     .join('\n')
     .replace(/\x1b./g, '')
     .trim()

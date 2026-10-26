@@ -67,3 +67,15 @@ describe('« Ma propre ROM » : réglages de WinUAE', () => {
     expect(STARTUP_KICKSTART).not.toMatch(/\bDelete\b|\bC:/)
   })
 })
+
+describe('« Ma propre ROM » : copie double', () => {
+  it('un Kickstart 1.3 copié deux fois dans 512 Ko est ramené à 256 Ko', () => {
+    const une = rom(256 * Ko, [0x11, 0x11, 0x4e, 0xf9, 0, 0xfc, 0, 0xd2, 0, 0, 0xff, 0xff, 0, 34, 0, 5])
+    const double = new Uint8Array(512 * Ko)
+    double.set(une)
+    double.set(une, 256 * Ko)
+    const r = analyserRom(double, 'amiga')
+    expect(r).toMatchObject({ ok: true, nom: 'Kickstart 1.3 (34.5)', modele: 'a500', taille: 256 * Ko })
+    expect(r.ok && r.contenu.length).toBe(256 * Ko)
+  })
+})

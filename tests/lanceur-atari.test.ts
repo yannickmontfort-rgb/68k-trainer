@@ -11,3 +11,11 @@ describe('texte affiché par un programme essayé dans Hatari', () => {
     expect(sortieAtari('Hold <Shift> to pause this screen\nWARN : quelque chose\nBonjour')).toBe('Bonjour')
   })
 })
+
+describe('texte affiché sous un vrai TOS', () => {
+  it('saute le test de la mémoire du TOS et ses retours arrière', () => {
+    const brut =
+      'Memory Test:\r\r\nST RAM                \b\b\b\b\b\b\b\b--------\b\b\b\b\b\b\b\b\b  1024 KB\r\r\nMemory Test Complete.\r\r\n                                        \r                                       \b\b\b\b\b\b\b\rBonjour TOS\r\r\n\r\r\n(Appuie sur une touche pour revenir au bureau)'
+    expect(sortieAtari(brut)).toBe('Bonjour TOS')
+  })
+})
