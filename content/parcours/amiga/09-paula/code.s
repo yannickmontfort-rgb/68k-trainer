@@ -292,3 +292,14 @@ START:
     SECTION son,DATA_C
 onde:   DCB.B   16,100
         DCB.B   16,-100
+
+;=== rappel
+START:
+    MOVEQ   #0,D1
+    MOVE.W  #$2C+16,D1      ; VSTART : y = 16
+    LSL.W   #8,D1           ; dans l'octet fort
+    MOVE.W  #$81+40,D2      ; HSTART : x = 40
+    LSR.W   #1,D2           ; HSTART / 2
+    OR.W    D2,D1           ; D1 = le premier mot de contrôle
+    MOVEQ   #0,D0
+    RTS

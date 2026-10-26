@@ -2,8 +2,24 @@
   "id": "amiga-ch10",
   "titre": "Outils, exécutable et démo",
   "plateforme": "amiga",
-  "resume": "Le dernier pas : sortir tes programmes du simulateur. Tu vas voir comment est fait un **exécutable AmigaDOS** (les *hunks*, les relocations, les sections en Chip RAM), comment le lancer dans **WinUAE**, **FS-UAE** ou sur un vrai Amiga, comment lire un **Guru Meditation**, et les règles d'or du programmeur Amiga. Pour finir, une petite **intro** qui réunit Copper, sprite, son et interruption.",
+  "resume": "Pour sortir tes programmes du simulateur, 68k Trainer fabrique un exécutable AmigaDOS, fait de hunks que le système charge où il trouve de la place et reloge, et que l'on lance dans WinUAE, FS-UAE ou sur un vrai Amiga. Quand un programme plante, le Guru Meditation dit pourquoi, et quelques règles d'or évitent la plupart des pannes. Une petite intro réunit pour finir Copper, sprite, son et interruption.",
   "notions": [
+    {
+      "id": "amiga-ch10-n0",
+      "titre": "Rappel des chapitres 4 et 9",
+      "contenus": [
+        {
+          "type": "prediction", "id": "amiga-ch10-rappel", "titre": "Ce que tu sais déjà",
+          "introduction": "Trois questions sur les chapitres précédents, sans relire les cours. Se tromper ici n'est pas grave : c'est en cherchant qu'on retient.",
+          "code": "@code.s#rappel",
+          "questions": [
+            { "id": "q1", "enonce": "D1 reçoit la longueur à écrire dans AUD0LEN pour un échantillon de 64 octets. Que vaut-il ?", "choix": ["64 ($40)", "32 ($20)", "128 ($80)"], "bonne": 1, "explication": "AUD0LEN se compte en mots : 64 octets font 32 mots.", "verification": { "D1": "$00000020" } },
+            { "id": "q2", "enonce": "Si l'on double la période d'une voie, la note…", "choix": ["monte d'une octave", "descend d'une octave", "ne change pas"], "bonne": 1, "explication": "Paula lit les octets deux fois plus lentement : la fréquence est divisée par deux, soit une octave plus bas." },
+            { "id": "q3", "enonce": "Où un programme trouve-t-il l'adresse d'ExecBase ?", "choix": ["À l'adresse $4", "Dans A5 au lancement", "En $DFF000"], "bonne": 0, "explication": "C'est la seule adresse du système à connaître : les bibliothèques et la mémoire se demandent ensuite à exec." }
+          ]
+        }
+      ]
+    },
     {
       "id": "amiga-ch10-n1",
       "titre": "L'exécutable AmigaDOS",
@@ -11,18 +27,23 @@
         { "type": "cours", "id": "amiga-ch10-cours-executable", "titre": "Hunks, sections, et lancer son programme", "fichier": "01-executable.md", "source": "Rédigé pour 68k Trainer d'après The AmigaDOS Manual (format des hunks), Amiga Intern (Abacus) et la documentation de vasm" },
         {
           "type": "prediction", "id": "amiga-ch10-pred-retour", "titre": "Le code de retour",
-          "introduction": "Le programme se termine par `RTS` avec 20 dans D0.",
+          "introduction": "Le programme rend la main au Shell par `RTS`, avec 20 dans D0.",
           "code": "@code.s#retour-prediction",
           "questions": [
-            { "id": "q1", "enonce": "Que vaut D0 à la fin ?", "choix": ["$00000014", "$00000020", "$00000000"], "bonne": 0, "explication": "20 en décimal = $14.", "verification": { "D0": "$00000014" } },
+            { "id": "q1", "enonce": "Que vaut D0 à la fin ?", "choix": ["$00000014", "$00000020", "$00000000"], "bonne": 0, "explication": "20 en décimal s'écrit $14.", "verification": { "D0": "$00000014" } },
             { "id": "q2", "enonce": "Que comprend le Shell ?", "choix": ["Le programme a échoué (FAIL)", "Tout va bien", "Un avertissement"], "bonne": 0, "explication": "0 = OK, 5 = WARN, 10 = ERROR, 20 = FAIL : un script qui l'appelle peut s'arrêter là." }
           ]
         },
         { "type": "exercice", "id": "amiga-ch10-exo-retour", "titre": "Tout s'est bien passé", "variante": "completer", "niveau": 1,
-          "enonce": "Ce programme fait son travail, mais annonce un échec au Shell. Corrige son code de retour.",
+          "enonce": "Ce programme fait son travail, mais annonce un échec au Shell : corrige son code de retour.",
           "indices": ["Le code de retour est dans D0 au moment du `RTS`.", "`MOVEQ #0,D0`"],
           "codeDepart": "@code.s#retour-depart", "solution": "@code.s#retour-solution",
-          "check": { "type": "registers", "maxSteps": 200, "terminer": true, "systemeRendu": true, "expected": { "D0": "$00000000" } } }
+          "check": { "type": "registers", "maxSteps": 200, "terminer": true, "systemeRendu": true, "expected": { "D0": "$00000000" } } },
+        { "type": "exercice", "id": "amiga-ch10-exo-abime", "titre": "Des données abîmées", "variante": "ecrire", "niveau": 2,
+          "enonce": "Avant de se servir de ses données, le programme les vérifie : additionne les 8 mots de `table` dans D7, compare la somme au mot `attendu`, puis rends au Shell le code 0 si elles sont égales, 10 (ERROR) sinon.",
+          "indices": ["Une boucle de 8 tours qui ajoute `(A0)+` à D7, mis à zéro avant.", "`CMP.W attendu(PC),D7` puis `BEQ` : ici la somme vaut 1300 et non 1310, le programme doit donc rendre 10."],
+          "codeDepart": "@code.s#abime-depart", "solution": "@code.s#abime-solution",
+          "check": { "type": "registers", "maxSteps": 200, "terminer": true, "systemeRendu": true, "expected": { "D0": "$0000000A", "D7": "$00000514" } } }
       ]
     },
     {
@@ -32,20 +53,20 @@
         { "type": "cours", "id": "amiga-ch10-cours-pratiques", "titre": "Guru Meditation et règles d'or", "fichier": "02-pratiques.md", "source": "Rédigé pour 68k Trainer d'après Amiga Intern (Abacus), les cours de démo (Stash of Code) et l'expérience de la scène" },
         {
           "type": "exemple", "id": "amiga-ch10-ex-intro", "titre": "Une petite intro",
-          "introduction": "Tout le parcours en un programme : un ciel dégradé et une barre de trois couleurs qui rebondit (Copper, animé par une routine VBL), une balle (sprite 0) et une note tenue (Paula). Coche 🔊, lance **🎬 Temps réel**, puis clique pour finir. Exporte-le, et lance-le dans un émulateur !",
+          "introduction": "Ce programme réunit le parcours : un ciel dégradé et une barre de trois couleurs qui rebondit (le Copper, animé par une routine VBL), une balle (le sprite 0) et une note tenue (Paula). Coche 🔊, lance « 🎬 Temps réel » puis clique pour finir ; tu peux ensuite l'exporter et le lancer dans un émulateur.",
           "code": "@code.s#intro-exemple",
           "machine": { "ecran": true, "interactif": true },
           "explications": [
-            { "ligne": 4, "texte": "`prendre` : le système est coupé, on a les puces pour nous." },
-            { "ligne": 5, "texte": "Les sprites : la balle, puis la liste vide pour les 7 autres." },
-            { "ligne": 22, "texte": "Paula : une onde carrée jouée à une période de 508, une note grave, au volume 24." },
+            { "ligne": 4, "texte": "`prendre` coupe le système, et les puces sont à nous." },
+            { "ligne": 5, "texte": "Le sprite 0 reçoit la balle, et les 7 autres la liste vide." },
+            { "ligne": 22, "texte": "Paula joue une onde carrée à la période 508, une note grave, au volume 24." },
             { "ligne": 26, "texte": "Un seul DMACON allume tout : DMAEN, COPEN, SPREN et AUD0EN." },
-            { "ligne": 27, "texte": "La routine VBL fera bouger la barre ; le programme principal attend le clic." },
+            { "ligne": 27, "texte": "La routine VBL fait bouger la barre pendant que le programme principal attend le clic." },
             { "ligne": 30, "texte": "Le son s'arrête avant de rendre le système." },
-            { "ligne": 39, "texte": "Dans la VBL : la position suivante de la table, en boucle sur 32 valeurs." },
+            { "ligne": 39, "texte": "La VBL lit la position suivante de la table, en boucle sur 32 valeurs." },
             { "ligne": 46, "texte": "Les trois WAIT de la barre sont réécrits, 4 lignes les uns sous les autres." }
           ],
-          "conclusion": "Copper, sprites, son, interruption : une intro de la scène Amiga, ce n'est que ça… et beaucoup d'imagination. À toi de jouer."
+          "conclusion": "Une intro de la scène Amiga n'est faite que de Copper, de sprites, de son et d'interruptions, avec beaucoup d'imagination."
         }
       ]
     }
@@ -56,15 +77,17 @@
     "questions": [
       { "id": "q1", "enonce": "Pourquoi un programme AmigaDOS n'a-t-il pas de ORG ?", "choix": ["AmigaDOS le charge où il trouve de la place et corrige ses adresses (relocations)", "ORG n'existe pas sur l'Amiga", "Pour aller plus vite"], "bonne": 0, "explication": "LoadSeg ajoute l'adresse réelle du chargement aux adresses listées dans les relocations." },
       { "id": "q2", "enonce": "Que demande `SECTION ecran,BSS_C` ?", "choix": ["Une zone vide en Chip RAM", "Du code en Fast RAM", "Un écran du Workbench"], "bonne": 0, "explication": "BSS = zone vide ; _C = Chip RAM, visible des puces." },
+      { "id": "q7", "enonce": "Les boutons lus dans `$BFE001` sont actifs à…", "choix": ["1", "0"], "bonne": 1, "explication": "Le bit passe à 0 quand on appuie : on le teste avec BTST, puis BEQ saute si le bouton est enfoncé." },
       { "id": "q3", "enonce": "Un Guru Meditation #00000004 signale…", "choix": ["une instruction illégale", "une division par zéro", "une erreur de bus"], "bonne": 0, "explication": "Le numéro est celui de l'exception du 68000 : 4 = instruction illégale." },
       { "id": "q4", "enonce": "Lancé depuis une icône, un programme doit d'abord…", "choix": ["récupérer et rendre le message du Workbench", "ouvrir intuition.library", "rien de spécial"], "bonne": 0, "explication": "WaitPort et GetMsg au début, ReplyMsg avant de finir ; sinon, lance-le depuis le Shell." },
       { "id": "q5", "enonce": "Pour qu'une animation ait la même vitesse sur un A500 et un A1200, on la cale sur…", "choix": ["la VBL ou le faisceau", "des boucles d'attente", "la vitesse du 68000"], "bonne": 0, "explication": "L'image dure toujours 1/50 de seconde en PAL ; le processeur, lui, peut être bien plus rapide." },
+      { "id": "q8", "enonce": "Comment un programme ouvre-t-il dos.library ?", "choix": ["Avec OpenLibrary, à −552 d'ExecBase", "En lisant l'adresse $DFF000", "Avec un TRAP"], "bonne": 0, "explication": "On charge ExecBase depuis $4 dans A6, le nom dans A1 et la version dans D0, puis `JSR -552(A6)`." },
       { "id": "q6", "enonce": "Quel émulateur peut faire tourner tes programmes ?", "choix": ["WinUAE ou FS-UAE", "Hatari", "DOSBox"], "bonne": 0, "explication": "Hatari émule l'Atari ST ; WinUAE et FS-UAE, l'Amiga." }
     ]
   },
   "bonus": [
     { "type": "exercice", "id": "amiga-ch10-bonus-intro", "titre": "Ton intro", "variante": "ecrire", "niveau": 3,
-      "enonce": "Défi final : la balle (sprite 0, un carré blanc) au milieu de l'écran en **(152, 120)**, et la barre de trois couleurs qui suit la table `positions`, une position par image, pendant **40 images** ; puis tout reste en place jusqu'au clic. Les listes et les données sont prêtes : à toi d'écrire le programme.",
+      "enonce": "Défi final : la balle (sprite 0, un carré blanc) au milieu de l'écran en (152, 120), et la barre de trois couleurs qui suit la table `positions`, une position par image, pendant 40 images ; puis tout reste en place jusqu'au clic. Les listes et les données sont prêtes, il reste à écrire le programme.",
       "indices": ["Les pointeurs de sprites comme au chapitre 8 ; les mots de contrôle : VSTART = $2C + 120, HSTART = $81 + 152, VSTOP = VSTART + 16.", "La barre : 4 WAIT à réécrire (barre, barre2, barre3, barre4), espacés de `$0400`. Après 40 images, l'index vaut 7 : la barre commence à la ligne `$81`."],
       "codeDepart": "@code.s#bonus-intro-depart", "solution": "@code.s#bonus-intro-solution",
       "check": { "type": "image", "maxSteps": 3000000, "terminer": true, "systemeRendu": true, "image": 50, "expected": { "10,86": "$0F00", "10,90": "$0F80", "10,94": "$0FF0", "10,98": "$0003", "152,120": "$0FFF", "167,135": "$0FFF", "151,120": "$0003" } },

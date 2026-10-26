@@ -1000,3 +1000,11 @@ sprite1:
     SECTION ecran,BSS_C
 plan:   DS.B    40*256
 
+
+;=== rappel
+START:
+    MOVEQ   #10,D1          ; 10 lignes
+    LSL.W   #6,D1           ; dans les bits 15-6
+    OR.W    #3,D1           ; 3 mots de large : D1 = BLTSIZE
+    MOVEQ   #0,D0
+    RTS

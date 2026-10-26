@@ -8,7 +8,7 @@ START:
     MOVE.L  #$01000000,$40(A5)  ; BLTCON0 = $0100 : canal D seul, minterm 0 ; BLTCON1 = 0
     MOVE.L  #plan,$54(A5)   ; BLTDPT : le début du plan
     MOVE.W  #0,$66(A5)      ; BLTDMOD : on efface tout, sans rien sauter
-    MOVE.W  #(256<<6)|20,$58(A5) ; BLTSIZE : 256 lignes de 20 mots. C'est parti !
+    MOVE.W  #(256<<6)|20,$58(A5) ; BLTSIZE : 256 lignes de 20 mots. C'est parti.
     BSR     attendre_blitter
     MOVE.L  #$09F00000,$40(A5)  ; BLTCON0 = $09F0 : canaux A et D, D = A ; BLTCON1 = 0
     MOVE.L  #-1,$44(A5)     ; BLTAFWM = BLTALWM = $FFFF : rien de masqué
@@ -1701,3 +1701,17 @@ cop_plans:
     SECTION ecran,BSS_C
 plan:   DS.B    40*256
 
+
+;=== rappel
+START:
+    MOVEQ   #0,D1
+    MOVE.W  #$90,D1         ; une ligne de l'écran
+    LSL.W   #8,D1           ; dans l'octet fort
+    OR.W    #$07,D1         ; D1 = le premier mot d'un WAIT
+    MOVEQ   #10,D2          ; y = 10
+    MULU    #40,D2          ; 40 octets par ligne
+    MOVEQ   #100,D3         ; x = 100
+    LSR.W   #3,D3           ; x / 8
+    ADD.W   D3,D2           ; D2 = l'octet du pixel (x, y) dans le plan
+    MOVEQ   #0,D0
+    RTS

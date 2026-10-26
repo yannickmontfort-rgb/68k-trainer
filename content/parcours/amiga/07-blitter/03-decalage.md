@@ -1,13 +1,12 @@
 ## Au pixel près
 
 Le Blitter travaille par mots de 16 pixels. Pour poser un dessin à une abscisse qui n'est pas un
-multiple de 16, il **décale** les données de A (et de B) vers la droite, de 0 à 15 bits, au vol :
+multiple de 16, il **décale** au vol les données de A et de B vers la droite, de 0 à 15 bits :
+le décalage de A, ASH, occupe les bits 15-12 de `BLTCON0`, et celui de B, BSH, les bits 15-12 de
+`BLTCON1`.
 
-- les bits 15-12 de `BLTCON0` : **ASH**, le décalage de A ;
-- les bits 15-12 de `BLTCON1` : **BSH**, le décalage de B.
-
-Pour un dessin à l'abscisse x : décalage = **x mod 16**, et le premier mot de destination est
-celui qui contient x, soit l'octet `(x ÷ 16) × 2` de la ligne.
+Pour un dessin à l'abscisse x, le décalage vaut x mod 16, et le premier mot de destination est
+celui qui contient x, à l'octet `(x ÷ 16) × 2` de la ligne.
 
 ```asm
     MOVE.W  D0,D1           ; D0 = x
@@ -19,16 +18,14 @@ celui qui contient x, soit l'octet `(x ÷ 16) × 2` de la ligne.
 
 ## Le mot de plus
 
-En se décalant, un dessin de 16 pixels déborde sur le mot suivant : il en occupe **deux**. On
-blitte donc **un mot de plus par ligne**… mais ce mot supplémentaire de la source contient
-n'importe quoi. Les **masques** règlent le problème :
+En se décalant, un dessin de 16 pixels déborde sur le mot suivant et en occupe deux : on blitte
+donc un mot de plus par ligne. Ce mot supplémentaire de la source contient n'importe quoi, et ce
+sont les masques qui le neutralisent : `BLTAFWM` (*First Word Mask*) s'applique au premier mot de
+chaque ligne de A, `BLTALWM` (*Last Word Mask*) au dernier.
 
-- `BLTAFWM` (*First Word Mask*) s'applique au **premier** mot de chaque ligne de A ;
-- `BLTALWM` (*Last Word Mask*) au **dernier**.
-
-Avec `BLTALWM` = `$0000`, le mot de plus est vidé avant d'être décalé : seuls les bits qui
-débordent du mot précédent arrivent dans la destination. La source lit donc un mot de trop par
-ligne : son modulo vaut **−2** pour revenir au bon endroit.
+Avec `BLTALWM` = `$0000`, le mot de plus est vidé avant d'être décalé, et seuls les bits qui
+débordent du mot précédent arrivent dans la destination. Comme la source lit un mot de trop par
+ligne, son modulo vaut −2 pour la ramener au bon endroit.
 
 ```asm
     MOVE.W  #$FFFF,$44(A5)  ; BLTAFWM : premier mot entier
@@ -38,5 +35,5 @@ ligne : son modulo vaut **−2** pour revenir au bon endroit.
     MOVE.W  #(16<<6)|2,$58(A5) ; 16 lignes de 2 mots
 ```
 
-Le dessin de 16 × 16 est rangé d'un seul tenant (1 mot par ligne) : sans le `−2`, la deuxième
-ligne commencerait un mot trop loin.
+Le dessin de 16 × 16 est rangé d'un seul tenant, un mot par ligne : sans ce −2, sa deuxième ligne
+commencerait un mot trop loin.

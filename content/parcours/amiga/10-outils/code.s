@@ -266,3 +266,37 @@ balle:
     DC.W    0,0
     DCB.L   16,$FFFF0000
     DC.W    0,0
+
+;=== rappel
+START:
+    MOVEQ   #64,D1          ; un échantillon de 64 octets
+    LSR.L   #1,D1           ; D1 = sa longueur pour AUD0LEN
+    MOVEQ   #0,D0           ; tout va bien
+    RTS
+
+;=== abime-depart
+; Additionne les 8 mots de « table » dans D7 et compare la somme à « attendu » :
+; code de retour 0 si elles sont égales, 10 (ERROR) sinon.
+START:
+    ; à toi
+    MOVEQ   #0,D0
+    RTS
+table:  DC.W    120,250,75,300,55,400,90,10
+attendu: DC.W   1310
+
+;=== abime-solution
+START:
+    LEA     table(PC),A0
+    MOVEQ   #0,D7
+    MOVEQ   #7,D1           ; 8 mots
+.somme:
+    ADD.W   (A0)+,D7
+    DBRA    D1,.somme
+    MOVEQ   #0,D0           ; 0 : tout va bien...
+    CMP.W   attendu(PC),D7
+    BEQ.S   .fin
+    MOVEQ   #10,D0          ; ... sauf si la somme est fausse : 10, ERROR
+.fin:
+    RTS
+table:  DC.W    120,250,75,300,55,400,90,10
+attendu: DC.W   1310
