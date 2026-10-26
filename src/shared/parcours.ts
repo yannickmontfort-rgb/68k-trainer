@@ -83,7 +83,8 @@ export interface ContenuExemple extends ContenuBase {
   machine?: MachineOptions
 }
 
-export type VarianteExercice = 'completer' | 'ecrire' | 'corriger' | 'ordonner'
+/** « modifier » : un programme qui marche, à changer pour obtenir un autre résultat. */
+export type VarianteExercice = 'completer' | 'ecrire' | 'corriger' | 'ordonner' | 'modifier'
 
 export interface ContenuExercice extends ContenuBase {
   type: 'exercice'
@@ -173,6 +174,7 @@ export const SEUIL_QCM_DEFAUT = 0.7
 
 export const LIBELLE_VARIANTE: Record<VarianteExercice, string> = {
   completer: 'À compléter',
+  modifier: 'À modifier',
   ecrire: 'À écrire',
   corriger: 'À corriger',
   ordonner: 'À remettre dans l’ordre'

@@ -116,7 +116,7 @@ function verifierParcours(parcours: Parcours): void {
                 expect(cpu.d[0], 'code de retour (D0) à la fin : MOVEQ #0,D0 avant le RTS').toBe(0)
               }
             })
-            if (c.variante === 'completer' || c.variante === 'corriger') {
+            if (c.variante === 'completer' || c.variante === 'corriger' || c.variante === 'modifier') {
               it(`exercice « ${c.titre} » : le code de départ n'est pas déjà juste`, () => {
                 const asm = assemble(c.codeDepart)
                 if (!asm.success) return // erreur de syntaxe volontaire
