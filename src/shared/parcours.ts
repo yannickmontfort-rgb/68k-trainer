@@ -13,6 +13,8 @@ export interface MachineOptions {
   modeUtilisateur?: boolean
   /** Touches tapées à l'avance (Cnecin, Bconin...). */
   touches?: { ascii: number; scancode: number }[]
+  /** GEM : bouton « cliqué » dans une boîte d'alerte (form_alert), sinon le bouton par défaut. */
+  boutonAlerte?: number
   /** Afficher l'aperçu de l'écran Atari (basse résolution). */
   ecran?: boolean
   /** Adresse affichée au départ dans la vue mémoire du débogueur (sinon : début du programme). */

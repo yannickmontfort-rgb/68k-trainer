@@ -10,9 +10,10 @@ themes: ["graphisme", "gem"]
 > premier programme. Pour une fonction précise, la référence reste la documentation d'Atari (Bible
 > ST, Profibuch, Atari Compendium).
 
-> **Le simulateur de 68k Trainer ne simule ni la Ligne A ni le GEM** : les exemples ci-dessous
-> s'assemblent, mais se lancent dans un vrai TOS, avec le bouton **« Essayer dans Hatari »**
-> (EmuTOS fournit la Ligne A et le GEM).
+> Le simulateur de 68k Trainer connaît les fonctions Ligne A `$A000` à `$A003`, `$A009` et `$A00A`
+> (tracés identiques à ceux d'EmuTOS), et de l'AES `appl_init`, `appl_exit`, `form_alert`,
+> `graf_handle` et `graf_mouse`. Pour le reste, et pour le VDI, lance ton programme dans Hatari
+> avec le bouton « Essayer dans Hatari ».
 
 ## La Ligne A : un mécanisme du 68000 exploité par le TOS
 
@@ -53,7 +54,7 @@ par des tableaux dont elles contiennent l'adresse :
 | 12 | `PTSIN` | adresse des coordonnées (paires x, y) |
 | 16 / 20 | `INTOUT` / `PTSOUT` | adresses des résultats |
 | 24-30 | `COLBIT0`-`COLBIT3` | couleur de tracé, un bit par plan |
-| 32 | `LSTLIN` | dernier point d'une ligne : 0 = tracé, −1 = non |
+| 32 | `LSTLIN` | en OU exclusif seulement : 0 = le dernier point n'est pas tracé (pour ne pas inverser deux fois le sommet commun de deux segments), une autre valeur = il l'est |
 | 34 | `LNMASK` | motif de la ligne (`$FFFF` = trait plein) |
 | 36 | `WMODE` | mode d'écriture (0 remplacement, 1 transparent, 2 OU exclusif, 3 transparent inversé) |
 | 38-44 | `X1`, `Y1`, `X2`, `Y2` | extrémités d'une ligne ou coins d'un rectangle |
@@ -75,7 +76,7 @@ par des tableaux dont elles contiennent l'adresse :
         CLR.W   30(A5)          ; COLBIT3 = 0
         MOVE.W  #$FFFF,34(A5)   ; trait plein
         CLR.W   36(A5)          ; mode remplacement
-        MOVE.W  #-1,32(A5)      ; LSTLIN
+        MOVE.W  #-1,32(A5)      ; LSTLIN (sans effet hors du OU exclusif)
         MOVE.W  #10,38(A5)      ; X1
         MOVE.W  #10,40(A5)      ; Y1
         MOVE.W  #300,42(A5)     ; X2
@@ -196,4 +197,5 @@ on ouvre un **poste de travail virtuel** (`v_opnvwk`, VDI 100) qui rend son prop
 
 > Fiche complétée et corrigée le 21/10/2026 (Claude) : les paramètres de la Ligne A passent surtout
 > par ses **variables** (rendues par `$A000`), pas seulement par 5 tableaux ; table des 16
-> fonctions, exemple pixel + ligne, appel `TRAP #2` (D0/D1), premier programme GEM.
+> fonctions, exemple pixel + ligne, appel `TRAP #2` (D0/D1), premier programme GEM. Corrigée le
+> 26/10/2026 : rôle de `LSTLIN`, vérifié dans le code source et le comportement d'EmuTOS.
