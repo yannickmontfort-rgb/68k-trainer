@@ -647,3 +647,16 @@ debut:   DC.B   'Bonjour '
 find:
     EVEN
 tampon:  DS.B   80
+
+;=== rappel
+START:
+    MOVEQ   #0,D1
+    MOVEQ   #4,D2
+.boucle:
+    ADD.W   D2,D1           ; 4 + 3 + 2 + 1 + 0
+    DBRA    D2,.boucle
+    LSL.W   #2,D1
+    MOVE.L  D1,-(SP)
+    MOVE.L  (SP)+,D3
+    MOVEQ   #0,D0
+    RTS

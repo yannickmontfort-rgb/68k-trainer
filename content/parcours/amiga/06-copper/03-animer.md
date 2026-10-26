@@ -1,8 +1,8 @@
 ## Le 68000 modifie la liste
 
-Une liste Copper est une simple zone de mémoire : le 68000 peut changer ses valeurs **entre deux
-images**, et le Copper appliquera la nouvelle version à l'image suivante. Pour animer, on repère
-les mots à modifier par des **étiquettes** :
+Une liste Copper n'est qu'une zone de mémoire : le 68000 peut changer ses valeurs entre deux
+images, et le Copper appliquera la nouvelle version à l'image suivante. Pour animer, on repère les
+mots à modifier par des étiquettes :
 
 ```asm
 copper:
@@ -30,8 +30,8 @@ Pour placer la barre à la ligne contenue dans D0, on fabrique le mot du WAIT :
 ## Au bon moment : une fois par image
 
 Si l'on modifie la liste pendant que le Copper la lit, l'image peut être coupée en deux. On la
-modifie donc **pendant le retour du faisceau**, en bas de l'écran. `attendre_vbl` (dans
-`amiga-systeme.s`) attend que le faisceau atteigne la ligne 303, sous l'image visible :
+modifie donc **pendant le retour du faisceau**, en bas de l'écran : `attendre_vbl`, dans
+`amiga-systeme.s`, attend que le faisceau atteigne la ligne 303, sous l'image visible.
 
 ```asm
 .image:
@@ -44,9 +44,9 @@ modifie donc **pendant le retour du faisceau**, en bas de l'écran. `attendre_vb
 
 ## Une barre qui rebondit : les tables
 
-Pour une trajectoire qui n'est pas une droite (un rebond, une ondulation), on ne calcule pas de
-sinus au vol : on lit une **table** de positions calculée à l'avance, rangée dans le programme
-avec `DC.B`, et un index qui avance à chaque image et revient au début à la fin de la table.
+Pour une trajectoire qui n'est pas une droite, un rebond ou une ondulation, on ne calcule pas de
+sinus au vol. On lit une table de positions calculée à l'avance et rangée dans le programme avec
+`DC.B`, grâce à un index qui avance à chaque image et revient au début à la fin de la table.
 
 ```asm
 positions:
@@ -56,6 +56,6 @@ positions:
 ## Le manuel corrigé
 
 L'exercice 2 du manuel Amiga fourni avec 68k Trainer déplace sa barre ainsi, mais il ne modifie
-que le **premier** WAIT : le second reste à la ligne `$31`. Dès que la barre descend plus bas, ce
+que le premier WAIT, et le second reste à la ligne `$31`. Dès que la barre descend plus bas, ce
 second WAIT est déjà dépassé quand le Copper y arrive, le noir revient aussitôt, et la barre
 disparaît. Il faut déplacer les deux WAIT ensemble, comme ci-dessus (voir l'errata).

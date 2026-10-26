@@ -657,3 +657,21 @@ barre:
 fin_barre:
     DC.W    $5807,$FFFE,$0180,$0000
     DC.W    $FFFF,$FFFE
+
+;=== rappel
+START:
+    LEA     $DFF000,A5
+    MOVE.W  $02(A5),D0      ; DMACONR
+    AND.W   #$07FF,D0       ; seulement les bits des canaux
+    MOVE.W  #$0100,$96(A5)  ; DMACON
+    MOVE.W  $02(A5),D1
+    AND.W   #$07FF,D1
+    OR.W    #$8000,D0
+    MOVE.W  D0,$96(A5)      ; DMACON
+    MOVEQ   #17,D2          ; x
+    MOVEQ   #2,D3           ; y
+    MULU    #40,D3
+    LSR.W   #3,D2
+    ADD.W   D2,D3
+    MOVEQ   #0,D0
+    RTS

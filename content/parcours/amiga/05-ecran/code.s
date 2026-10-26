@@ -1007,3 +1007,26 @@ cop_plans:
     SECTION ecran,BSS_C
 plan1:  DS.B    40*256
 plan2:  DS.B    40*256
+
+;=== rappel
+START:
+    MOVEA.L 4.W,A6
+    MOVE.L  #400,D0
+    MOVE.L  #$10002,D1      ; MEMF_CHIP + MEMF_CLEAR
+    JSR     -198(A6)        ; AllocMem
+    TST.L   D0
+    BEQ.S   .fin
+    MOVE.L  D0,D7           ; l'adresse du bloc
+    MOVEA.L D0,A0
+    MOVE.W  #99,D2
+.remplir:
+    MOVE.L  #$12345678,(A0)+
+    DBRA    D2,.remplir
+    MOVE.L  A0,D6
+    SUB.L   D7,D6           ; le nombre d'octets écrits
+    MOVEA.L D7,A1
+    MOVE.L  #400,D0
+    JSR     -210(A6)        ; FreeMem
+.fin:
+    MOVEQ   #0,D0
+    RTS
