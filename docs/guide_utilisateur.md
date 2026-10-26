@@ -42,7 +42,7 @@ fait par un **clic droit → Ouvrir** (puis « Ouvrir » dans la fenêtre d'aver
 
 | Onglet | À quoi il sert |
 |---|---|
-| **Parcours** | Le cours guidé de la machine choisie : 8 chapitres pour l'Atari ST, 10 pour l'Amiga (les 3 premiers, le 68000, sont communs). C'est là qu'on commence. |
+| **Parcours** | Le cours guidé de la machine choisie : 9 chapitres pour l'Atari ST, 10 pour l'Amiga (les 3 premiers, le 68000, sont communs). C'est là qu'on commence. |
 | **Bac à sable** | Un vrai éditeur pour tes propres programmes : **Ouvrir**, **Enregistrer** (Ctrl+O, Ctrl+S), assembler, exécuter pas à pas, exporter, essayer dans l'émulateur. Le bouton **Exemple** remet le programme d'exemple. |
 | **Fiches** | Tous les **cours du parcours**, rangés par chapitre, à relire quand tu veux, et les **fiches de référence** (68000, TOS, MFP, Ligne A et GEM, registres matériels ; Exec, bibliothèques, puces custom de l'Amiga). |
 | **Émulateurs** | Installer, lancer ou retirer Hatari et WinUAE, ouvrir leur dossier de partage. |
