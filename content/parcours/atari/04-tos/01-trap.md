@@ -1,25 +1,22 @@
 ## Le TOS, une bibliothèque de services
 
-Le **TOS** (*The Operating System*) est le système d'exploitation de l'Atari ST, gravé en ROM. Il
-offre des centaines de **fonctions** toutes prêtes : afficher du texte, lire le clavier, ouvrir un
-fichier, changer la résolution… On les appelle avec l'instruction **`TRAP`**, qui déclenche une
-exception : le processeur passe en mode superviseur et saute dans le TOS.
+Le TOS (*The Operating System*) est le système de l'Atari ST, gravé en ROM. Il offre des centaines
+de fonctions toutes prêtes, pour afficher du texte, lire le clavier, ouvrir un fichier ou changer
+de résolution, et on les appelle avec l'instruction **`TRAP`**. Ce `TRAP` déclenche une exception :
+le processeur passe en mode superviseur et saute dans le TOS.
 
 | Appel | Couche | Exemples de fonctions |
 |---|---|---|
-| `TRAP #1` | **GEMDOS** : fichiers, mémoire, console | Cconws (afficher un texte), Cnecin (lire une touche), Pterm0 (terminer) |
-| `TRAP #2` | **GEM** (AES/VDI) : fenêtres, menus, dessin | — |
-| `TRAP #13` | **BIOS** : entrées-sorties de bas niveau | Bconout (envoyer un caractère), Setexec (changer un vecteur) |
-| `TRAP #14` | **XBIOS** : matériel de l'Atari | Physbase (adresse de l'écran), Setcolor (couleur), Supexec |
+| `TRAP #1` | GEMDOS : fichiers, mémoire, console | Cconws (afficher un texte), Cnecin (lire une touche), Pterm0 (terminer) |
+| `TRAP #2` | GEM (AES/VDI) : fenêtres, menus, dessin | — |
+| `TRAP #13` | BIOS : entrées-sorties de bas niveau | Bconout (envoyer un caractère), Setexec (changer un vecteur) |
+| `TRAP #14` | XBIOS : matériel de l'Atari | Physbase (adresse de l'écran), Setcolor (couleur), Supexec |
 
 ## Passer les paramètres par la pile
 
-Chaque appel suit le même rituel :
-
-1. on **empile les paramètres**, du dernier au premier ;
-2. on empile le **numéro de la fonction** (un mot) ;
-3. on exécute **`TRAP #n`** ;
-4. on **nettoie la pile** : on ajoute à SP le nombre d'octets empilés.
+Le TOS lit ses paramètres sur la pile. On empile donc les paramètres du dernier au premier, puis
+le numéro de la fonction (un mot), on exécute `TRAP #n`, et au retour on nettoie la pile en
+ajoutant à SP le nombre d'octets empilés.
 
 ```asm
     PEA     MESSAGE         ; paramètre : l'adresse du texte (PEA empile 4 octets)
@@ -28,17 +25,17 @@ Chaque appel suit le même rituel :
     ADDQ.L  #6,SP           ; 4 + 2 = 6 octets à retirer
 ```
 
-`PEA` (*Push Effective Address*) empile une **adresse** : c'est la façon habituelle de passer
-l'adresse d'un texte ou d'une table.
+`PEA` (*Push Effective Address*) empile une adresse : c'est ainsi qu'on passe l'adresse d'un texte
+ou d'une table.
 
-Le nettoyage est **à ta charge**. Oublie-le, et la pile se déséquilibre : le prochain `RTS`
-partira dans le décor (pour 8 octets ou moins, `ADDQ.L #n,SP` ; au-delà, `LEA n(SP),SP`).
+**Le nettoyage de la pile est à ta charge.** Si tu l'oublies, la pile se déséquilibre et le
+prochain `RTS` part n'importe où. Jusqu'à 8 octets, on écrit `ADDQ.L #n,SP`, et au-delà
+`LEA n(SP),SP`.
 
 ## Ce que le TOS rend et ce qu'il abîme
 
-- La **valeur de retour** d'une fonction est toujours dans **D0**.
-- Le TOS **préserve D3-D7 et A3-A6**, mais il peut **modifier D0-D2 et A0-A2**. Ne compte jamais
-  sur ces registres après un appel système.
+La fonction rend sa valeur de retour dans D0. Le TOS préserve D3-D7 et A3-A6, mais peut modifier
+D0-D2 et A0-A2 : après un appel système, ne compte plus sur ces registres.
 
 ## Quelques fonctions utiles
 
@@ -52,12 +49,12 @@ partira dans le décor (pour 8 octets ou moins, `ADDQ.L #n,SP` ; au-delà, `LEA 
 | `Physbase()` | XBIOS 2 | — ; D0 = adresse de l'écran affiché | 2 |
 | `Setcolor(n,c)` | XBIOS 7 | `MOVE.W #couleur,-(SP)` puis `MOVE.W #n,-(SP)` | 6 |
 
-Désormais, nos programmes se terminent proprement avec **`Pterm0`** :
+Désormais, nos programmes se terminent avec `Pterm0`, qui rend la main au TOS sans revenir :
 
 ```asm
     CLR.W   -(SP)           ; empile 0 : fonction Pterm0
-    TRAP    #1              ; le GEMDOS termine le programme (pas de retour)
+    TRAP    #1              ; le GEMDOS termine le programme
 ```
 
-Dans 68k Trainer, le texte affiché apparaît dans la zone **Sortie texte** du panneau de pas à pas.
-Les codes `13,10` (retour chariot, saut de ligne) passent à la ligne.
+Dans 68k Trainer, le texte affiché apparaît dans la zone Sortie texte du panneau de pas à pas, et
+les codes `13,10` (retour chariot, saut de ligne) passent à la ligne.

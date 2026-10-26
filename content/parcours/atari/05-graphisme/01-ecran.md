@@ -1,12 +1,12 @@
 ## L'écran est de la mémoire
 
-Sur l'Atari ST, il n'y a pas de carte graphique : l'image affichée est **une zone de la mémoire
-vive** de 32 000 octets, le *framebuffer*. Le circuit vidéo (le **Shifter**) la relit 50 fois par
-seconde pour fabriquer l'image. Écrire dans cette zone, c'est dessiner.
+L'Atari ST n'a pas de carte graphique : l'image affichée est une zone de 32 000 octets de la
+mémoire vive, le *framebuffer*, que le circuit vidéo, le Shifter, relit 50 fois par seconde pour
+fabriquer l'image. Écrire dans cette zone, c'est donc dessiner.
 
-Son adresse s'obtient avec **XBIOS 2, `Physbase`** (l'écran affiché) ou **XBIOS 3, `Logbase`**
-(l'écran où le TOS dessine). Sur un 1040 ST, c'est généralement `$F8000`. Ce n'est pas une zone
-protégée : un programme en mode utilisateur peut y écrire.
+Son adresse s'obtient avec XBIOS 2, `Physbase`, pour l'écran affiché, ou XBIOS 3, `Logbase`, pour
+l'écran où le TOS dessine ; sur un 1040 ST, c'est généralement `$F8000`. Cette zone n'est pas
+protégée, et un programme en mode utilisateur peut y écrire.
 
 ## Les trois résolutions
 
@@ -16,13 +16,13 @@ protégée : un programme en mode utilisateur peut y écrire.
 | Moyenne | 640 × 200 | 4 | 2 | 160 |
 | Haute (moniteur monochrome) | 640 × 400 | 2 | 1 | 80 |
 
-On travaille ici en **basse résolution**, celle des jeux et des démos.
+On travaille ici en basse résolution, celle des jeux et des démos.
 
 ## Les plans de bits entrelacés
 
-Avec 16 couleurs, chaque pixel a besoin de **4 bits** (0 à 15). Mais ces 4 bits ne sont pas
-rangés côte à côte ! L'écran est découpé en **groupes de 16 pixels**, et chaque groupe occupe
-**4 mots consécutifs** (8 octets), un par **plan** :
+Avec 16 couleurs, chaque pixel a besoin de 4 bits, mais ces 4 bits ne sont pas rangés côte à côte.
+L'écran est découpé en groupes de 16 pixels, et chaque groupe occupe 4 mots consécutifs (8 octets),
+un par **plan de bits** :
 
 ```
   adresse du groupe +0 : plan 0  (bit 0 de la couleur des 16 pixels)
@@ -31,32 +31,28 @@ rangés côte à côte ! L'écran est découpé en **groupes de 16 pixels**, et 
                     +6 : plan 3  (bit 3)
 ```
 
-Dans chaque mot, le **bit 15 est le pixel de gauche** et le bit 0 celui de droite. La couleur
-d'un pixel se lit verticalement, en prenant son bit dans chacun des quatre plans.
-
-Exemple : un pixel de couleur 5 (`%0101`) a son bit à 1 dans les plans 0 et 2, et à 0 dans les
-plans 1 et 3.
+Dans chaque mot, le bit 15 est le pixel de gauche et le bit 0 celui de droite. La couleur d'un
+pixel se lit donc verticalement, en prenant son bit dans chacun des quatre plans : un pixel de
+couleur 5 (`%0101`) a son bit à 1 dans les plans 0 et 2, et à 0 dans les plans 1 et 3.
 
 ## Trouver l'adresse d'un pixel
 
-Une ligne fait 320 pixels = 20 groupes × 8 octets = **160 octets**. Pour le pixel (X, Y) :
+Une ligne fait 320 pixels, soit 20 groupes de 8 octets, 160 octets en tout. Pour le pixel (X, Y) :
 
 ```
 adresse du groupe  = écran + Y × 160 + (X ÷ 16) × 8
 numéro du bit      = 15 − (X modulo 16)
 ```
 
-Attention : `(X ÷ 16) × 8` se calcule **avec une division entière d'abord**. En assembleur :
-`LSR.W #4` (÷ 16) puis `LSL.W #3` (× 8), ou `LSR.W #1` puis `AND.W #$FFF8`. Écrire simplement
-« X ÷ 2 » est une erreur (on la retrouvera dans une routine du manuel).
+`(X ÷ 16) × 8` se calcule avec une division entière d'abord, par `LSR.W #4` (÷ 16) puis `LSL.W #3`
+(× 8), ou par `LSR.W #1` puis `AND.W #$FFF8`. Écrire simplement « X ÷ 2 » est une erreur, qu'on
+retrouvera dans une routine du manuel.
 
 ## Allumer, éteindre, choisir une couleur
 
-Pour modifier un pixel sans abîmer ses 15 voisins du même mot, on utilise les masques du
-chapitre 3 :
+Pour modifier un pixel sans abîmer ses 15 voisins du même mot, on se sert des masques : `OR.W`
+avec un masque comme `%0000 0100 0000 0000` met le bit à 1, et `AND.W` avec le masque inversé le
+met à 0.
 
-- `OR.W` avec un masque `%0000 0100 0000 0000` met le bit à 1 ;
-- `AND.W` avec le masque **inversé** le met à 0.
-
-Pour donner la couleur c au pixel, on le traite plan par plan : bit à 1 dans le plan n si le bit n
-de c vaut 1, bit à 0 sinon.
+Pour donner la couleur c au pixel, on le traite plan par plan : son bit passe à 1 dans le plan n
+si le bit n de c vaut 1, et à 0 sinon.

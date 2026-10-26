@@ -1,22 +1,22 @@
 ## Deux modes de fonctionnement
 
-Le 68000 fonctionne dans l'un de deux modes, choisi par le bit **S** du registre d'état :
+Le 68000 fonctionne dans l'un de deux modes, choisi par le bit S du registre d'état.
 
-| | Mode **utilisateur** (S = 0) | Mode **superviseur** (S = 1) |
+| | Mode utilisateur (S = 0) | Mode superviseur (S = 1) |
 |---|---|---|
 | Qui ? | les programmes lancés par le TOS | le TOS lui-même, les routines d'interruption |
 | Pile | USP | SSP |
 | Interdit | `MOVE …,SR`, `STOP`, `RTE`, `MOVE USP`… (violation de privilège : 8 bombes) | rien |
-| Mémoire sur ST | les **vecteurs et variables système** (`$000`–`$7FF`) et les **registres matériels** (`$FF8000`+) sont protégés : erreur de bus, **2 bombes** | tout est accessible |
+| Mémoire sur ST | les vecteurs et variables système (`$000`–`$7FF`) et les registres matériels (`$FF8000`+) sont protégés : erreur de bus, 2 bombes | tout est accessible |
 
 **À partir de ce chapitre, 68k Trainer lance tes programmes en mode utilisateur**, comme le vrai
-TOS. Écrire directement dans la palette (`$FF8240`) ou lire une variable système (`$484`) provoque
-donc une erreur de bus.
+TOS. Une écriture directe dans la palette (`$FF8240`) ou une lecture d'une variable système
+(`$484`) provoque donc une erreur de bus.
 
 ## Passer en superviseur le temps d'une routine : Supexec
 
-La fonction **XBIOS 38, `Supexec`**, exécute une routine de ton programme **en mode superviseur**,
-puis revient en mode utilisateur. La routine se termine par un simple `RTS`.
+La fonction XBIOS 38, `Supexec`, exécute une routine de ton programme en mode superviseur, puis
+revient en mode utilisateur. La routine se termine par un simple `RTS`.
 
 ```asm
     PEA     ROUTINE         ; adresse de la routine
@@ -29,19 +29,21 @@ ROUTINE:                    ; ici, tout est permis
     RTS
 ```
 
-C'est la méthode recommandée : seules les quelques instructions qui en ont besoin s'exécutent en
-superviseur.
+C'est la méthode recommandée, car seules les quelques instructions qui en ont besoin s'exécutent
+en superviseur.
 
 ## Rester en superviseur : Super
 
-La fonction **GEMDOS 32, `Super`**, fait basculer tout le programme :
+La fonction GEMDOS 32, `Super`, fait basculer tout le programme en superviseur. Elle renvoie
+l'ancienne pile superviseur, qu'on garde pour revenir ensuite en mode utilisateur avec le même
+appel.
 
 ```asm
     CLR.L   -(SP)           ; paramètre 0 : passer en superviseur
     MOVE.W  #32,-(SP)
     TRAP    #1
     ADDQ.L  #6,SP
-    MOVE.L  D0,ANCIENNE_PILE ; Super renvoie l'ancienne pile superviseur : on la garde
+    MOVE.L  D0,ANCIENNE_PILE ; on garde l'ancienne pile superviseur
     ; ... ici, mode superviseur
     MOVE.L  ANCIENNE_PILE,-(SP)
     MOVE.W  #32,-(SP)       ; même appel, avec l'ancienne pile : retour en utilisateur
@@ -49,12 +51,12 @@ La fonction **GEMDOS 32, `Super`**, fait basculer tout le programme :
     ADDQ.L  #6,SP
 ```
 
-Les démos et les jeux l'utilisent pour prendre le contrôle de la machine. Pour un petit accès
-ponctuel, préfère `Supexec`.
+Les démos et les jeux s'en servent pour prendre le contrôle de la machine ; pour un accès
+ponctuel, `Supexec` suffit.
 
 ## Les variables système
 
-Le TOS range ses réglages en mémoire basse. Quelques exemples (lecture et écriture en superviseur) :
+Le TOS range ses réglages en mémoire basse, où on les lit et les écrit en superviseur.
 
 | Adresse | Nom | Contenu |
 |---|---|---|
