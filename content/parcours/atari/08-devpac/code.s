@@ -550,3 +550,11 @@ COULEURS:  DC.W $100,$200,$300,$400,$500,$600,$700,$710,$720,$730,$740,$750,$760
     SECTION DATA
 IMAGE:
     INCBIN  "LOGO.PI1"
+
+;=== rappel
+START:
+    MOVE.W  #8,-(SP)        ; Cnecin : attend une touche
+    TRAP    #1
+    ADDQ.L  #2,SP
+    CLR.W   -(SP)           ; Pterm0
+    TRAP    #1
