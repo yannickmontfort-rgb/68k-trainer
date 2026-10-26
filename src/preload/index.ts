@@ -9,6 +9,7 @@ import {
   type ExportProfil,
   type ProfilPublic,
   type ProgressState,
+  type RomPublique,
   type ResultatProfil
 } from '../shared/ipc'
 
@@ -58,7 +59,12 @@ const api = {
     source: string,
     nom: string,
     dossier?: string
-  ): Promise<{ ok: boolean; erreur?: string; chemin?: string }> => ipcRenderer.invoke(IPC.emulateurEssayer, id, source, nom, dossier),
+  ): Promise<{ ok: boolean; erreur?: string; chemin?: string; manuel?: boolean }> => ipcRenderer.invoke(IPC.emulateurEssayer, id, source, nom, dossier),
+  romsEtat: (): Promise<Partial<Record<'atari' | 'amiga', RomPublique>>> => ipcRenderer.invoke(IPC.romsEtat),
+  romChoisir: (machine: 'atari' | 'amiga'): Promise<{ ok: boolean; erreur?: string; nom?: string }> => ipcRenderer.invoke(IPC.romChoisir, machine),
+  romAdfChoisir: (): Promise<{ ok: boolean; erreur?: string }> => ipcRenderer.invoke(IPC.romAdfChoisir),
+  romUtiliser: (machine: 'atari' | 'amiga', actif: boolean): Promise<void> => ipcRenderer.invoke(IPC.romUtiliser, machine, actif),
+  romRetirer: (machine: 'atari' | 'amiga'): Promise<void> => ipcRenderer.invoke(IPC.romRetirer, machine),
   ouvrirPartage: (machine: 'atari' | 'amiga'): Promise<string> => ipcRenderer.invoke(IPC.ouvrirPartage, machine),
   surProgressionEmulateur: (rappel: (p: { id: string; fait: number; total: number; etape: string }) => void): (() => void) => {
     const f = (_e: unknown, p: { id: string; fait: number; total: number; etape: string }): void => rappel(p)

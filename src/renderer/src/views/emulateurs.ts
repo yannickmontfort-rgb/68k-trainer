@@ -6,7 +6,8 @@ const mo = (octets: number): string => `${Math.round(octets / 1e6)} Mo`
 
 /**
  * Les émulateurs d'étude (Hatari pour l'Atari ST, WinUAE pour l'Amiga) : installation à la demande,
- * lancement, dossier de partage. Pour étudier les machines, pas pour jouer : aucune ROM sous droits.
+ * lancement, dossier de partage, et « ma propre ROM » (TOS ou Kickstart fourni par l'utilisateur).
+ * Pour étudier les machines, pas pour jouer : 68k Trainer ne fournit aucune ROM sous droits.
  */
 export function renderEmulateurs(container: HTMLElement): () => void {
   container.innerHTML = `<div class="emulateurs-view"><p class="loading">Chargement…</p></div>`
@@ -79,13 +80,93 @@ export function renderEmulateurs(container: HTMLElement): () => void {
           dossier de partage et le lance.</p>
         </div>
         ${etats.map(carte).join('')}
-        <div class="apropos-card emulateur-carte emulateur-inactif">
-          <h3>Ma propre ROM <small>bientôt</small></h3>
-          <p class="apropos-texte">Si tu possèdes légalement une ROM d'origine (par exemple le Kickstart vendu avec
-          Amiga Forever), tu pourras l'utiliser à la place du système libre. Ce réglage n'est pas encore disponible.</p>
+        <div class="apropos-card">
+          <h3>Ma propre ROM</h3>
+          <p class="apropos-texte">Si tu possèdes légalement une ROM d'origine, un TOS ou un Kickstart (celui
+          d'Amiga Forever, par exemple, ou celui que tu as copié depuis ta machine), l'émulateur peut s'en servir à
+          la place du système libre. 68k Trainer la copie seulement dans son propre dossier et ne la transmet jamais.</p>
+          ${carteRom('atari')}
+          ${carteRom('amiga')}
+          <p class="profils-message" id="message-rom"></p>
         </div>
       </div>`
   }
+
+  let roms: Awaited<ReturnType<typeof window.api.romsEtat>> = {}
+
+  function carteRom(machine: 'atari' | 'amiga'): string {
+    const rom = roms[machine]
+    const titre = machine === 'atari' ? 'Atari ST : ma ROM du TOS (192 ou 256 Ko)' : 'Amiga : mon Kickstart (256 ou 512 Ko)'
+    if (!rom) {
+      return `<div class="rom-ligne" data-machine="${machine}"><h4>${titre}</h4>
+        <p class="apropos-texte">Aucune : l'émulateur utilise ${machine === 'atari' ? 'EmuTOS' : 'AROS'}.</p>
+        <div class="profils-form-boutons"><button data-rom="choisir">Choisir ma ROM…</button></div></div>`
+    }
+    const remarque =
+      machine === 'amiga' && !rom.essaiAutomatique
+        ? `<p class="apropos-texte">Avec le Kickstart 1.3, l'Amiga démarre sur ta disquette Workbench${rom.adf ? '' : ' (à choisir ci-dessous)'} ;
+           le bouton « Essayer » y dépose ton programme, que tu lances depuis le Shell en tapant <code>PARTAGE:nom</code>.</p>`
+        : ''
+    return `<div class="rom-ligne" data-machine="${machine}"><h4>${titre}</h4>
+      <p class="apropos-texte"><strong>${echapper(rom.nom)}</strong></p>
+      <label class="rom-choix"><input type="radio" name="rom-${machine}" value="libre" ${rom.actif ? '' : 'checked'} /> Système libre (${machine === 'atari' ? 'EmuTOS' : 'AROS'})</label>
+      <label class="rom-choix"><input type="radio" name="rom-${machine}" value="rom" ${rom.actif ? 'checked' : ''} /> Ma ROM</label>
+      ${remarque}
+      <div class="profils-form-boutons">
+        <button data-rom="choisir">Changer de ROM…</button>
+        ${machine === 'amiga' && !rom.essaiAutomatique ? `<button data-rom="adf">${rom.adf ? 'Changer de disquette Workbench…' : 'Choisir ma disquette Workbench (.adf)…'}</button>` : ''}
+        <button data-rom="retirer" class="btn-danger">Retirer</button>
+      </div></div>`
+  }
+
+  async function rafraichirRoms(): Promise<void> {
+    roms = await window.api.romsEtat()
+  }
+
+  root.addEventListener('change', (ev) => {
+    const radio = ev.target as HTMLInputElement
+    const machine = radio.closest<HTMLElement>('.rom-ligne')?.dataset.machine as 'atari' | 'amiga' | undefined
+    if (!machine || radio.type !== 'radio') return
+    void window.api.romUtiliser(machine, radio.value === 'rom').then(rafraichirRoms)
+  })
+
+  root.addEventListener('click', (ev) => {
+    const bouton = (ev.target as HTMLElement).closest<HTMLButtonElement>('button[data-rom]')
+    const machine = bouton?.closest<HTMLElement>('.rom-ligne')?.dataset.machine as 'atari' | 'amiga' | undefined
+    if (!bouton || !machine) return
+    const message = (texte: string): void => {
+      const m = root.querySelector<HTMLElement>('#message-rom')
+      if (m) m.textContent = texte
+    }
+    const apres = async (texte: string): Promise<void> => {
+      await rafraichirRoms()
+      await rafraichir()
+      message(texte)
+    }
+    switch (bouton.dataset.rom) {
+      case 'choisir':
+        void window.api.romChoisir(machine).then((r) => {
+          if (r.ok) void apres(`${r.nom} est reconnue : l'émulateur s'en servira à son prochain démarrage.`)
+          else if (r.erreur) message(r.erreur)
+        })
+        break
+      case 'adf':
+        void window.api.romAdfChoisir().then((r) => {
+          if (r.ok) void apres('Disquette Workbench enregistrée.')
+          else if (r.erreur) message(r.erreur)
+        })
+        break
+      case 'retirer':
+        void confirmer("Retirer ta ROM de 68k Trainer ? L'émulateur reviendra au système libre ; ton fichier d'origine n'est pas touché.", 'Retirer').then(
+          async (oui) => {
+            if (!oui) return
+            await window.api.romRetirer(machine)
+            await apres('ROM retirée.')
+          }
+        )
+        break
+    }
+  })
 
   root.addEventListener('click', (ev) => {
     const bouton = (ev.target as HTMLElement).closest<HTMLButtonElement>('button[data-action]')
@@ -124,7 +205,7 @@ export function renderEmulateurs(container: HTMLElement): () => void {
     }
   })
 
-  void rafraichir()
+  void rafraichirRoms().then(rafraichir)
   return () => {
     disposed = true
     oublierProgression()

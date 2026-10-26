@@ -18,6 +18,7 @@ import { tmpdir } from 'os'
 import { join } from 'path'
 import { EMULATEURS, type Emulateur, type IdEmulateur, type Paquet } from './catalogue'
 import { sortieAtari } from './lanceurAtari'
+import { STARTUP_KICKSTART, analyserRom, configUaeKickstart, dossierRoms, type MachineRom, type RomReconnue } from './roms'
 export { sourceLanceurAtari } from './lanceurAtari'
 
 export interface EtatEmulateur {
@@ -308,24 +309,129 @@ async function lancerProcessus(e: Emulateur, args: string[], surSortie?: (texte:
   return p
 }
 
+// --- Ma propre ROM -------------------------------------------------------------------
+
+export interface RomUtilisateur {
+  /** Copie de la ROM dans le dossier des émulateurs. */
+  fichier: string
+  nom: string
+  taille: number
+  modele: RomReconnue['modele']
+  shellEnRom?: boolean
+  /** Vrai : la ROM remplace le système libre. */
+  actif: boolean
+  /** Amiga avec Kickstart 1.3 : disquette Workbench de l'utilisateur (copie), pour démarrer. */
+  adf?: string
+}
+
+const fichierRoms = (): string => join(dossierRoms(dossierEmulateurs()), 'roms.json')
+
+export function romsUtilisateur(): Partial<Record<MachineRom, RomUtilisateur>> {
+  try {
+    return JSON.parse(readFileSync(fichierRoms(), 'utf-8')) as Partial<Record<MachineRom, RomUtilisateur>>
+  } catch {
+    return {}
+  }
+}
+
+function ecrireRoms(roms: Partial<Record<MachineRom, RomUtilisateur>>): void {
+  mkdirSync(dossierRoms(dossierEmulateurs()), { recursive: true })
+  writeFileSync(fichierRoms(), JSON.stringify(roms, null, 2))
+}
+
+/** Vérifie la ROM choisie et la copie dans le dossier des émulateurs ; elle devient active. */
+export function importerRom(machine: MachineRom, chemin: string): { ok: boolean; erreur?: string; nom?: string } {
+  const octets = readFileSync(chemin)
+  const rom = analyserRom(octets, machine)
+  if (!rom.ok) return { ok: false, erreur: rom.raison }
+  const fichier = join(dossierRoms(dossierEmulateurs()), machine === 'atari' ? 'tos.img' : 'kickstart.rom')
+  mkdirSync(dossierRoms(dossierEmulateurs()), { recursive: true })
+  writeFileSync(fichier, octets)
+  const roms = romsUtilisateur()
+  roms[machine] = { fichier, nom: rom.nom, taille: rom.taille, modele: rom.modele, shellEnRom: rom.shellEnRom, actif: true, adf: roms[machine]?.adf }
+  ecrireRoms(roms)
+  return { ok: true, nom: rom.nom }
+}
+
+/** Disquette Workbench (fichier .adf) pour démarrer un Amiga sous Kickstart 1.3. */
+export function importerAdf(chemin: string): { ok: boolean; erreur?: string } {
+  const octets = readFileSync(chemin)
+  // Une disquette double densité : 80 pistes × 2 faces × 11 secteurs de 512 octets
+  if (octets.length !== 901120) return { ok: false, erreur: "Une disquette Amiga (.adf) fait 880 Ko ; ce fichier n'en est pas une." }
+  const roms = romsUtilisateur()
+  if (!roms.amiga) return { ok: false, erreur: "Choisis d'abord ton Kickstart." }
+  const fichier = join(dossierRoms(dossierEmulateurs()), 'workbench.adf')
+  writeFileSync(fichier, octets)
+  roms.amiga.adf = fichier
+  ecrireRoms(roms)
+  return { ok: true }
+}
+
+export function utiliserRom(machine: MachineRom, actif: boolean): void {
+  const roms = romsUtilisateur()
+  const rom = roms[machine]
+  if (!rom) return
+  rom.actif = actif
+  ecrireRoms(roms)
+}
+
+export function retirerRom(machine: MachineRom): void {
+  const roms = romsUtilisateur()
+  const rom = roms[machine]
+  if (!rom) return
+  rmSync(rom.fichier, { force: true })
+  if (rom.adf) rmSync(rom.adf, { force: true })
+  delete roms[machine]
+  ecrireRoms(roms)
+}
+
+/** La ROM de l'utilisateur, si elle est choisie et toujours là. */
+function romActive(machine: MachineRom): RomUtilisateur | undefined {
+  const rom = romsUtilisateur()[machine]
+  return rom?.actif && existsSync(rom.fichier) ? rom : undefined
+}
+
+/**
+ * Le bouton « Essayer » peut-il lancer le programme tout seul ? Pas avec un Kickstart 1.3 : ses
+ * commandes de Shell (Execute, Echo…) sont sur la disquette Workbench, qu'on ne modifie pas.
+ */
+export function essaiAutomatique(id: IdEmulateur): boolean {
+  const rom = id === 'winuae' ? romActive('amiga') : undefined
+  return !rom || !!rom.shellEnRom
+}
+
+/** Fichier de réglages de WinUAE : système libre (AROS) ou Kickstart de l'utilisateur. */
+function configWinuae(): string {
+  const rom = romActive('amiga')
+  if (!rom) return join(dossierEmulateur('winuae'), '68k-trainer.uae')
+  const demarrage = join(dossierRoms(dossierEmulateurs()), 'demarrage')
+  mkdirSync(join(demarrage, 'S'), { recursive: true })
+  writeFileSync(join(demarrage, 'S', 'Startup-sequence'), STARTUP_KICKSTART)
+  const fichier = join(dossierEmulateur('winuae'), '68k-trainer-rom.uae')
+  const reconnue: RomReconnue = { ok: true, machine: 'amiga', nom: rom.nom, taille: rom.taille, modele: rom.modele, shellEnRom: rom.shellEnRom }
+  writeFileSync(fichier, configUaeKickstart(reconnue, rom.fichier, preparerPartage('amiga'), demarrage, rom.adf), 'utf-8')
+  return fichier
+}
+
 function argumentsHatari(): string[] {
   const d = dossierEmulateur('hatari')
+  const rom = romActive('atari')
   // Hatari démarre sur le dernier disque donné : ici C:, le dossier de partage. Basse résolution,
   // celle des programmes du parcours
   return [
-    '--configfile', join(d, '68k-trainer.cfg'), '--tos', join(d, 'tos.img'), '--tos-res', 'low',
-    '--machine', 'st', '--memsize', '1024', '--harddrive', preparerPartage('atari')
+    '--configfile', join(d, '68k-trainer.cfg'), '--tos', rom?.fichier ?? join(d, 'tos.img'), '--tos-res', 'low',
+    '--machine', rom?.modele === 'ste' ? 'ste' : 'st', '--memsize', '1024', '--harddrive', preparerPartage('atari')
   ]
 }
 
-/** Lance l'émulateur tel quel (bureau d'EmuTOS ou d'AROS). */
+/** Lance l'émulateur tel quel (bureau du TOS ou d'AROS, Shell d'un Kickstart). */
 export async function lancer(id: IdEmulateur): Promise<void> {
   const e = EMULATEURS[id]
   if (id === 'hatari') {
     await lancerProcessus(e, argumentsHatari())
   } else {
     rmSync(join(dossierPartage('amiga'), 'essai', 'lancer'), { force: true })
-    await lancerProcessus(e, ['-f', join(dossierEmulateur(id), '68k-trainer.uae')])
+    await lancerProcessus(e, ['-f', configWinuae()])
   }
 }
 
@@ -402,15 +508,23 @@ export async function essayer(
   // Le programme s'ouvre dans une fenêtre console qui reste affichée à la fin ; le script s'efface
   writeFileSync(
     join(d, 'essai', 'lancer'),
-    `Delete >NIL: PARTAGE:essai/lancer\nRun >"CON:20/20/600/220/68k Trainer : ${nom}/WAIT/CLOSE" Execute PARTAGE:essai/programme\n`
+    // FailAt 21 : avec un Kickstart sans Workbench, Delete n'existe pas et ne doit pas tout arrêter
+    `FailAt 21\nDelete >NIL: PARTAGE:essai/lancer\nRun >"CON:20/20/600/220/68k Trainer : ${nom}/WAIT/CLOSE" Execute PARTAGE:essai/programme\n`
   )
   // Le programme, puis son code de retour (variable RC du Shell), écrit pour 68k Trainer
   writeFileSync(
     join(d, 'essai', 'programme'),
     `FailAt 1000000\nPARTAGE:${nom}\nEcho >PARTAGE:essai/retour "$RC"\nEcho "*N(Code de retour : $RC)"\n`
   )
-  const p = await lancerProcessus(e, ['-f', join(dossierEmulateur(id), '68k-trainer.uae')])
-  if (fin) guetterFin(id, nom, p, () => '', fin)
+  if (!essaiAutomatique(id)) rmSync(join(d, 'essai', 'lancer'), { force: true })
+  const p = await lancerProcessus(e, ['-f', configWinuae()])
+  if (fin && essaiAutomatique(id)) {
+    guetterFin(id, nom, p, () => '', (f) => {
+      // Sans Workbench, la commande Delete du script n'existe pas : on l'efface d'ici
+      rmSync(join(d, 'essai', 'lancer'), { force: true })
+      fin(f)
+    })
+  }
   return join(d, nom)
 }
 

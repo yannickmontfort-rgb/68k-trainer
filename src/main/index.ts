@@ -3,7 +3,7 @@ import { is } from '@electron-toolkit/utils'
 import { mkdirSync } from 'fs'
 import { readFile, writeFile } from 'fs/promises'
 import { join } from 'path'
-import { IPC, type AssembleRequest, type ProgressState } from '../shared/ipc'
+import { IPC, type AssembleRequest, type ProgressState, type RomPublique } from '../shared/ipc'
 import { assemblerDansApplication, fabriquerPrg } from './assemblage'
 import * as emulateurs from './emulateurs/installation'
 import { GestionProfils } from './profils'
@@ -198,11 +198,40 @@ app.whenReady().then(() => {
       const chemin = await emulateurs.essayer(id, exe.octets, nom, lanceur, (fin) => {
         if (fenetre && !fenetre.isDestroyed()) fenetre.webContents.send(IPC.emulateurFin, fin)
       })
-      return { ok: true, chemin }
+      return { ok: true, chemin, manuel: !emulateurs.essaiAutomatique(id) }
     } catch (e) {
       return { ok: false, erreur: (e as Error).message }
     }
   })
+  ipcMain.handle(IPC.romsEtat, () => {
+    const roms = emulateurs.romsUtilisateur()
+    const r: Partial<Record<'atari' | 'amiga', RomPublique>> = {}
+    for (const m of ['atari', 'amiga'] as const) {
+      const rom = roms[m]
+      if (rom) r[m] = { nom: rom.nom, actif: rom.actif, essaiAutomatique: m === 'atari' || !!rom.shellEnRom, adf: !!rom.adf }
+    }
+    return r
+  })
+  ipcMain.handle(IPC.romChoisir, async (event, machine: 'atari' | 'amiga') => {
+    const choix = await dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender)!, {
+      title: machine === 'atari' ? 'Choisir ta ROM du TOS' : 'Choisir ton Kickstart',
+      properties: ['openFile'],
+      filters: [{ name: 'ROM', extensions: ['img', 'rom', 'bin', 'tos'] }, { name: 'Tous les fichiers', extensions: ['*'] }]
+    })
+    if (choix.canceled || choix.filePaths.length === 0) return { ok: false }
+    return emulateurs.importerRom(machine, choix.filePaths[0])
+  })
+  ipcMain.handle(IPC.romAdfChoisir, async (event) => {
+    const choix = await dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender)!, {
+      title: 'Choisir ta disquette Workbench',
+      properties: ['openFile'],
+      filters: [{ name: 'Disquette Amiga', extensions: ['adf'] }]
+    })
+    if (choix.canceled || choix.filePaths.length === 0) return { ok: false }
+    return emulateurs.importerAdf(choix.filePaths[0])
+  })
+  ipcMain.handle(IPC.romUtiliser, (_e, machine: 'atari' | 'amiga', actif: boolean) => emulateurs.utiliserRom(machine, actif))
+  ipcMain.handle(IPC.romRetirer, (_e, machine: 'atari' | 'amiga') => emulateurs.retirerRom(machine))
   ipcMain.handle(IPC.ouvrirPartage, (_e, machine: 'atari' | 'amiga') => {
     const d = emulateurs.dossierPartage(machine)
     mkdirSync(d, { recursive: true })

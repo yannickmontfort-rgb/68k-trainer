@@ -179,6 +179,17 @@ export interface EtatEmulateurPublic {
   disponible: boolean
 }
 
+/** « Ma propre ROM » : la ROM d'origine fournie par l'utilisateur, vue par l'interface. */
+export interface RomPublique {
+  nom: string
+  /** Vrai : elle remplace le système libre dans l'émulateur. */
+  actif: boolean
+  /** Amiga : le bouton « Essayer » lance le programme tout seul (Kickstart 2.0 et plus). */
+  essaiAutomatique: boolean
+  /** Amiga, Kickstart 1.3 : une disquette Workbench a été donnée. */
+  adf: boolean
+}
+
 export const IPC = {
   listerProfils: '68k:listerProfils',
   creerProfil: '68k:creerProfil',
@@ -202,6 +213,11 @@ export const IPC = {
   emulateurEssayer: '68k:emulateurEssayer',
   emulateurProgression: '68k:emulateurProgression',
   emulateurFin: '68k:emulateurFin',
+  romsEtat: '68k:romsEtat',
+  romChoisir: '68k:romChoisir',
+  romAdfChoisir: '68k:romAdfChoisir',
+  romUtiliser: '68k:romUtiliser',
+  romRetirer: '68k:romRetirer',
   ouvrirPartage: '68k:ouvrirPartage',
   assemble: '68k:assemble',
   loadProgress: '68k:loadProgress',

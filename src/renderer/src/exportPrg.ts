@@ -106,11 +106,21 @@ export async function essayerDansEmulateur(
     arreterGuet = undefined
     return { ok: false, message: r.erreur ?? 'Essai impossible.' }
   }
+  if (r.manuel) {
+    arreterGuet?.()
+    arreterGuet = undefined
+    return {
+      ok: true,
+      message: `${etat.nom} (re)démarre sur ta disquette Workbench. Ouvre un Shell et tape PARTAGE:${nomFichier} pour lancer ton programme.`
+    }
+  }
+  const roms = await window.api.romsEtat()
+  const systeme = plateforme === 'amiga' ? (roms.amiga?.actif ? 'Kickstart' : 'AROS') : roms.atari?.actif ? 'TOS' : 'EmuTOS'
   return {
     ok: true,
     message:
       plateforme === 'amiga'
-        ? `${etat.nom} (re)démarre et lance ${r.chemin} dès que le bureau d'AROS est prêt (une vingtaine de secondes).`
-        : `${etat.nom} (re)démarre et lance ${r.chemin} dès que le bureau d'EmuTOS est prêt.`
+        ? `${etat.nom} (re)démarre et lance ${r.chemin} dès que ${systeme === 'AROS' ? "le bureau d'AROS" : 'le Shell du Kickstart'} est prêt (une vingtaine de secondes).`
+        : `${etat.nom} (re)démarre et lance ${r.chemin} dès que le bureau ${systeme === 'TOS' ? 'du TOS' : "d'EmuTOS"} est prêt.`
   }
 }
