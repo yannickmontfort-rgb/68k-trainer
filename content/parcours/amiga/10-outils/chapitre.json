@@ -39,6 +39,14 @@
           "indices": ["Le code de retour est dans D0 au moment du `RTS`.", "`MOVEQ #0,D0`"],
           "codeDepart": "@code.s#retour-depart", "solution": "@code.s#retour-solution",
           "check": { "type": "registers", "maxSteps": 200, "terminer": true, "systemeRendu": true, "expected": { "D0": "$00000000" } } },
+        { "type": "exercice", "id": "amiga-ch10-exo-ordonner", "titre": "Le code selon la mesure", "variante": "ordonner", "niveau": 2,
+          "enonce": "Remets dans l'ordre les lignes du sous-programme `code`, qui range dans D0 le code de retour correspondant à la valeur de D1 : 0 (OK) jusqu'à 100, 5 (WARN) jusqu'à 200, 10 (ERROR) au-delà. Le programme l'essaie avec 250, 50 puis 150.",
+          "indices": ["On range un code dans D0, puis on compare : si la valeur reste sous la limite, on part à `.fin` avec ce code, sinon on passe au code suivant.", "`MOVEQ` modifie aussi les flags : chaque `BLS` doit suivre directement son `CMP`."],
+          "entete": "@code.s#ordonner-entete",
+          "lignes": ["    MOVEQ   #0,D0           ; OK", "    CMP.W   #100,D1", "    BLS.S   .fin", "    MOVEQ   #5,D0           ; WARN", "    CMP.W   #200,D1", "    BLS.S   .fin", "    MOVEQ   #10,D0          ; ERROR"],
+          "pied": "@code.s#ordonner-pied",
+          "codeDepart": "", "solution": "",
+          "check": { "type": "registers", "maxSteps": 200, "terminer": true, "expected": { "D0": "$00000005", "D5": "$00000000", "D6": "$0000000A" } } },
         { "type": "exercice", "id": "amiga-ch10-exo-abime", "titre": "Des données abîmées", "variante": "ecrire", "niveau": 2,
           "enonce": "Avant de se servir de ses données, le programme les vérifie : additionne les 8 mots de `table` dans D7, compare la somme au mot `attendu`, puis rends au Shell le code 0 si elles sont égales, 10 (ERROR) sinon.",
           "indices": ["Une boucle de 8 tours qui ajoute `(A0)+` à D7, mis à zéro avant.", "`CMP.W attendu(PC),D7` puis `BEQ` : ici la somme vaut 1300 et non 1310, le programme doit donc rendre 10."],
@@ -67,7 +75,17 @@
             { "ligne": 46, "texte": "Les trois WAIT de la barre sont réécrits, 4 lignes les uns sous les autres." }
           ],
           "conclusion": "Une intro de la scène Amiga n'est faite que de Copper, de sprites, de son et d'interruptions, avec beaucoup d'imagination."
-        }
+        },
+        { "type": "exercice", "id": "amiga-ch10-exo-pile", "titre": "Le Guru du sous-programme", "variante": "corriger", "niveau": 2,
+          "enonce": "Ce programme devrait ranger dans D7 la somme des 8 mots de `table`, mais il part en Guru Meditation. Avance pas à pas en surveillant A7 et la pile, et corrige le sous-programme.",
+          "indices": ["Regarde ce que `RTS` dépile à la fin de `somme`, et compare-le à l'adresse de retour empilée par `BSR`.", "`somme` empile D3 et A0 sans les dépiler : ajoute `MOVEM.L (SP)+,D3/A0` juste avant son `RTS`."],
+          "codeDepart": "@code.s#pile-depart", "solution": "@code.s#pile-solution",
+          "check": { "type": "registers", "maxSteps": 300, "terminer": true, "expected": { "D0": "$00000000", "D3": "$00000001", "D7": "$00000514" } } },
+        { "type": "exercice", "id": "amiga-ch10-exo-moyenne", "titre": "La table vide", "variante": "modifier", "niveau": 2,
+          "enonce": "Ce programme range dans D7 la moyenne des `nombre` premiers mots de `table`. Mets `nombre` à 0 et lance-le : la division par zéro provoque un Guru Meditation. Change-le pour qu'avec une table vide il ne divise pas, laisse D7 à 0 et rende au Shell le code 10 (ERROR).",
+          "indices": ["Il faut tester `nombre` avant la boucle, et sauter à une fin qui range 10 dans D0.", "Juste après `MOVE.W D1,D2`, le flag Z dit si `nombre` vaut 0 : `BEQ.S .vide`, puis plus bas `.vide: MOVEQ #10,D0` et `RTS`."],
+          "codeDepart": "@code.s#moyenne-depart", "solution": "@code.s#moyenne-solution",
+          "check": { "type": "registers", "maxSteps": 300, "terminer": true, "expected": { "D0": "$0000000A", "D7": "$00000000" } } }
       ]
     }
   ],

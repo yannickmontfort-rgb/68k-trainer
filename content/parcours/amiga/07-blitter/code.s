@@ -1715,3 +1715,208 @@ START:
     ADD.W   D3,D2           ; D2 = l'octet du pixel (x, y) dans le plan
     MOVEQ   #0,D0
     RTS
+
+;=== ordonner-entete
+; Le plan garde une vieille image à rayures : efface-le en entier avec le Blitter, puis pose le
+; bloc de 32 x 16 en (64, 100).
+START:
+    BSR     prendre
+    BSR     ecran           ; l'écran d'un plan (en bas du programme) s'affiche
+    LEA     plan,A0         ; la vieille image : des rayures verticales
+    MOVE.W  #40*256/4-1,D7
+.fond:
+    MOVE.L  #$0F0F0F0F,(A0)+
+    DBF     D7,.fond
+    BSR     attendre_blitter
+    MOVE.L  #-1,$44(A5)     ; BLTAFWM = BLTALWM = $FFFF : rien de masqué
+    MOVE.W  #0,$64(A5)      ; BLTAMOD : le bloc est d'un seul tenant
+
+;=== ordonner-pied
+    BSR     attendre_blitter
+    BSR     attendre_clic
+    BSR     rendre
+    MOVEQ   #0,D0
+    RTS
+
+; Affiche le plan (320 x 256, blanc sur noir) et allume le DMA du Blitter
+ecran:
+    MOVE.L  #plan,D0
+    MOVE.W  D0,cop_plans+6
+    SWAP    D0
+    MOVE.W  D0,cop_plans+2
+    MOVE.L  #copper,$80(A5)
+    MOVE.W  D0,$88(A5)
+    MOVE.W  #$83C0,$96(A5)  ; DMAEN + BPLEN + COPEN + BLTEN
+    RTS
+    INCLUDE "amiga-systeme.s"
+
+    SECTION chip,DATA_C
+copper:
+    DC.W    $008E,$2C81,$0090,$2CC1,$0092,$0038,$0094,$00D0
+    DC.W    $0102,$0000,$0104,$0024,$0108,$0000,$010A,$0000
+    DC.W    $0180,$0000,$0182,$0FFF
+    DC.W    $0100,$1200
+cop_plans:
+    DC.W    $00E0,0,$00E2,0
+    DC.W    $FFFF,$FFFE
+
+; Un bloc plein de 32 x 16 (2 mots par ligne)
+bloc:   DCB.L   16,$FFFFFFFF
+
+    SECTION ecran,BSS_C
+plan:   DS.B    40*256
+
+;=== ou-exclusif-solution
+START:
+    BSR     prendre
+    BSR     ecran           ; l'écran d'un plan (en bas du programme) s'affiche
+    LEA     plan,A0         ; le fond : des rayures verticales (4 pixels sur 8)
+    MOVE.W  #40*256/4-1,D7
+.fond:
+    MOVE.L  #$0F0F0F0F,(A0)+
+    DBF     D7,.fond
+    BSR     attendre_blitter
+    MOVE.L  #$0B5A0000,$40(A5)  ; BLTCON0 = $0B5A : canaux A, C, D ; D = A EOR C
+    MOVE.L  #-1,$44(A5)
+    MOVE.L  #bloc,$50(A5)   ; A : le bloc
+    MOVE.L  #plan+100*40+64/8,D0
+    MOVE.L  D0,$48(A5)      ; C : le fond, à l'endroit où l'on pose
+    MOVE.L  D0,$54(A5)      ; D : au même endroit
+    MOVE.W  #0,$64(A5)      ; BLTAMOD
+    MOVE.W  #36,$60(A5)     ; BLTCMOD
+    MOVE.W  #36,$66(A5)     ; BLTDMOD : C et D parcourent l'écran ensemble
+    MOVE.W  #(16<<6)|2,$58(A5)
+    BSR     attendre_blitter
+    BSR     attendre_clic
+    BSR     rendre
+    MOVEQ   #0,D0
+    RTS
+
+; Affiche le plan (320 x 256, blanc sur noir) et allume le DMA du Blitter
+ecran:
+    MOVE.L  #plan,D0
+    MOVE.W  D0,cop_plans+6
+    SWAP    D0
+    MOVE.W  D0,cop_plans+2
+    MOVE.L  #copper,$80(A5)
+    MOVE.W  D0,$88(A5)
+    MOVE.W  #$83C0,$96(A5)  ; DMAEN + BPLEN + COPEN + BLTEN
+    RTS
+    INCLUDE "amiga-systeme.s"
+
+    SECTION chip,DATA_C
+copper:
+    DC.W    $008E,$2C81,$0090,$2CC1,$0092,$0038,$0094,$00D0
+    DC.W    $0102,$0000,$0104,$0024,$0108,$0000,$010A,$0000
+    DC.W    $0180,$0000,$0182,$0FFF
+    DC.W    $0100,$1200
+cop_plans:
+    DC.W    $00E0,0,$00E2,0
+    DC.W    $FFFF,$FFFE
+
+; Un dessin de 32 x 16 : un cadre (bord plein, intérieur vide)
+bloc:   DC.L    $FFFFFFFF
+        DCB.L   14,$80000001
+        DC.L    $FFFFFFFF
+
+    SECTION ecran,BSS_C
+plan:   DS.B    40*256
+
+;=== masque-depart
+; Pose le carré de 16 x 16 en x = 150, y = 100.
+START:
+    BSR     prendre
+    BSR     ecran           ; l'écran d'un plan (en bas du programme) s'affiche
+    BSR     attendre_blitter
+    MOVE.W  #$69F0,$40(A5)  ; BLTCON0 : décalage 6 (150 = 9 x 16 + 6), canaux A et D, D = A
+    MOVE.W  #0,$42(A5)      ; BLTCON1
+    MOVE.W  #$FFFF,$44(A5)  ; BLTAFWM
+    MOVE.W  #$FFFF,$46(A5)  ; BLTALWM
+    MOVE.L  #carre,$50(A5)
+    MOVE.L  #plan+100*40+18,$54(A5) ; le mot n° 9 de la ligne 100, qui contient x = 150
+    MOVE.W  #-2,$64(A5)     ; BLTAMOD
+    MOVE.W  #40-4,$66(A5)   ; BLTDMOD
+    MOVE.W  #(16<<6)|2,$58(A5) ; 16 lignes de 2 mots
+    BSR     attendre_blitter
+    BSR     attendre_clic
+    BSR     rendre
+    MOVEQ   #0,D0
+    RTS
+
+; Affiche le plan (320 x 256, blanc sur noir) et allume le DMA du Blitter
+ecran:
+    MOVE.L  #plan,D0
+    MOVE.W  D0,cop_plans+6
+    SWAP    D0
+    MOVE.W  D0,cop_plans+2
+    MOVE.L  #copper,$80(A5)
+    MOVE.W  D0,$88(A5)
+    MOVE.W  #$83C0,$96(A5)  ; DMAEN + BPLEN + COPEN + BLTEN
+    RTS
+    INCLUDE "amiga-systeme.s"
+
+    SECTION chip,DATA_C
+copper:
+    DC.W    $008E,$2C81,$0090,$2CC1,$0092,$0038,$0094,$00D0
+    DC.W    $0102,$0000,$0104,$0024,$0108,$0000,$010A,$0000
+    DC.W    $0180,$0000,$0182,$0FFF
+    DC.W    $0100,$1200
+cop_plans:
+    DC.W    $00E0,0,$00E2,0
+    DC.W    $FFFF,$FFFE
+
+; Un carré plein de 16 x 16 (1 mot par ligne)
+carre:  DCB.W   16,$FFFF
+
+    SECTION ecran,BSS_C
+plan:   DS.B    40*256
+
+
+;=== masque-solution
+START:
+    BSR     prendre
+    BSR     ecran           ; l'écran d'un plan (en bas du programme) s'affiche
+    BSR     attendre_blitter
+    MOVE.W  #$69F0,$40(A5)  ; BLTCON0 : décalage 6 (150 = 9 x 16 + 6), canaux A et D, D = A
+    MOVE.W  #0,$42(A5)      ; BLTCON1
+    MOVE.W  #$FFFF,$44(A5)  ; BLTAFWM
+    MOVE.W  #$0000,$46(A5)  ; BLTALWM : le mot de plus est vidé
+    MOVE.L  #carre,$50(A5)
+    MOVE.L  #plan+100*40+18,$54(A5) ; le mot n° 9 de la ligne 100, qui contient x = 150
+    MOVE.W  #-2,$64(A5)     ; BLTAMOD
+    MOVE.W  #40-4,$66(A5)   ; BLTDMOD
+    MOVE.W  #(16<<6)|2,$58(A5) ; 16 lignes de 2 mots
+    BSR     attendre_blitter
+    BSR     attendre_clic
+    BSR     rendre
+    MOVEQ   #0,D0
+    RTS
+
+; Affiche le plan (320 x 256, blanc sur noir) et allume le DMA du Blitter
+ecran:
+    MOVE.L  #plan,D0
+    MOVE.W  D0,cop_plans+6
+    SWAP    D0
+    MOVE.W  D0,cop_plans+2
+    MOVE.L  #copper,$80(A5)
+    MOVE.W  D0,$88(A5)
+    MOVE.W  #$83C0,$96(A5)  ; DMAEN + BPLEN + COPEN + BLTEN
+    RTS
+    INCLUDE "amiga-systeme.s"
+
+    SECTION chip,DATA_C
+copper:
+    DC.W    $008E,$2C81,$0090,$2CC1,$0092,$0038,$0094,$00D0
+    DC.W    $0102,$0000,$0104,$0024,$0108,$0000,$010A,$0000
+    DC.W    $0180,$0000,$0182,$0FFF
+    DC.W    $0100,$1200
+cop_plans:
+    DC.W    $00E0,0,$00E2,0
+    DC.W    $FFFF,$FFFE
+
+; Un carré plein de 16 x 16 (1 mot par ligne)
+carre:  DCB.W   16,$FFFF
+
+    SECTION ecran,BSS_C
+plan:   DS.B    40*256
+
