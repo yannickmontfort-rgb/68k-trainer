@@ -81,6 +81,27 @@ copper:
     DC.W    $B007,$FFFE,$0180,$0000 ; ligne $B0 : noir
     DC.W    $FFFF,$FFFE
 
+;=== ordonner-entete
+; Remets dans l'ordre les lignes de la liste Copper : noir en haut, rouge à partir de la
+; ligne $50, blanc à partir de $80, bleu à partir de $B0.
+START:
+    BSR     prendre
+    MOVE.L  #copper,$80(A5)
+    MOVE.W  D0,$88(A5)
+    MOVE.W  #$8280,$96(A5)
+    BSR     attendre_clic
+    BSR     rendre
+    MOVEQ   #0,D0
+    RTS
+    INCLUDE "amiga-systeme.s"
+
+    SECTION chip,DATA_C
+copper:
+    DC.W    $0100,$0200     ; aucun plan
+
+;=== ordonner-pied
+    DC.W    $FFFF,$FFFE     ; fin de la liste
+
 ;=== faux-wait-depart
 START:
     BSR     prendre
@@ -329,6 +350,39 @@ START:
     OR.W    #$07,D1
     MOVE.W  D1,barre
     ADD.W   #$0800,D1       ; le bas de la barre suit, 8 lignes plus bas
+    MOVE.W  D1,fin_barre
+    DBF     D7,.image
+    BSR     attendre_clic
+    BSR     rendre
+    MOVEQ   #0,D0
+    RTS
+    INCLUDE "amiga-systeme.s"
+
+    SECTION chip,DATA_C
+copper:
+    DC.W    $0100,$0200,$0180,$0000
+barre:
+    DC.W    $4007,$FFFE,$0180,$0F00
+fin_barre:
+    DC.W    $4807,$FFFE,$0180,$0000
+    DC.W    $FFFF,$FFFE
+
+;=== haute-solution
+START:
+    BSR     prendre
+    MOVE.L  #copper,$80(A5)
+    MOVE.W  D0,$88(A5)
+    MOVE.W  #$8280,$96(A5)
+    MOVE.W  #$40,D0
+    MOVEQ   #29,D7
+.image:
+    BSR     attendre_vbl
+    ADDQ.W  #1,D0
+    MOVE.W  D0,D1
+    LSL.W   #8,D1
+    OR.W    #$07,D1
+    MOVE.W  D1,barre
+    ADD.W   #$1000,D1       ; le bas de la barre, 16 lignes plus bas
     MOVE.W  D1,fin_barre
     DBF     D7,.image
     BSR     attendre_clic

@@ -463,6 +463,58 @@ final:  DC.B    'Décollage !',10,0
 nombre: DC.W    0
 tampon: DS.B    40
 
+;=== decompte5-solution
+START:
+    MOVEA.L 4.W,A6
+    LEA     dosnom(PC),A1
+    MOVEQ   #0,D0
+    JSR     -552(A6)
+    MOVEA.L D0,A5           ; A5 = DOSBase
+    MOVEQ   #5,D7           ; on compte à partir de 5
+.boucle:
+    MOVE.W  D7,nombre
+    LEA     format(PC),A0
+    LEA     nombre(PC),A1
+    LEA     ranger(PC),A2
+    LEA     tampon,A3
+    MOVEA.L 4.W,A6
+    JSR     -522(A6)        ; RawDoFmt : tampon = « T-5 »
+    BSR.S   afficher
+    MOVEA.L A5,A6
+    MOVEQ   #50,D1
+    JSR     -198(A6)        ; Delay(50)
+    SUBQ.W  #1,D7
+    BNE.S   .boucle
+    LEA     final(PC),A3
+    BSR.S   afficher
+    MOVEA.L A5,A1
+    MOVEA.L 4.W,A6
+    JSR     -414(A6)
+    MOVEQ   #0,D0
+    RTS
+; Écrit le texte terminé par 0 qui commence en A3
+afficher:
+    MOVEA.L A3,A0
+    MOVEQ   #-1,D3
+.compte:
+    ADDQ.L  #1,D3
+    TST.B   (A0)+
+    BNE.S   .compte
+    MOVEA.L A5,A6
+    JSR     -60(A6)
+    MOVE.L  D0,D1
+    MOVE.L  A3,D2
+    JSR     -48(A6)
+    RTS
+ranger: MOVE.B  D0,(A3)+
+    RTS
+dosnom: DC.B    'dos.library',0
+format: DC.B    'T-%d',10,0
+final:  DC.B    'Décollage !',10,0
+    EVEN
+nombre: DC.W    0
+tampon: DS.B    40
+
 ;=== score-depart
 ; Affiche « Score : 1500 » (puis un retour à la ligne) dans le CLI, à partir de la valeur
 ; rangée en mémoire à l'étiquette score.

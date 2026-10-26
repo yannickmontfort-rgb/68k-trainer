@@ -530,6 +530,42 @@ cop_plans:
     SECTION ecran,BSS_C
 plan:   DS.B    40*256
 
+;=== ordonner-entete
+; Remets dans l'ordre les lignes qui allument le pixel (x, y) = (D0, D1) dans le plan.
+START:
+    BSR     prendre
+    LEA     plan,A0
+    MOVE.L  A0,D0
+    LEA     cop_plans,A1
+    MOVE.W  D0,6(A1)
+    SWAP    D0
+    MOVE.W  D0,2(A1)
+    MOVE.W  #203,D0         ; x
+    MOVE.W  #50,D1          ; y
+
+;=== ordonner-pied
+    MOVE.L  #copper,$80(A5)
+    MOVE.W  D0,$88(A5)
+    MOVE.W  #$8380,$96(A5)
+    BSR     attendre_clic
+    BSR     rendre
+    MOVEQ   #0,D0
+    RTS
+    INCLUDE "amiga-systeme.s"
+
+    SECTION chip,DATA_C
+copper:
+    DC.W    $008E,$2C81,$0090,$2CC1,$0092,$0038,$0094,$00D0
+    DC.W    $0102,$0000,$0104,$0024,$0108,$0000,$010A,$0000
+    DC.W    $0180,$0000,$0182,$0FFF
+    DC.W    $0100,$1200
+cop_plans:
+    DC.W    $00E0,0,$00E2,0
+    DC.W    $FFFF,$FFFE
+
+    SECTION ecran,BSS_C
+plan:   DS.B    40*256
+
 ;=== horizontale-depart
 ; Trace une ligne blanche sur toute la largeur de l'écran, à la ligne y = 100.
 START:
@@ -702,6 +738,59 @@ START:
     MOVE.B  #$FF,20(A1,D6.W)
     DBF     D6,.b2
     LEA     40(A0),A0       ; ligne suivante dans chaque plan
+    LEA     40(A1),A1
+    DBF     D7,.ligne
+    MOVE.L  #copper,$80(A5)
+    MOVE.W  D0,$88(A5)
+    MOVE.W  #$8380,$96(A5)
+    BSR     attendre_clic
+    BSR     rendre
+    MOVEQ   #0,D0
+    RTS
+    INCLUDE "amiga-systeme.s"
+
+    SECTION chip,DATA_C
+copper:
+    DC.W    $008E,$2C81,$0090,$2CC1,$0092,$0038,$0094,$00D0
+    DC.W    $0102,$0000,$0104,$0024,$0108,$0000,$010A,$0000
+    DC.W    $0180,$0000,$0182,$0F00 ; couleurs 0 et 1 : noir, rouge
+    DC.W    $0184,$00F0,$0186,$000F ; couleurs 2 et 3 : vert, bleu
+    DC.W    $0100,$2200             ; BPLCON0 : 2 plans
+cop_plans:
+    DC.W    $00E0,0,$00E2,0         ; plan 1
+    DC.W    $00E4,0,$00E6,0         ; plan 2
+    DC.W    $FFFF,$FFFE
+
+    SECTION ecran,BSS_C
+plan1:  DS.B    40*256
+plan2:  DS.B    40*256
+
+;=== bandes-inverse-solution
+START:
+    BSR     prendre
+    LEA     plan1,A0
+    LEA     plan2,A1
+    MOVE.L  A0,D0
+    LEA     cop_plans,A2
+    MOVE.W  D0,6(A2)
+    SWAP    D0
+    MOVE.W  D0,2(A2)
+    MOVE.L  A1,D0
+    MOVE.W  D0,14(A2)
+    SWAP    D0
+    MOVE.W  D0,10(A2)
+    MOVE.W  #255,D7         ; 256 lignes
+.ligne:
+    MOVEQ   #9,D6           ; plan 1 : couleurs 3 et 1, octets 0 à 9...
+.b1:
+    MOVE.B  #$FF,0(A0,D6.W)
+    MOVE.B  #$FF,20(A0,D6.W) ; ... et octets 20 à 29
+    DBF     D6,.b1
+    MOVEQ   #19,D6          ; plan 2 : couleurs 3 et 2, octets 0 à 19
+.b2:
+    MOVE.B  #$FF,0(A1,D6.W)
+    DBF     D6,.b2
+    LEA     40(A0),A0
     LEA     40(A1),A1
     DBF     D7,.ligne
     MOVE.L  #copper,$80(A5)
