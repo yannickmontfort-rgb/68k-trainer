@@ -10,16 +10,16 @@ themes: ["outillage", "tableaux", "demarrage"]
 
 Un programme TOS (`.PRG`, `.TOS`, `.TTP`) est un fichier en trois sections :
 
-- **TEXT** — le code ;
-- **DATA** — les données initialisées (`DC.x`) ;
-- **BSS** — les variables à zéro (`DS.x`), qui ne prennent pas de place dans le fichier.
+- TEXT, le code ;
+- DATA, les données initialisées (`DC.x`) ;
+- BSS, les variables à zéro (`DS.x`), qui ne prennent pas de place dans le fichier.
 
-Le fichier contient aussi une **table de relocation** : le TOS charge le programme à une adresse
-inconnue à l'avance et corrige lui-même toutes les adresses absolues (`MOVE.L #TABLE,A0`,
-`DC.L ROUTINE`…).
+Comme le TOS charge le programme à une adresse qu'on ne connaît pas à l'avance, le fichier contient
+aussi une **table de relocation**, grâce à laquelle le TOS corrige lui-même toutes les adresses
+absolues (`MOVE.L #TABLE,A0`, `DC.L ROUTINE`…).
 
-Au lancement, le TOS place juste devant le programme une **page de base** de 256 octets, dont
-l'adresse est sur la pile : `4(SP)` à la première instruction.
+Au lancement, le TOS place juste devant le programme une **page de base** de 256 octets, dont il
+laisse l'adresse sur la pile, en `4(SP)` à la première instruction.
 
 | Offset | Contenu |
 |---|---|
@@ -37,10 +37,10 @@ l'adresse est sur la pile : `4(SP)` à la première instruction.
 
 ## La routine de démarrage
 
-Au lancement, un programme TOS reçoit **toute la mémoire libre**. S'il veut appeler `Malloc` ou
-lancer un autre programme (`Pexec`), il doit d'abord rendre ce qu'il n'utilise pas, avec `Mshrink`
-(GEMDOS 74) : taille = 256 (page de base) + TEXT + DATA + BSS. Il installe aussi sa propre pile,
-réservée dans sa section BSS.
+Un programme TOS reçoit au lancement toute la mémoire libre. S'il veut appeler `Malloc` ou lancer
+un autre programme avec `Pexec`, il doit d'abord rendre ce qu'il n'utilise pas, avec `Mshrink`
+(GEMDOS 74), en gardant 256 octets pour la page de base plus la taille de TEXT, DATA et BSS. Il
+installe aussi sa propre pile, réservée dans sa section BSS.
 
 ```asm
         SECTION TEXT
@@ -67,28 +67,26 @@ DEBUT:  MOVEA.L 4(SP),A5        ; A5 = page de base
 PILE:                           ; l'étiquette APRÈS la réservation
 ```
 
-> **La pile se remplit vers le bas** (`-(SP)`) : l'étiquette `PILE` doit donc être placée **après**
-> la réservation, pas avant. Une pile trop petite ne plante pas forcément tout de suite : elle
-> écrase silencieusement ce qui se trouve juste avant elle en mémoire. Compter les octets empilés
-> par les `BSR`, `MOVEM` et `TRAP` imbriqués, et garder de la marge.
+La pile se remplit vers le bas (`-(SP)`), et l'étiquette `PILE` se place donc **après** la
+réservation. Une pile trop petite ne plante pas forcément tout de suite : elle écrase en silence ce
+qui se trouve juste avant elle en mémoire. Compte les octets empilés par les `BSR`, `MOVEM` et
+`TRAP` imbriqués, et garde de la marge.
 
-> `LEA PILE,SP` (ou `MOVE.L #PILE,SP`) met dans SP **l'adresse** de la pile. `MOVE.L PILE,SP`, sans
-> `#`, y mettrait le **contenu** des 4 octets situés à `PILE` — une erreur classique.
+`LEA PILE,SP`, ou `MOVE.L #PILE,SP`, met dans SP l'adresse de la pile, alors que `MOVE.L PILE,SP`,
+sans `#`, y mettrait le contenu des 4 octets situés à `PILE`, une erreur classique.
 
 Un programme simple qui n'appelle ni `Malloc` ni `Pexec` peut se passer de `Mshrink`.
 
-> Le simulateur de 68k Trainer ne gère pas `Mshrink` (ni `Malloc`, ni `Pexec`) : cette routine de
-> démarrage s'essaie avec le bouton **« Essayer dans Hatari »**.
+> Le simulateur de 68k Trainer ne gère ni `Mshrink`, ni `Malloc`, ni `Pexec` : cette routine de
+> démarrage s'essaie avec le bouton « Essayer dans Hatari ».
 
 ## Inclusions : `INCLUDE` et `INCBIN`
 
-Deux directives d'assembleur (pas des instructions 68000) pour garder les sources gérables :
-
-- **`INCBIN "fichier"`** — incorpore un fichier binaire tel quel (image, son, sprites, police) à
-  l'endroit de la directive.
-- **`INCLUDE "fichier.s"`** — incorpore un fichier source, comme un copier-coller à l'assemblage.
-  Permet de constituer une **bibliothèque personnelle** de routines réutilisables (sauvegarde de
-  palette, routine de démarrage, etc.) sans les retaper dans chaque programme.
+Ces deux directives d'assembleur, qui ne sont pas des instructions 68000, gardent les sources
+gérables. `INCBIN "fichier"` incorpore tel quel un fichier binaire (image, son, sprites, police) à
+l'endroit de la directive. `INCLUDE "fichier.s"` incorpore un fichier source, comme un
+copier-coller à l'assemblage, ce qui permet de se constituer une bibliothèque personnelle de
+routines (sauvegarde de palette, routine de démarrage…) sans les retaper dans chaque programme.
 
 ```asm
         INCLUDE "macros.s"      ; définitions partagées
@@ -97,21 +95,22 @@ IMAGE:  INCBIN  "photo.pi1"     ; Degas : résolution (2 octets), palette (32), 
         EVEN
 ```
 
-> Dans le bac à sable de 68k Trainer, ces fichiers sont cherchés d'abord **à côté du source
-> ouvert**, puis dans les fichiers fournis avec les cours.
+> Dans le bac à sable de 68k Trainer, ces fichiers sont cherchés d'abord à côté du source ouvert,
+> puis dans les fichiers fournis avec les cours.
 
-> Attention à la distinction adresse/contenu : `IMAGE INCBIN "photo.pi1"` place les octets de
-> l'image à l'adresse `IMAGE`, alors que `PTN_IMAGE DC.L IMAGE` place à l'adresse `PTN_IMAGE` un
-> **pointeur** vers `IMAGE` — bien distinguer « la donnée » de « l'adresse de la donnée ».
+Garde en tête la distinction entre la donnée et son adresse : `IMAGE INCBIN "photo.pi1"` place les
+octets de l'image à l'adresse `IMAGE`, alors que `PTN_IMAGE DC.L IMAGE` place à l'adresse
+`PTN_IMAGE` un pointeur vers `IMAGE`.
 
 ## Macros
 
-Une macro remplace plusieurs lignes répétitives par une seule ligne « maison », développée par
-l'assembleur au moment de l'assemblage. Elle n'existe pas pour le processeur : contrairement à un
-sous-programme, il n'y a ni `BSR` ni `RTS`, juste du texte recopié à chaque utilisation.
+Une **macro** remplace plusieurs lignes répétitives par une seule ligne « maison », que
+l'assembleur développe au moment de l'assemblage. Elle n'existe pas pour le processeur :
+contrairement à un sous-programme, il n'y a ni `BSR` ni `RTS`, seulement du texte recopié à chaque
+utilisation.
 
-Syntaxe de Devpac (et de l'assembleur de 68k Trainer) : le nom en première colonne devant `MACRO`,
-les paramètres `\1` à `\9` dans le corps, `ENDM` à la fin.
+Dans la syntaxe de Devpac, que suit l'assembleur de 68k Trainer, le nom se place en première
+colonne devant `MACRO`, le corps utilise les paramètres `\1` à `\9`, et `ENDM` termine la macro.
 
 ```asm
 PRINT   MACRO
@@ -124,10 +123,9 @@ PRINT   MACRO
         PRINT   MESSAGE         ; remplacé par les 4 lignes, avec MESSAGE à la place de \1
 ```
 
-- `\0` est remplacé par la **taille** écrite après le nom de la macro (`COPIE.L` → `L`).
-- `\@` donne un nombre **différent à chaque utilisation** : indispensable pour une étiquette dans
-  une macro utilisée plusieurs fois.
-- Une macro peut en appeler une autre.
+`\0` est remplacé par la taille écrite après le nom de la macro (`COPIE.L` donne `L`). `\@` donne un
+nombre différent à chaque utilisation, ce qui est indispensable pour une étiquette dans une macro
+utilisée plusieurs fois. Une macro peut aussi en appeler une autre.
 
 ```asm
 ATTENDS MACRO                   ; ATTENDS n : boucle d'attente de n tours
@@ -139,12 +137,12 @@ ATTENDS MACRO                   ; ATTENDS n : boucle d'attente de n tours
         ATTENDS 200             ; pas de conflit : les étiquettes sont .att1 et .att2 (par exemple)
 ```
 
-> Revers de la médaille : à trop en abuser, on ne voit plus ce que le processeur exécute vraiment, et
-> le programme grossit (le corps est recopié à chaque fois). À réserver aux séquences vraiment
-> répétitives, comme les appels système.
+À trop abuser des macros, on ne voit plus ce que le processeur exécute vraiment, et le programme
+grossit puisque le corps est recopié à chaque fois. On les réserve aux séquences vraiment
+répétitives, comme les appels système.
 
-**Assemblage conditionnel** — `IFEQ`/`IFNE`/`IFD`… `ELSE` … `ENDC` n'assemblent un bloc que si une
-condition est vraie (version de démonstration, options de débogage) :
+L'**assemblage conditionnel**, avec `IFEQ`, `IFNE`, `IFD`… `ELSE` … `ENDC`, n'assemble un bloc que
+si une condition est vraie, pour une version de démonstration ou des options de débogage :
 
 ```asm
 DEBUG   EQU     1
@@ -155,8 +153,8 @@ DEBUG   EQU     1
 
 ## Tableaux : adressage indexé
 
-L'adressage indexé avec déplacement (`d8(An,Dn.taille)`) sert à parcourir un tableau : `An` pointe le
-début du tableau, `Dn` sert d'indice, `d` est un décalage fixe optionnel (−128 à 127).
+L'adressage indexé avec déplacement, `d8(An,Dn.taille)`, sert à parcourir un tableau : `An` pointe
+le début du tableau, `Dn` sert d'indice et `d` est un décalage fixe optionnel, de −128 à 127.
 
 ```asm
         LEA     TABLEAU,A0
@@ -165,13 +163,13 @@ début du tableau, `Dn` sert d'indice, `d` est un décalage fixe optionnel (−1
         MOVE.W  0(A0,D0.W),D1   ; D1 = le D0-ième mot du tableau
 ```
 
-> **Le déplacement compte toujours en octets**, quelle que soit la taille des éléments — d'où la
-> multiplication de l'indice par 2 (mot) ou 4 (long, `LSL.W #2,D0`). L'oublier est une erreur
-> classique : le programme « marche » par accident sur les indices pairs, puis plante en **erreur
-> d'adresse** (3 bombes) sur les indices impairs. Un tableau d'**octets** n'a pas ce problème.
+Le déplacement **compte toujours en octets**, quelle que soit la taille des éléments, d'où la
+multiplication de l'indice par 2 pour un mot ou par 4 pour un long (`LSL.W #2,D0`). L'oublier est
+une erreur classique : le programme marche par accident sur les indices pairs, puis plante en
+erreur d'adresse (3 bombes) sur les indices impairs. Un tableau d'octets n'a pas ce problème.
 
-**Table de sauts** (*jump table*) — un tableau d'adresses de routines, pour remplacer une longue
-cascade de comparaisons par un simple indice :
+Une **table de sauts** (*jump table*) est un tableau d'adresses de routines, qui remplace une
+longue cascade de comparaisons par un simple indice :
 
 ```asm
         LEA     ROUTINES,A0
@@ -185,8 +183,8 @@ ROUTINES:
         DC.L    QUITTER
 ```
 
-Variante relogeable, sans adresses absolues : une table de **déplacements** (mots) depuis le début
-de la table.
+La variante relogeable se passe d'adresses absolues et range des déplacements, sur un mot, depuis
+le début de la table :
 
 ```asm
         ADD.W   D0,D0           ; indice x 2
@@ -198,8 +196,8 @@ SAUTS:  DC.W    TOUT_VERT-SAUTS
         DC.W    QUITTER-SAUTS
 ```
 
-**Recherche dans une liste** terminée par une valeur sentinelle (`$FFFF`), en parallèle d'une liste
-de routines :
+Pour chercher un code dans une liste terminée par une valeur sentinelle (`$FFFF`), on la parcourt
+en parallèle d'une liste de routines :
 
 ```asm
         LEA     TAB_CODE,A0
@@ -213,30 +211,35 @@ de routines :
         JSR     (A2)
 ```
 
-> **Étiquette locale** : une étiquette commençant par un point (`.ici`) est rattachée à l'étiquette
-> globale précédente — on peut réutiliser `.ici` dans plusieurs routines sans collision de noms.
+Une étiquette qui commence par un point, comme `.ici`, est une étiquette locale, rattachée à
+l'étiquette globale précédente : on peut donc réutiliser `.ici` dans plusieurs routines sans
+collision de noms.
 
-**Tableau à deux dimensions** — une image de 320 × 200 en octets : l'élément (x, y) est à
-`y × 320 + x`. On évite la multiplication par une **table précalculée** des débuts de ligne :
+Dans un **tableau à deux dimensions**, comme une image de 320 × 200 en octets, l'élément (x, y) se
+trouve à `y × 320 + x`. Une table précalculée des débuts de ligne évite la multiplication. Comme
+199 × 320 dépasse 32 767, la table range des mots longs, et l'index se fait en `.L` : un index en
+`.W` serait étendu en signe et donnerait une adresse fausse dès la ligne 103.
 
 ```asm
-        ADD.W   D1,D1           ; y x 2 (table de mots)
-        MOVE.W  LIGNES(PC,D1.W),D1 ; D1 = y x 320, lu dans la table
-        ADD.W   D0,D1           ; + x
-        MOVE.B  0(A0,D1.W),D2   ; l'octet (x, y)
+        ADD.W   D1,D1
+        ADD.W   D1,D1           ; y x 4 (table de mots longs)
+        MOVE.L  LIGNES(PC,D1.W),D1 ; D1 = y x 320, lu dans la table
+        AND.L   #$FFFF,D0       ; x sur 32 bits
+        ADD.L   D0,D1           ; + x
+        MOVE.B  0(A0,D1.L),D2   ; l'octet (x, y)
         RTS
 
 LIGNES:
 Y       SET     0
         REPT    200
-        DC.W    Y*320
+        DC.L    Y*320
 Y       SET     Y+1
         ENDR
 ```
 
-`REPT n` … `ENDR` répète un bloc à l'assemblage ; `SET` (contrairement à `EQU`) permet de redéfinir
-un symbole à chaque tour.
+`REPT n` … `ENDR` répète un bloc à l'assemblage, et `SET`, contrairement à `EQU`, permet de
+redéfinir un symbole à chaque tour.
 
-> Fiche complétée et corrigée le 21/10/2026 (Claude) : `MOVE.L PILE,A7` remplacé par `LEA PILE,SP`,
+> Fiche complétée et corrigée le 21/10/2026 (Claude) : `LEA PILE,SP` au lieu de `MOVE.L PILE,A7`,
 > macros selon la syntaxe Devpac, `\@`, assemblage conditionnel, table de sauts relogeable,
-> tableaux 2D.
+> tableaux à deux dimensions.

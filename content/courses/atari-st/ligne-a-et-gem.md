@@ -6,25 +6,25 @@ themes: ["graphisme", "gem"]
 
 # Ligne A et GEM (AES/VDI)
 
-> Le GEM est vaste : cette fiche donne l'architecture et les appels de base, assez pour écrire un
-> premier programme. Pour une fonction précise, la référence reste la documentation d'Atari (Bible
-> ST, Profibuch, Atari Compendium).
+> Le GEM est vaste, et cette fiche s'en tient à l'architecture et aux appels de base, de quoi écrire
+> un premier programme. Pour une fonction précise, la référence reste la documentation d'Atari
+> (Bible ST, Profibuch, Atari Compendium).
 
-> Le simulateur de 68k Trainer connaît les fonctions Ligne A `$A000` à `$A003`, `$A009` et `$A00A`
-> (tracés identiques à ceux d'EmuTOS), et de l'AES `appl_init`, `appl_exit`, `form_alert`,
-> `graf_handle` et `graf_mouse`. Pour le reste, et pour le VDI, lance ton programme dans Hatari
-> avec le bouton « Essayer dans Hatari ».
+> Le simulateur de 68k Trainer connaît les fonctions Ligne A `$A000` à `$A003`, `$A009` et `$A00A`,
+> avec des tracés identiques à ceux d'EmuTOS, et de l'AES `appl_init`, `appl_exit`, `form_alert`,
+> `graf_handle` et `graf_mouse`. Pour le reste, et pour le VDI, lance ton programme dans Hatari avec
+> le bouton « Essayer dans Hatari ».
 
 ## La Ligne A : un mécanisme du 68000 exploité par le TOS
 
-Tout mot d'instruction qui commence par `$A` (`$A000` à `$AFFF`) n'est **pas une instruction
-68000** : le processeur déclenche une exception et saute au **vecteur 10** (adresse `$28`). C'est un
-mécanisme générique du 68000 (« émulateur ligne A ») ; l'Atari ST y branche ses **primitives
-graphiques de bas niveau**, les mêmes que celles qu'utilise le VDI du GEM. (Sur l'Amiga, ce
-vecteur ne sert à rien de tel : un `$Axxx` y provoque une erreur.)
+Un mot d'instruction qui commence par `$A` (`$A000` à `$AFFF`) n'est pas une instruction 68000 :
+le processeur déclenche une exception et saute au vecteur 10, à l'adresse `$28`. Ce mécanisme
+générique du 68000 s'appelle l'émulateur ligne A, et l'Atari ST y branche ses **primitives
+graphiques de bas niveau**, les mêmes que celles qu'utilise le VDI du GEM. Sur l'Amiga, ce vecteur
+ne sert à rien de tel, et un `$Axxx` y provoque une erreur.
 
-Les fonctions se notent comme des données, puisque l'assembleur ne connaît pas d'instruction
-`$Axxx` :
+L'assembleur ne connaît pas d'instruction `$Axxx`, et on écrit donc les fonctions comme des
+données :
 
 ```asm
         DC.W    $A000           ; Ligne A n° 0 : initialisation
@@ -41,9 +41,9 @@ Les fonctions se notent comme des données, puisque l'assembleur ne connaît pas
 | `$A006` | polygone plein (une ligne) | `$A00E` | copier une surface (*copy raster*) |
 | `$A007` | copie de bloc (*bitblt*) | `$A00F` | remplissage (*seed fill*) |
 
-**`$A000` d'abord** : il rend dans **A0** (et D0) l'adresse des **variables de la Ligne A**, dans A1
-la table des polices, dans A2 la table des routines. Les paramètres passent par ces variables et
-par des tableaux dont elles contiennent l'adresse :
+On commence toujours par `$A000`, qui rend dans A0 (et D0) l'adresse des **variables de la Ligne
+A**, dans A1 la table des polices et dans A2 la table des routines. Les paramètres passent par ces
+variables et par les tableaux dont elles contiennent l'adresse :
 
 | Décalage | Variable | Rôle |
 |---|---|---|
@@ -84,25 +84,25 @@ par des tableaux dont elles contiennent l'adresse :
         DC.W    $A003           ; tracer la ligne
 ```
 
-> **Ces tableaux sont partagés avec le GEM** — un appel GEM entre deux appels Ligne A peut écraser
-> leur contenu. Toujours les remplir juste avant chaque appel.
+Ces tableaux sont **partagés avec le GEM**, et un appel GEM entre deux appels Ligne A peut écraser
+leur contenu : on les remplit donc juste avant chaque appel.
 
-> La Ligne A a été déclarée « à ne plus utiliser » par Atari à partir du TT (elle ne gère pas les
-> cartes graphiques) ; elle reste pratique sur ST pour la souris et les primitives rapides.
+Atari a déclaré la Ligne A « à ne plus utiliser » à partir du TT, car elle ne gère pas les cartes
+graphiques, mais elle reste pratique sur ST pour la souris et les primitives rapides.
 
 ## Le GEM : AES + VDI
 
-Le GEM s'appelle par **`TRAP #2`**, avec dans **D0** le numéro de la partie appelée et dans **D1**
-l'adresse d'un **bloc de paramètres** (une liste d'adresses de tableaux) :
+Le GEM s'appelle par `TRAP #2`, avec dans D0 le numéro de la partie appelée et dans D1 l'adresse
+d'un **bloc de paramètres**, une liste d'adresses de tableaux :
 
 | Partie | D0 | Rôle | Bloc de paramètres (adresses de…) |
 |---|---|---|---|
 | **AES** (*Application Environment System*) | `$C8` (200) | fenêtres, menus, boîtes de dialogue, événements | `CONTROL`, `GLOBAL`, `INT_IN`, `INT_OUT`, `ADDR_IN`, `ADDR_OUT` |
 | **VDI** (*Virtual Device Interface*) | `$73` (115) | dessin indépendant du périphérique : lignes, cercles, texte | `CONTRL`, `INTIN`, `PTSIN`, `INTOUT`, `PTSOUT` |
 
-Pour l'AES, le tableau `CONTROL` décrit l'appel : `CONTROL[0]` = numéro de la fonction, puis le
-nombre d'éléments de `INT_IN`, `INT_OUT`, `ADDR_IN` et `ADDR_OUT`. Le résultat principal est dans
-`INT_OUT[0]`.
+Pour l'AES, le tableau `CONTROL` décrit l'appel : `CONTROL[0]` donne le numéro de la fonction, et
+les quatre mots suivants le nombre d'éléments de `INT_IN`, `INT_OUT`, `ADDR_IN` et `ADDR_OUT`. Le
+résultat principal revient dans `INT_OUT[0]`.
 
 | Fonction AES | N° | CONTROL | Entrées | Résultat |
 |---|---|---|---|---|
@@ -112,7 +112,7 @@ nombre d'éléments de `INT_IN`, `INT_OUT`, `ADDR_IN` et `ADDR_OUT`. Le résulta
 | `graf_handle` | 77 | 77, 0, 5, 0, 0 | — | `INT_OUT[0]` = numéro du périphérique VDI de l'écran |
 | `evnt_multi` | 25 | 25, 16, 7, 1, 0 | événements attendus… | événement survenu |
 
-**Un premier programme GEM** : une boîte d'alerte.
+Un premier programme GEM peut se contenter d'afficher une boîte d'alerte :
 
 ```asm
         SECTION TEXT
@@ -160,42 +160,44 @@ ADDR_IN:  DS.L  2
 ADDR_OUT: DS.L  1
 ```
 
-Le texte d'une alerte suit le format `[icône][ligne 1|ligne 2…][bouton 1|bouton 2…]` : icône 0
-(aucune), 1 (point d'exclamation), 2 (point d'interrogation) ou 3 (stop) ; 5 lignes de 30
-caractères et 3 boutons au plus.
+Le texte d'une alerte suit le format `[icône][ligne 1|ligne 2…][bouton 1|bouton 2…]`, avec l'icône
+0 (aucune), 1 (point d'exclamation), 2 (point d'interrogation) ou 3 (stop), au plus 5 lignes de 30
+caractères et 3 boutons.
 
-Pour le **VDI**, on demande d'abord à l'AES le numéro du périphérique écran (`graf_handle`), puis
-on ouvre un **poste de travail virtuel** (`v_opnvwk`, VDI 100) qui rend son propre numéro dans
-`CONTRL[6]` ; chaque appel VDI met ce numéro dans `CONTRL[6]`, le numéro de fonction dans
-`CONTRL[0]`, et le nombre de points et d'entiers fournis dans `CONTRL[1]` et `CONTRL[3]`. Exemples :
-`v_pline` (6, ligne brisée), `v_gtext` (8, texte), `v_circle` (11, sous-fonction 4), `v_clsvwk`
-(101, fermeture).
+Pour le VDI, on demande d'abord à l'AES le numéro du périphérique écran (`graf_handle`), puis on
+ouvre un **poste de travail virtuel** (`v_opnvwk`, VDI 100), qui rend son propre numéro dans
+`CONTRL[6]`. Chaque appel VDI met ensuite ce numéro dans `CONTRL[6]`, le numéro de fonction dans
+`CONTRL[0]`, et le nombre de points et d'entiers fournis dans `CONTRL[1]` et `CONTRL[3]`. Parmi les
+fonctions courantes, on trouve `v_pline` (6, ligne brisée), `v_gtext` (8, texte), `v_circle` (11,
+sous-fonction 4) et `v_clsvwk` (101, fermeture).
 
-**Concepts clés du modèle GEM** :
-- **Identifiant d'application** — rendu par `appl_init` à chaque application (programme principal
-  ou accessoire de bureau, `.ACC`) ; un programme GEM commence par `appl_init` et finit par
-  `appl_exit`.
-- **Handle** — numéro d'une fenêtre (AES) ou d'un poste de travail (VDI), obtenu à l'ouverture.
-- **Boucle d'événements** — un programme GEM passe le plus clair de son temps à *attendre* un
-  événement (clic, touche, message de fenêtre) avec `evnt_multi`. Ce n'est pas du multitâche réel,
-  mais les accessoires peuvent s'activer pendant que le programme attend.
-- **Ressources** (`.RSC`) — menus et boîtes de dialogue dessinés avec un éditeur de ressources,
-  chargés par `rsrc_load`, plutôt que décrits à la main dans le source.
+Quelques notions reviennent dans tout programme GEM :
+
+- l'**identifiant d'application**, que `appl_init` rend à chaque application, programme principal
+  ou accessoire de bureau (`.ACC`) ; un programme GEM commence par `appl_init` et finit par
+  `appl_exit` ;
+- le **handle**, numéro d'une fenêtre (AES) ou d'un poste de travail (VDI), obtenu à l'ouverture ;
+- la **boucle d'événements** : un programme GEM passe le plus clair de son temps à attendre un
+  événement (clic, touche, message de fenêtre) avec `evnt_multi`, et si ce n'est pas du multitâche
+  réel, les accessoires peuvent s'activer pendant cette attente ;
+- les **ressources** (`.RSC`), menus et boîtes de dialogue dessinés avec un éditeur de ressources
+  et chargés par `rsrc_load`, plutôt que décrits à la main dans le source.
 
 ## Pièges pratiques
 
-- **Adresses sur 32 bits** : écrire `$FFFF8800` plutôt que `$FF8800` garde le programme valable sur
-  le TT et le Falcon (bus d'adresse de 32 bits).
-- **FDB (*Form Definition Block*)** : structure décrivant une surface (adresse, largeur, hauteur,
-  nombre de plans) pour une copie de bloc (`vro_cpyfm`). Une adresse nulle désigne l'écran.
-- **Ergonomie** (conventions d'Atari, reprises du Macintosh) : les entrées de menu qui ouvrent un
-  dialogue finissent par « … » ; Tab et Maj+Tab passent d'un champ éditable à l'autre ; Ctrl+X/C/V
-  pour couper, copier, coller. Un accessoire reste petit et discret.
-- **Bits libres des objets** : dans un arbre d'objets de ressource, le champ `ob_flags` n'utilise
-  que 9 bits sur 16 ; les 7 bits restants peuvent porter une donnée personnelle (un raccourci
-  clavier associé à un bouton, par exemple).
+- Écrire les adresses sur 32 bits, `$FFFF8800` plutôt que `$FF8800`, garde le programme valable
+  sur le TT et le Falcon, dont le bus d'adresse fait 32 bits.
+- Un FDB (*Form Definition Block*) décrit une surface (adresse, largeur, hauteur, nombre de plans)
+  pour une copie de bloc (`vro_cpyfm`) ; une adresse nulle y désigne l'écran.
+- Les conventions d'ergonomie d'Atari, reprises du Macintosh, veulent que les entrées de menu qui
+  ouvrent un dialogue finissent par « … », que Tab et Maj+Tab passent d'un champ éditable à
+  l'autre, et que Ctrl+X, Ctrl+C et Ctrl+V coupent, copient et collent. Un accessoire reste petit
+  et discret.
+- Dans un arbre d'objets de ressource, le champ `ob_flags` n'utilise que 9 bits sur 16, et les 7
+  bits restants peuvent porter une donnée personnelle, comme un raccourci clavier associé à un
+  bouton.
 
 > Fiche complétée et corrigée le 21/10/2026 (Claude) : les paramètres de la Ligne A passent surtout
-> par ses **variables** (rendues par `$A000`), pas seulement par 5 tableaux ; table des 16
-> fonctions, exemple pixel + ligne, appel `TRAP #2` (D0/D1), premier programme GEM. Corrigée le
-> 26/10/2026 : rôle de `LSTLIN`, vérifié dans le code source et le comportement d'EmuTOS.
+> par ses variables (rendues par `$A000`), pas seulement par 5 tableaux ; table des 16 fonctions,
+> exemple pixel et ligne, appel `TRAP #2` (D0/D1), premier programme GEM. Corrigée le 26/10/2026 :
+> rôle de `LSTLIN`, vérifié dans le code source et le comportement d'EmuTOS.

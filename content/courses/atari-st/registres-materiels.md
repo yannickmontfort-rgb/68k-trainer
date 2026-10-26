@@ -6,9 +6,9 @@ themes: ["materiel", "reference"]
 
 # Atari ST : registres matériels et carte mémoire
 
-> Fiche de référence (ST/STF, avec les ajouts du STE signalés). Tous ces registres ne sont
-> accessibles qu'en **mode superviseur** (voir [la fiche TOS](trap-et-systeme.md)) : en mode
-> utilisateur, y toucher provoque une erreur de bus (2 bombes). Écrire les adresses sur 32 bits
+> Cette fiche couvre le ST et le STF, et signale les ajouts du STE. Tous ces registres ne
+> s'atteignent qu'en **mode superviseur** (voir [la fiche TOS](trap-et-systeme.md)), et en mode
+> utilisateur, y toucher provoque une erreur de bus, les 2 bombes. Écrire les adresses sur 32 bits
 > (`$FFFF8240`) garde le programme valable sur le TT et le Falcon.
 
 ## Carte mémoire
@@ -45,9 +45,9 @@ themes: ["materiel", "reference"]
 
 ## Le son : le YM2149
 
-Le générateur de son (un Yamaha YM2149, cousin de l'AY-3-8910) a **3 voies carrées** (A, B, C), un
-**bruit** et une **enveloppe**, réglés par 16 registres. On sélectionne le registre en écrivant son
-numéro en `$FFFF8800`, puis on écrit la valeur en `$FFFF8802` (ou on la lit en `$FFFF8800`).
+Le générateur de son, un Yamaha **YM2149** cousin de l'AY-3-8910, a 3 voies carrées (A, B, C), un
+bruit et une enveloppe, réglés par 16 registres. On sélectionne un registre en écrivant son numéro
+en `$FFFF8800`, puis on écrit sa valeur en `$FFFF8802`, ou on la lit en `$FFFF8800`.
 
 | Registre | Rôle |
 |---|---|
@@ -62,8 +62,8 @@ numéro en `$FFFF8800`, puis on écrit la valeur en `$FFFF8802` (ou on la lit en
 | 14 | port A : sélection du lecteur de disquette et de la face (bits 0-2), lignes de la RS-232 et de l'imprimante |
 | 15 | port B : données de l'imprimante |
 
-**Fréquence** d'une voie = 2 000 000 / (16 × période) = 125 000 / période. Le *la* à 440 Hz : période
-284.
+La fréquence d'une voie vaut 2 000 000 / (16 × période), soit 125 000 / période, et le *la* à
+440 Hz demande donc une période de 284.
 
 ```asm
 ; Un « la » sur la voie A (en superviseur)
@@ -81,26 +81,26 @@ YM      EQU     $FFFF8800
         MOVE.B  D0,YM+2
 ```
 
-> Le registre 14 commande aussi les lecteurs de disquette : ne jamais l'écrire au hasard. Pour jouer
-> une suite de notes sans tout faire à la main, le XBIOS fournit `Dosound` (XBIOS 32), qui lit une
-> liste de commandes à chaque interruption de 50 Hz.
+> Le registre 14 commande aussi les lecteurs de disquette, et on ne l'écrit jamais au hasard. Pour
+> jouer une suite de notes sans tout faire à la main, le XBIOS fournit `Dosound` (XBIOS 32), qui
+> lit une liste de commandes à chaque interruption de 50 Hz.
 
 ## Le clavier, la souris et le joystick
 
-Le clavier a son propre processeur (l'**IKBD**, un 6301), relié par une liaison série à l'**ACIA**
-(`$FFFFFC00`). Il envoie :
+Le clavier a son propre processeur, l'**IKBD**, un 6301 relié par une liaison série à l'ACIA
+(`$FFFFFC00`). Il envoie un octet par touche, son code (*scancode*), avec le bit 7 à 1 quand la
+touche est relâchée. La souris et le joystick arrivent en paquets : pour la souris, un en-tête de
+`$F8` à `$FB` suivi des déplacements X et Y ; pour le joystick, un en-tête `$FE` ou `$FF` suivi de
+l'état, avec les bits 0 à 3 pour haut, bas, gauche, droite et le bit 7 pour le bouton.
 
-- un **octet par touche** : son code (*scancode*), avec le bit 7 à 1 quand la touche est **relâchée** ;
-- des **paquets** pour la souris (en-tête `$F8`-`$FB`, puis déplacements X et Y) et le joystick
-  (en-tête `$FE`/`$FF`, puis l'état : bits 0-3 = haut, bas, gauche, droite, bit 7 = bouton).
-
-Le TOS décode tout cela sous l'interruption de l'ACIA (canal 6 du MFP) ; un programme récupère les
-paquets en détournant les routines de la table rendue par `Kbdvbase` (XBIOS 34), ou les touches par
-`Crawcin` / `Bconin`.
+Le TOS décode tout cela sous l'interruption de l'ACIA, le canal 6 du MFP. Un programme récupère les
+paquets en détournant les routines de la table que rend `Kbdvbase` (XBIOS 34), ou les touches par
+`Crawcin` et `Bconin`.
 
 ## Les exceptions et les « bombes »
 
-Quand une exception non prévue survient, le TOS affiche autant de **bombes** que le numéro du vecteur :
+Quand une exception non prévue survient, le TOS affiche autant de **bombes** que le numéro du
+vecteur :
 
 | Bombes | Cause | Erreur classique |
 |---|---|---|
@@ -110,8 +110,7 @@ Quand une exception non prévue survient, le TOS affiche autant de **bombes** qu
 | 5 | division par zéro | |
 | 8 | violation de privilège | `MOVE #…,SR` en mode utilisateur |
 
-> Dans le simulateur de 68k Trainer : la palette, la base vidéo, la résolution, le YM2149, le MFP et
-> l'ACIA du clavier sont simulés ; le son DMA et le Blitter du STE, non (Hatari les émule, en mode
-> STE).
+> Le simulateur de 68k Trainer simule la palette, la base vidéo, la résolution, le YM2149, le MFP et
+> l'ACIA du clavier, mais pas le son DMA ni le Blitter du STE, que Hatari émule en mode STE.
 
 > Fiche créée le 21/10/2026 (Claude).

@@ -6,14 +6,14 @@ themes: ["systeme", "bibliotheques"]
 
 # Amiga : les bibliothèques exec, dos, graphics et intuition
 
-> Fiche de référence. Le principe de l'appel (A6 = base, `JSR décalage(A6)`, registres détruits)
-> est expliqué dans [la fiche système](systeme-et-hardware.md). Les décalages ci-dessous sont ceux du
-> Kickstart 1.3 (et suivants) ; ils ont été vérifiés dans les sources d'AROS — certains livres de
-> l'époque (dont *Amiga Intern*) en donnent quelques-uns de faux.
+> Le principe de l'appel (A6 = base, `JSR décalage(A6)`, registres détruits) est expliqué dans
+> [la fiche système](systeme-et-hardware.md). Les décalages ci-dessous sont ceux du Kickstart 1.3 et
+> des suivants, vérifiés dans les sources d'AROS, car certains livres de l'époque, dont
+> *Amiga Intern*, en donnent quelques-uns de faux.
 
-**Rappels** : résultat dans **D0** ; **D0, D1, A0, A1 détruits** par tout appel ; A6 doit contenir la
-base de la **bonne** bibliothèque (ExecBase, lue en `$4`, pour exec). Les fonctions marquées sont
-simulées par 68k Trainer ; les autres demandent un vrai système (WinUAE avec AROS).
+Tout appel rend son résultat dans D0 et **détruit D0, D1, A0 et A1** ; A6 doit contenir la base de
+la bonne bibliothèque, celle d'exec étant ExecBase, lue en `$4`. Les fonctions marquées ★ sont
+simulées par 68k Trainer, les autres demandent un vrai système (WinUAE avec AROS).
 
 ## exec.library (base : `MOVEA.L 4.W,A6`)
 
@@ -50,16 +50,17 @@ simulées par 68k Trainer ; les autres demandent un vrai système (WinUAE avec A
 | −630 | `CopyMemQuick(source, destination, taille)` ★ | A0, A1, D0 | adresses et taille multiples de 4 |
 | −636 | `CacheClearU()` | | vide les caches des 68020+ (Kickstart 2.0 et plus) |
 
-**Types de mémoire** (`MEMF_…`, à additionner) : `MEMF_PUBLIC` = `$1`, `MEMF_CHIP` = `$2`,
-`MEMF_FAST` = `$4`, `MEMF_CLEAR` = `$10000` (remplie de zéros), `MEMF_LARGEST` = `$20000` (pour
-`AvailMem` : le plus grand bloc).
+Les types de mémoire `MEMF_…` s'additionnent : `MEMF_PUBLIC` = `$1`, `MEMF_CHIP` = `$2`,
+`MEMF_FAST` = `$4`, `MEMF_CLEAR` = `$10000` (remplie de zéros), et `MEMF_LARGEST` = `$20000`, qui
+fait rendre à `AvailMem` le plus grand bloc.
 
-**Champs d'ExecBase** : `LIB_VERSION` (+20, mot), `ThisTask` (+276), `AttnFlags` (+296, mot : bit 0 =
+Champs d'ExecBase : `LIB_VERSION` (+20, mot), `ThisTask` (+276), `AttnFlags` (+296, mot : bit 0 =
 68010 ou plus, bit 1 = 68020 ou plus), `VBlankFrequency` (+530, octet : 50 en PAL).
 
 ## dos.library (ouvrir `"dos.library"`)
 
-Les paramètres sont dans **D1, D2, D3** ; fichiers et verrous sont des BPTR.
+Les fonctions de dos prennent leurs paramètres dans D1, D2, D3, et leurs fichiers et verrous sont
+des BPTR.
 
 | Décalage | Fonction | Paramètres | Résultat / remarque |
 |---|---|---|---|
@@ -82,8 +83,9 @@ Les paramètres sont dans **D1, D2, D3** ; fichiers et verrous sont des BPTR.
 
 ## graphics.library (ouvrir `"graphics.library"`)
 
-La plupart des fonctions de dessin travaillent sur un **RastPort** (A1), la « feuille » de dessin
-d'une fenêtre ou d'un écran (`Window+50` : `RPort`).
+La plupart des fonctions de dessin travaillent sur un **RastPort**, passé dans A1 : c'est la
+« feuille » de dessin d'une fenêtre ou d'un écran, que la fenêtre range dans son champ `RPort`
+(`Window+50`).
 
 | Décalage | Fonction | Paramètres | Remarque |
 |---|---|---|---|
@@ -109,8 +111,8 @@ d'une fenêtre ou d'un écran (`Window+50` : `RPort`).
 | −456 | `OwnBlitter()` ★ | | le Blitter est à nous |
 | −462 | `DisownBlitter()` ★ | | on le rend |
 
-**Champs de GfxBase** : `ActiView` (+34 : la vue affichée), `copinit` (+38 : la liste Copper du
-système, à remettre dans `COP1LC` en rendant la machine).
+Champs de GfxBase : `ActiView` (+34) est la vue affichée, et `copinit` (+38) la liste Copper du
+système, à remettre dans `COP1LC` quand on rend la machine.
 
 ## intuition.library (ouvrir `"intuition.library"`)
 
@@ -122,8 +124,8 @@ système, à remettre dans `COP1LC` en rendant la machine).
 | −198 | `OpenScreen(nouvel_écran)` | A0 = NewScreen | D0 = Screen |
 | −204 | `OpenWindow(nouvelle_fenêtre)` | A0 = NewWindow | D0 = Window |
 
-Champs utiles d'une **Window** : `RPort` (+50, son RastPort), `UserPort` (+86, le port où arrivent
-ses messages IDCMP : clic sur la case de fermeture, touches…).
+Une Window a deux champs utiles : `RPort` (+50), son RastPort, et `UserPort` (+86), le port où
+arrivent ses messages IDCMP, comme un clic sur la case de fermeture ou une touche.
 
 ## Exemple : afficher un nombre avec RawDoFmt
 
@@ -145,6 +147,7 @@ VALEURS: DC.W   1234
 TAMPON:  DS.B   40
 ```
 
-> `%d` lit un **mot** et `%ld` un **long** : se tromper décale toutes les valeurs suivantes.
+`%d` lit un **mot** et `%ld` un long : si l'on se trompe, toutes les valeurs suivantes sont lues
+de travers.
 
 > Fiche créée le 21/10/2026 (Claude) à partir des décalages vérifiés du simulateur (sources d'AROS).

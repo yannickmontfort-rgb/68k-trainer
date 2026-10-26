@@ -6,13 +6,13 @@ themes: ["trap", "systeme"]
 
 # TRAP, GEMDOS/BIOS/XBIOS et reprogrammation des vecteurs
 
-> Prérequis : la notion de vecteur d'exception et le mécanisme de `TRAP` sont dans le tronc commun,
-> voir [pile-et-sous-programmes.md](../general/pile-et-sous-programmes.md). Ce qui suit est
-> **spécifique au TOS** (le système d'exploitation de l'Atari ST) et à ses conventions d'appel.
+> La notion de vecteur d'exception et le mécanisme de `TRAP` sont dans le tronc commun, voir
+> [pile-et-sous-programmes.md](../general/pile-et-sous-programmes.md). Cette fiche porte sur ce qui
+> est propre au TOS, le système d'exploitation de l'Atari ST, et sur ses conventions d'appel.
 
 ## Les trois familles d'appels système
 
-Le TOS expose ses services par trois `TRAP`, chacun avec ses fonctions numérotées :
+Le TOS offre ses services par trois `TRAP`, chacun avec ses fonctions numérotées :
 
 | Trap | Famille | Rôle |
 |---|---|---|
@@ -20,11 +20,11 @@ Le TOS expose ses services par trois `TRAP`, chacun avec ses fonctions numérot�
 | `TRAP #13` | **BIOS** | entrées/sorties de base : caractères, disques, vecteurs |
 | `TRAP #14` | **XBIOS** | extensions propres au ST : écran, palette, son, clavier, superviseur |
 
-(`TRAP #2` sert au GEM, voir [la fiche Ligne A et GEM](ligne-a-et-gem.md).)
+`TRAP #2` sert au GEM, voir [la fiche Ligne A et GEM](ligne-a-et-gem.md).
 
-**Convention d'appel** : les paramètres sont **empilés du dernier au premier**, puis le numéro de
-fonction (un mot), puis le `TRAP` ; au retour, **l'appelant** rend la place prise sur la pile. Le
-résultat est dans **D0** (un nombre négatif = code d'erreur).
+On empile les paramètres du dernier au premier, puis le numéro de fonction sur un mot, avant
+d'exécuter le `TRAP` ; au retour, c'est **l'appelant qui rend la place** prise sur la pile. Le
+résultat arrive dans D0, où un nombre négatif signale une erreur.
 
 ```asm
         PEA     MESSAGE(PC)     ; paramètre : adresse de la chaîne (4 octets)
@@ -39,8 +39,8 @@ MESSAGE DC.B    'Bonjour !',13,10,0
         EVEN
 ```
 
-> Une chaîne TOS se termine par un **octet nul**. Le passage à la ligne s'écrit `13,10` (retour
-> chariot, puis saut de ligne).
+Une chaîne TOS se termine par un octet nul, et le passage à la ligne s'écrit `13,10` : retour
+chariot, puis saut de ligne.
 
 ## Les fonctions les plus utiles
 
@@ -73,7 +73,7 @@ MESSAGE DC.B    'Bonjour !',13,10,0
 | XBIOS 37 | `Vsync()` | — | attend le prochain retour du faisceau (VBL) |
 | XBIOS 38 | `Supexec(routine)` | `routine.L` | exécute une routine en superviseur (elle finit par `RTS`) |
 
-Exemple : attendre une touche et la garder dans D7.
+Pour attendre une touche et la garder dans D7 :
 
 ```asm
         MOVE.W  #7,-(SP)        ; Crawcin : attend une touche, sans écho
@@ -82,16 +82,16 @@ Exemple : attendre une touche et la garder dans D7.
         MOVE.L  D0,D7           ; octet bas = code ASCII, mot haut = code clavier
 ```
 
-> **Dans le simulateur de 68k Trainer**, une partie de ces fonctions est simulée : GEMDOS 0, 1, 2, 7,
-> 8, 9, 11, 32, 76 ; BIOS 1, 2, 3, 5, 11 ; XBIOS 2 à 7, 17, 28, 32, 34, 37, 38. Les fichiers
-> (`Fopen`…) et la mémoire (`Malloc`, `Mshrink`), eux, demandent un vrai TOS : utilise le bouton
-> **« Essayer dans Hatari »**.
+> Le simulateur de 68k Trainer connaît une partie de ces fonctions : GEMDOS 0, 1, 2, 7, 8, 9, 11,
+> 32 et 76 ; BIOS 1, 2, 3, 5 et 11 ; XBIOS 2 à 7, 17, 28, 32, 34, 37 et 38. Les fichiers (`Fopen`…)
+> et la mémoire (`Malloc`, `Mshrink`) demandent un vrai TOS et s'essaient avec le bouton
+> « Essayer dans Hatari ».
 
 ## Passer en mode superviseur
 
-Les vecteurs, les variables système (mémoire basse) et les registres matériels (`$FF8000` et plus)
-ne sont accessibles qu'en **mode superviseur** : en mode utilisateur, y toucher déclenche une
-erreur de bus (2 bombes). Deux façons d'y passer :
+Les vecteurs, les variables système de la mémoire basse et les registres matériels, à partir de
+`$FF8000`, ne s'atteignent qu'en **mode superviseur** : en mode utilisateur, y toucher déclenche
+une erreur de bus, les 2 bombes. Le TOS offre deux façons d'y passer :
 
 ```asm
 ; 1. Super() : tout le programme passe en superviseur
@@ -120,14 +120,15 @@ ROUGE:  MOVE.W  #$0700,$FFFF8240 ; couleur 0 = rouge
 ANCIENNE_PILE DC.L 0
 ```
 
-`Supexec` est plus sûr pour de courts accès au matériel ; `Super` convient à un programme qui
-travaille longtemps en superviseur (une démo, un jeu).
+`Supexec` est le plus sûr pour de courts accès au matériel, et `Super` convient à un programme qui
+travaille longtemps en superviseur, comme une démo ou un jeu.
 
 ## Reprogrammer un vecteur (Setexec)
 
-La fonction BIOS `Setexec()` (n° 5) **lit ou remplace** l'adresse d'un vecteur d'exception — n'importe
-lequel : erreur, interruption ou trap. Le numéro de vecteur *n* correspond à l'adresse *n* × 4 : 35
-est `TRAP #3` (`$8C`), 28 l'interruption VBL (`$70`), 69 le Timer C (`$114`).
+La fonction BIOS `Setexec()`, la n° 5, lit ou remplace l'adresse de n'importe quel vecteur
+d'exception, qu'il s'agisse d'une erreur, d'une interruption ou d'un trap. Le vecteur *n* se trouve
+à l'adresse *n* × 4 : 35 est `TRAP #3` (`$8C`), 28 l'interruption VBL (`$70`), 69 le Timer C
+(`$114`).
 
 ```asm
         PEA     MA_ROUTINE(PC)  ; nouvelle adresse
@@ -148,39 +149,39 @@ MA_ROUTINE:
 ANCIEN_TRAP3 DC.L 0
 ```
 
-> **`RTE` (Return from Exception), pas `RTS`** : une routine appelée par une exception doit se
-> terminer par `RTE`, qui dépile le SR **et** le PC.
+Une routine appelée par une exception se termine par **`RTE`** (*Return from Exception*), qui
+dépile le SR et le PC, et non par `RTS`.
 
-**Lire sans modifier** : passer `-1` comme adresse ; `Setexec` rend alors seulement l'adresse
-actuelle dans D0. C'est le point de départ d'un **détournement** : garder l'ancienne adresse, la
-remplacer par la sienne, traiter les cas qui nous intéressent, puis sauter à l'ancienne routine pour
-tout le reste (`MOVE.L ANCIEN,-(SP)` puis `RTS`, ou `JMP` vers l'adresse gardée).
+Avec `-1` comme adresse, `Setexec` ne modifie rien et rend seulement l'adresse actuelle dans D0.
+C'est le point de départ d'un détournement : on garde l'ancienne adresse, on la remplace par la
+sienne, on traite les cas qui nous intéressent et on saute à l'ancienne routine pour tout le reste,
+avec `MOVE.L ANCIEN,-(SP)` puis `RTS`, ou un `JMP` vers l'adresse gardée.
 
 ## Pile et TRAP : ce qui diffère d'un simple BSR
 
-Un `TRAP` passe le processeur en mode superviseur et empile, sur la **pile superviseur**, l'adresse
-de retour (4 octets) **et** le SR (2 octets) : 6 octets sur le 68000 (8 sur les 68010 et suivants :
-Atari TT et Falcon). Les paramètres empilés par l'appelant restent, eux, sur la pile **de
-l'appelant** (la pile utilisateur s'il était en mode utilisateur) — c'est pourquoi le TOS regarde le
-bit S du SR empilé pour savoir où les lire.
+Un `TRAP` passe le processeur en mode superviseur et empile sur la **pile superviseur** l'adresse
+de retour (4 octets) et le SR (2 octets), soit 6 octets sur le 68000 et 8 sur les 68010 et
+suivants, ceux de l'Atari TT et du Falcon. Les paramètres empilés par l'appelant restent sur sa
+propre pile, la pile utilisateur s'il était en mode utilisateur, et c'est pourquoi le TOS regarde
+le bit S du SR empilé pour savoir où les lire.
 
 ## Registres et TRAP : attention à D2
 
-Les appels système ne sauvegardent **pas tous les registres** : seuls `D3-D7` et `A3-A6` sont
-préservés. **`D0`, `D1`, `D2`, `A0`, `A1`, `A2` peuvent être écrasés** (D0 contient le résultat).
-Ne jamais compter sur eux après un `TRAP` — les sauvegarder si besoin.
+Les appels système ne préservent que `D3-D7` et `A3-A6`. D0 reçoit le résultat, et D1, D2, A0, A1
+et A2 peuvent être écrasés : on ne compte jamais sur eux après un `TRAP`, et on les sauvegarde si
+on en a besoin.
 
 ## Ne pas rappeler le GEMDOS n'importe quand
 
-Le GEMDOS **n'est pas réentrant** : on ne l'appelle ni depuis une routine d'interruption (VBL, timer
-du MFP), ni depuis une routine qui détourne un trap du GEMDOS lui-même. Depuis une interruption, on se
-limite au matériel et, avec précaution, à quelques appels du BIOS et du XBIOS. Le GEMDOS, lui, appelle
-le BIOS en interne pour afficher les caractères ou lire les disques (ce que montre un débogueur comme
-MONST quand on suit les traps).
+Le GEMDOS n'est pas réentrant : on ne l'appelle ni depuis une routine d'interruption (VBL, timer du
+MFP), ni depuis une routine qui détourne un trap du GEMDOS lui-même. Depuis une interruption, on
+s'en tient au matériel et, avec précaution, à quelques appels du BIOS et du XBIOS. Le GEMDOS appelle
+d'ailleurs lui-même le BIOS pour afficher les caractères ou lire les disques, ce que montre un
+débogueur comme MONST quand on suit les traps.
 
 ## Les variables système utiles
 
-En mémoire basse (accessibles en superviseur seulement), le TOS tient des variables documentées :
+Le TOS tient en mémoire basse des variables documentées, accessibles en superviseur seulement :
 
 | Adresse | Nom | Contenu |
 |---|---|---|
@@ -194,9 +195,8 @@ En mémoire basse (accessibles en superviseur seulement), le TOS tient des varia
 ## Hors périmètre de ce trainer
 
 La suite de ce cours du Féroce Lapin (démarrage, inclusions, macros, auto-modification, Ligne A,
-GEM, MFP) est dans les autres fiches de référence Atari ST.
+GEM, MFP) se trouve dans les autres fiches de référence Atari ST.
 
 > Fiche complétée et corrigée le 21/10/2026 (Claude) : Setexec est la fonction BIOS 5 (elle était
-> donnée en XBIOS) ; le vecteur 35 est bien un trap ; l'affirmation sur l'imbrication des traps était
-> fausse (remplacée par la non-réentrance du GEMDOS) ; tableau des fonctions, superviseur, variables
-> système.
+> donnée en XBIOS) ; l'imbrication des traps, affirmée à tort, a laissé place à la non-réentrance
+> du GEMDOS ; tableau des fonctions, superviseur, variables système.

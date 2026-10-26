@@ -8,9 +8,9 @@ themes: ["systeme", "hardware", "outillage"]
 
 ## Deux façons de programmer l'Amiga
 
-L'Amiga propose une dualité structurante : passer par l'**AmigaOS** (Kickstart en ROM), dont le
-noyau **Exec** offre dès 1985 un multitâche préemptif, ou programmer « au métal » en écrivant
-directement dans les registres des **puces custom** (`$DFF000` et suivants).
+Sur l'Amiga, on peut passer par AmigaOS, rangé en ROM dans le Kickstart, dont le noyau Exec offre
+dès 1985 un multitâche préemptif ; on peut aussi programmer « au métal », en écrivant directement
+dans les registres des **puces custom**, à partir de `$DFF000`.
 
 | | Système (bibliothèques) | Hardware (« metal ») |
 |---|---|---|
@@ -20,23 +20,23 @@ directement dans les registres des **puces custom** (`$DFF000` et suivants).
 | Usage type | utilitaires, outils du Shell, applications Workbench | démos, jeux, effets |
 | Multitâche | préservé | suspendu le temps du programme, puis **rendu** |
 
-Les deux se combinent : un programme « metal » bien élevé **demande** la machine au système
-(`Forbid`, `OwnBlitter`, `LoadView(0)`…), puis la lui **rend** dans l'état exact où il l'a trouvée
-(voir [la fiche des puces](demos-et-custom-chips.md)).
+Les deux se combinent : un programme « metal » bien élevé demande la machine au système
+(`Forbid`, `OwnBlitter`, `LoadView(0)`…), puis la lui rend dans l'état exact où il l'a trouvée,
+comme le détaille [la fiche des puces](demos-et-custom-chips.md).
 
 ## Environnement de développement
 
-- **68k Trainer** — simule un Amiga 500 (68000, OCS, Kickstart 1.3 simplifié, PAL) : exec, dos et
-  graphics en partie, toutes les puces custom. Le débogueur montre les registres des puces, et
-  « Exporter pour l'Amiga » produit un vrai exécutable AmigaDOS (format *hunk*).
-- **WinUAE avec AROS** — installé par 68k Trainer (onglet « Émulateurs ») : un Amiga 68020 avec le
-  Kickstart libre AROS, pour essayer ses programmes sur un vrai système (bouton « Essayer dans
-  WinUAE »). AROS demande un 68020, sur lequel la table des vecteurs peut être déplacée (VBR).
-- **Avec un vrai Kickstart** (vendu avec Amiga Forever) : configurer WinUAE en Amiga 500 (68000,
-  Kickstart 1.3, 512 Ko de Chip RAM + 512 Ko de « Slow RAM » en `$C00000`). **Ne pas cocher
-  « Immediate Blitter »** : le Blitter y devient instantané, ce qui masque les oublis d'attente de
+- **68k Trainer** simule un Amiga 500 (68000, OCS, Kickstart 1.3 simplifié, PAL) : une partie
+  d'exec, de dos et de graphics, et toutes les puces custom. Le débogueur montre les registres des
+  puces, et « Exporter pour l'Amiga » produit un vrai exécutable AmigaDOS (format *hunk*).
+- **WinUAE avec AROS**, installé par 68k Trainer depuis l'onglet « Émulateurs », est un Amiga 68020
+  avec le Kickstart libre AROS, où le bouton « Essayer dans WinUAE » lance tes programmes sur un
+  vrai système. AROS demande un 68020, sur lequel, comme dès le 68010, la table des vecteurs peut être déplacée (VBR).
+- **Avec un vrai Kickstart**, vendu avec Amiga Forever, on configure WinUAE en Amiga 500 (68000,
+  Kickstart 1.3, 512 Ko de Chip RAM + 512 Ko de « Slow RAM » en `$C00000`). Ne coche pas
+  « Immediate Blitter » : le Blitter y devient instantané, ce qui masque les oublis d'attente de
   fin du Blitter qui planteraient une vraie machine.
-- **ASM-One / AsmPro, Devpac Amiga, vasm** — les assembleurs de l'époque et d'aujourd'hui.
+- **ASM-One / AsmPro, Devpac Amiga, vasm** sont les assembleurs de l'époque et d'aujourd'hui.
 
 ## Les types de mémoire
 
@@ -47,8 +47,9 @@ Les deux se combinent : un programme « metal » bien élevé **demande** la mac
 | **Slow RAM** (`$C00000`, extension A501) | le 68000 seul | sur le bus des puces, donc aussi lente que la Chip |
 | ROM (`$F80000`-`$FFFFFF`) | | le Kickstart |
 
-Un tampon pour les puces alloué en Fast RAM ne fait pas planter le système : les puces liront
-simplement **autre chose** (bug silencieux). On demande donc explicitement de la Chip RAM :
+Un tampon destiné aux puces mais alloué en Fast RAM ne fait pas planter le système : les puces
+lisent simplement autre chose, et le bug reste silencieux. On demande donc explicitement de la
+Chip RAM :
 
 ```asm
         MOVEA.L 4.W,A6          ; ExecBase
@@ -65,15 +66,16 @@ simplement **autre chose** (bug silencieux). On demande donc explicitement de la
 ```
 
 Dans un exécutable, `SECTION nom,DATA_C` (ou `BSS_C`, `CODE_C`) demande au chargeur de placer la
-section en Chip RAM — c'est le plus simple pour des données fixes (image, liste Copper).
+section en Chip RAM, ce qui est le plus simple pour des données fixes comme une image ou une liste
+Copper.
 
 ## ExecBase et la structure Node
 
-**L'adresse `$4` contient l'adresse d'ExecBase** : c'est la **seule adresse fixe** du système ; tout
-le reste (bibliothèques, tâches, mémoire) se retrouve à partir d'elle.
+L'adresse `$4` contient l'adresse d'ExecBase. C'est la **seule adresse fixe** du système, et tout
+le reste, bibliothèques, tâches et mémoire, se retrouve à partir d'elle.
 
-Tout le système repose sur des **listes doublement chaînées** de *nodes* : bibliothèques, tâches,
-ports, périphériques. Les 14 premiers octets de toute structure système :
+Le système range ses bibliothèques, ses tâches, ses ports et ses périphériques dans des listes
+doublement chaînées de *nodes*, et toute structure système commence par les 14 octets d'un node :
 
 | Offset | Type | Nom | Description |
 |---|---|---|---|
@@ -83,15 +85,15 @@ ports, périphériques. Les 14 premiers octets de toute structure système :
 | 9 | BYTE | `LN_PRI` | priorité (−128 à 127 ; l'ordonnanceur prend la plus haute) |
 | 10 | APTR | `LN_NAME` | adresse du nom (ex : `"exec.library"`) |
 
-Quelques champs d'ExecBase utiles : `LIB_VERSION` (mot en +20 : 34 pour le Kickstart 1.3, 37 pour
+Quelques champs utiles d'ExecBase : `LIB_VERSION` (mot en +20 : 34 pour le Kickstart 1.3, 37 pour
 le 2.04, 40 pour le 3.1), `ThisTask` (+276 : la tâche en cours), `AttnFlags` (mot en +296 : le
 processeur ; bit 0 = 68010 ou plus, bit 1 = 68020 ou plus).
 
 ## Appeler une fonction système : décalages négatifs
 
-Une bibliothèque est un bloc de mémoire : ses **données** sont aux décalages **positifs** depuis son
-adresse de base, et ses **fonctions** aux décalages **négatifs** (une table de `JMP` de 6 octets).
-On met l'adresse de base dans **A6**, les paramètres dans les registres prévus, puis
+Une bibliothèque est un bloc de mémoire : ses données sont aux décalages positifs depuis son
+adresse de base, et ses fonctions aux **décalages négatifs**, dans une table de `JMP` de 6 octets.
+On met l'adresse de base dans A6, les paramètres dans les registres prévus, puis on appelle
 `JSR décalage(A6)` :
 
 ```asm
@@ -123,40 +125,40 @@ FIN:
 ```
 
 - Les 4 premières entrées de toute bibliothèque (`-6`, `-12`, `-18`, `-24` : Open, Close, Expunge,
-  réservée) servent au système ; la première fonction propre est en `-30`.
-- **Registres détruits par tout appel** : `D0`, `D1`, `A0`, `A1` (le résultat est dans D0). Les autres
-  sont préservés — A6 compris.
+  réservée) servent au système, et la première fonction propre est en `-30`.
+- Tout appel **détruit `D0`, `D1`, `A0` et `A1`**, le résultat arrivant dans D0 ; les autres
+  registres sont préservés, A6 compris.
 - Les décalages des fonctions courantes sont dans [la fiche des bibliothèques](bibliotheques-exec-dos.md).
 
 ## Lancement depuis le Shell ou le Workbench
 
-Un programme reçoit le contrôle par un simple `JSR` : il se termine par **`RTS`** avec un **code de
-retour dans D0** (0 = bon, 5 = avertissement, 10 = erreur, 20 = échec). Un script AmigaDOS s'arrête
-si un code atteint sa limite (`FailAt`, 10 par défaut) : un D0 oublié, qui contient n'importe quoi,
-peut donc arrêter le script qui a lancé le programme.
+Un programme reçoit le contrôle par un simple `JSR`, et il se termine par `RTS` avec un **code de
+retour dans D0** : 0 = bon, 5 = avertissement, 10 = erreur, 20 = échec. Un script AmigaDOS s'arrête
+dès qu'un code atteint sa limite (`FailAt`, 10 par défaut), si bien qu'un D0 oublié, qui contient
+n'importe quoi, peut arrêter le script qui a lancé le programme.
 
-- **Depuis le Shell (CLI)** : A0 pointe sur la ligne d'arguments, D0 en donne la longueur ; `Output()`
-  est la fenêtre du Shell.
-- **Depuis le Workbench (icône)** : pas de fenêtre de sortie (`Output()` vaut 0), et un **message
-  de démarrage** (*WBStartup*) attend sur le port du processus. Le programme doit le récupérer au
-  début (`WaitPort`, `GetMsg` sur `pr_MsgPort`, +92 dans la structure Process) et y répondre à la fin
-  (`Forbid` puis `ReplyMsg`) — sinon le Workbench ne libère jamais le programme. On sait d'où l'on
-  vient par `pr_CLI` (+172) : 0 = lancé par le Workbench.
+- Lancé depuis le Shell (CLI), le programme trouve dans A0 l'adresse de la ligne d'arguments et dans
+  D0 sa longueur ; `Output()` est la fenêtre du Shell.
+- Lancé depuis le Workbench, par son icône, il n'a pas de fenêtre de sortie (`Output()` vaut 0), et
+  un message de démarrage (*WBStartup*) l'attend sur le port du processus. Il doit le récupérer au
+  début (`WaitPort`, `GetMsg` sur `pr_MsgPort`, +92 dans la structure Process) et y répondre à la
+  fin (`Forbid` puis `ReplyMsg`), sans quoi le Workbench ne le libère jamais. Le champ `pr_CLI`
+  (+172) dit d'où l'on vient : il vaut 0 quand le programme a été lancé par le Workbench.
 
-L'export Amiga de 68k Trainer ajoute ce code de démarrage tout seul : le programme marche depuis le
-Shell comme depuis une icône (une fenêtre console s'ouvre alors pour sa sortie).
+L'export Amiga de 68k Trainer ajoute ce code de démarrage tout seul, et le programme marche depuis
+le Shell comme depuis une icône, une fenêtre console s'ouvrant alors pour sa sortie.
 
 ## Messages et signaux (base du multitâche)
 
-Les tâches communiquent par **messages** envoyés à des **ports** ; l'arrivée d'un message réveille
-la tâche par un **signal**. Le cycle est toujours le même : `WaitPort` (ou `Wait` sur le signal du
-port : la tâche dort sans consommer de temps) → `GetMsg` (récupérer le message) → traiter →
-`ReplyMsg` (le rendre). **Oublier `ReplyMsg` est une faute grave** : l'expéditeur ne peut jamais
-récupérer sa structure — fuite de mémoire, ou blocage.
+Les tâches communiquent par des messages envoyés à des ports, et l'arrivée d'un message réveille la
+tâche par un signal. Le cycle est toujours le même : la tâche dort dans `WaitPort` (ou `Wait` sur le
+signal du port) sans consommer de temps, récupère le message par `GetMsg`, le traite, puis le rend
+par `ReplyMsg`. Si elle oublie **`ReplyMsg`**, l'expéditeur ne récupère jamais sa structure, ce qui
+mène à une fuite de mémoire ou à un blocage.
 
-Jamais d'**attente active** (boucle qui teste en permanence) dans un programme système : elle vole
-tout le temps processeur aux autres tâches. Pour patienter, `Delay(n)` de dos (*n* cinquantièmes de
-seconde) ou `WaitTOF` de graphics (une image).
+Un programme système ne fait jamais d'attente active, une boucle qui teste en permanence, car elle
+vole tout le temps processeur aux autres tâches. Pour patienter, on appelle `Delay(n)` de dos
+(*n* cinquantièmes de seconde) ou `WaitTOF` de graphics (une image).
 
 ## Exemple : ouvrir une fenêtre Intuition
 
@@ -204,38 +206,40 @@ WINDOWPTR: DC.L 0
 
 ## AmigaDOS et l'héritage du BCPL
 
-AmigaDOS vient du système TRIPOS, écrit en BCPL, d'où des conventions à part :
-- **BPTR** — un pointeur BCPL compte en **longs** : pour obtenir une adresse 68000, le multiplier
-  par 4 (`LSL.L #2,D0`). Les fichiers (`Open`) et les verrous (`Lock`) sont des BPTR.
-- **BSTR** — une chaîne BCPL **commence** par un octet de longueur (pas de zéro final).
-- **Paramètres dans D1, D2, D3…** pour les fonctions de dos (et non A0/A1 comme dans exec).
-- **Lock** — un « verrou » sur un fichier ou un répertoire, sans l'ouvrir : pour `Examine` (taille,
-  date…), `CurrentDir`, ou vérifier qu'un fichier existe. Chaque `Lock` se libère par `UnLock`.
+AmigaDOS vient du système TRIPOS, écrit en BCPL, et en garde des conventions à part :
+
+- Un **BPTR**, pointeur BCPL, compte en longs : on le multiplie par 4 (`LSL.L #2,D0`) pour obtenir
+  une adresse 68000. Les fichiers (`Open`) et les verrous (`Lock`) sont des BPTR.
+- Une BSTR, chaîne BCPL, commence par un octet de longueur et n'a pas de zéro final.
+- Les fonctions de dos prennent leurs paramètres dans D1, D2, D3…, et non dans A0/A1 comme exec.
+- Un Lock est un « verrou » posé sur un fichier ou un répertoire sans l'ouvrir, pour `Examine`
+  (taille, date…), `CurrentDir`, ou pour vérifier qu'un fichier existe. Chaque `Lock` se libère par
+  `UnLock`.
 
 ## Stockage : disquette et bootblock
 
-Une disquette Amiga standard : 880 Ko (80 cylindres × 2 faces × 11 secteurs de 512 octets).
+Une disquette Amiga standard contient 880 Ko : 80 cylindres × 2 faces × 11 secteurs de 512 octets.
 
-Le **bootblock** occupe les 2 premiers secteurs (1 024 octets) : la signature `"DOS"` suivie d'un
-octet de type (0 = OFS), une **somme de contrôle** (long en +4), le numéro du bloc racine (+8, 880),
-puis le code de démarrage en **+12**, appelé avec A6 = ExecBase et A1 = la requête du lecteur. La
-somme se calcule en additionnant les 256 longs avec report de la retenue (`ADDX`) ; on choisit la
-valeur en +4 pour que la somme complète vaille `$FFFFFFFF`.
+Le **bootblock** occupe les 2 premiers secteurs (1 024 octets). Il commence par la signature `"DOS"`
+suivie d'un octet de type (0 = OFS), puis viennent une somme de contrôle (long en +4), le numéro du
+bloc racine (+8, 880) et le code de démarrage en +12, appelé avec A6 = ExecBase et A1 = la requête
+du lecteur. La somme s'obtient en additionnant les 256 longs avec report de la retenue (`ADDX`), et
+on choisit la valeur en +4 pour que la somme complète vaille `$FFFFFFFF`.
 
 ## Note historique : la protection CopyLock
 
-La protection *CopyLock* (Rob Northen) reposait sur des pistes à la synchronisation MFM
+La protection *CopyLock* de Rob Northen reposait sur des pistes à la synchronisation MFM
 inhabituelle et sur un code chiffré qui déclenchait volontairement des exceptions (mode trace,
-instructions illégales comme `$4AFC`) pour gêner l'analyse — mentionné ici comme exemple historique
-de la scène Amiga, pas comme technique à reproduire.
+instructions illégales comme `$4AFC`) pour gêner l'analyse. Elle n'est citée ici que comme exemple
+historique de la scène Amiga, pas comme technique à reproduire.
 
 ## Pour pratiquer
 
-Le parcours Amiga de 68k Trainer met tout cela en exercices : chapitre 4 (le système : exec, dos,
-messages), chapitre 5 (prendre et rendre la machine), puis le Copper, le Blitter, les sprites et
-Paula.
+Le parcours Amiga de 68k Trainer met tout cela en exercices : le chapitre 4 traite du système
+(exec, dos, messages), le chapitre 5 de la façon de prendre et rendre la machine, puis viennent le
+Copper, le Blitter, les sprites et Paula.
 
-> Fiche complétée et corrigée le 21/10/2026 (Claude) : `OpenWindow` est en `-204` (et non `-156`),
-> `DC.L title(pc)` n'était pas valable, somme du bootblock corrigée (`$FFFFFFFF` avec report de
-> retenue), Rob Northen, option « Immediate Blitter » ; ajouts : AllocMem, ExecBase, lancement
-> Shell/Workbench, codes de retour, environnement 68k Trainer.
+> Fiche complétée et corrigée le 21/10/2026 (Claude) : `OpenWindow` en `-204` (et non `-156`),
+> `DC.L title(pc)` retiré, somme du bootblock (`$FFFFFFFF` avec report de retenue), Rob Northen,
+> option « Immediate Blitter » ; ajouts : AllocMem, ExecBase, lancement Shell/Workbench, codes de
+> retour, environnement 68k Trainer.
