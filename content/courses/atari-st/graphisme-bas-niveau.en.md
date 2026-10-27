@@ -92,7 +92,7 @@ In low resolution, the ST displays 16 colors chosen from 512 on the STF, 4,096 o
 color registers are words, from `$FFFF8240` to `$FFFF825E`, accessible in supervisor mode:
 
 ```
-color word: %0000 0RRR 0VVV 0BBB   ($0RVB: red, green, blue, each component from 0 to 7)
+color word: %0000 0RRR 0GGG 0BBB   ($0RGB: red, green, blue, each component from 0 to 7)
 $0000 black  $0777 white  $0700 red  $0070 green  $0007 blue  $0770 yellow
 ```
 

@@ -32,7 +32,7 @@ themes: ["materiel", "reference"]
 | `$FFFF8205` / `07` / `09` | video counter (read) | address currently being read by the Shifter |
 | `$FFFF820A` | synchronization | bit 1: 1 = 50 Hz, 0 = 60 Hz |
 | `$FFFF820F` / `$FFFF8265` | extra line width / fine pixel scrolling (STE) | hardware scrolling |
-| `$FFFF8240`-`$FFFF825E` | palette | 16 colors `$0RVB` (red, green, blue; 3 bits per component; 4 on STE) |
+| `$FFFF8240`-`$FFFF825E` | palette | 16 colors `$0RGB` (red, green, blue; 3 bits per component; 4 on STE) |
 | `$FFFF8260` | resolution | 0 = low, 1 = medium, 2 = high |
 | `$FFFF8604` / `$FFFF8606` | DMA controller | floppy disk and hard disk |
 | `$FFFF8800` | YM2149: select / read | number of the register to read or write |
