@@ -1,0 +1,123 @@
+{
+  "titre": "Getting started: the workshop and your first program",
+  "resume": "Before writing code, you learn to assemble it, run it and watch it in the workshop, the equivalent of [[atari:Devpac and MONST|amiga:Devpac or ASM-One]]. You discover the shape of an assembly line, a first program and the method for finding your mistakes. [[atari:The Atari ST manual left these tools for the end; here, we start with them.|amiga:Books often leave these tools for the end; here, we start with them.]]",
+  "notions": {
+    "atari-ch01-n1": { "titre": "The workshop and the first program" },
+    "atari-ch01-n2": { "titre": "Finding your mistakes" }
+  },
+  "contenus": {
+    "atari-ch01-cours-atelier": {
+      "titre": "Assembler, machine language and workshop",
+      "source": "Written for 68k Trainer from the Atari ST manual v2 (module 6) and the Féroce Lapin course (lesson 1)"
+    },
+    "atari-ch01-cours-ligne": {
+      "titre": "Anatomy of an assembly line",
+      "source": "Rephrased from David Bouchet's EPITA course (structure of a source file) and the Atari ST manual v2 (§ 1.1)"
+    },
+    "atari-ch01-ex-premier": {
+      "titre": "Your first program, step by step",
+      "introduction": "Click Next step to run one instruction at a time: the register that has just changed lights up in yellow, and the explanation of the line appears below the code.",
+      "explications": {
+        "3": "`MOVE.W #5,D0` copies the immediate value 5 into D0, which is now `$00000005`, and the PC moves on to the next instruction.",
+        "4": "D1 receives 3 and D0 does not move, because an instruction only changes its destination.",
+        "5": "`ADD.W D1,D0` adds the source D1 to the destination D0: D0 = 5 + 3 = 8, and D1 keeps its value.",
+        "6": "`RTS` takes the return address to [[atari:TOS|amiga:the CLI]] from the top of the stack and hands control back to it."
+      },
+      "conclusion": "Registers hold the values, instructions transform them one by one, and the PC moves from one instruction to the next."
+    },
+    "atari-ch01-pred-sub": {
+      "titre": "Read, then guess",
+      "introduction": "Answer without running the program, then check. `SUB.W D1,D0` does D0 ← D0 − D1.",
+      "questions": {
+        "q1": {
+          "enonce": "What is D0 at the end?",
+          "choix": ["$0000000E (14)", "$00000006 (6)", "$FFFFFFFA (−6)"],
+          "explication": "10 − 4 = 6: the source D1 is taken away from the destination D0, and the order matters."
+        },
+        "q2": {
+          "enonce": "And D1?",
+          "explication": "D1 is the source of the subtraction: it is not modified."
+        }
+      }
+    },
+    "atari-ch01-exo-completer": {
+      "titre": "Find the right value",
+      "enonce": "The program adds 2 to D0. Replace the `0` in the first instruction so that D0 is 9 at the end.",
+      "indices": ["What number, plus 2, gives 9?", "`MOVE.W #7,D0`"]
+    },
+    "atari-ch01-exo-ordonner": {
+      "titre": "Put the program back in order",
+      "enonce": "The instructions have been shuffled. Put them back in order with the arrows to get D2 = (6 + 2) × 5 = 40. `ADDQ` is a quick `ADD` for values from 1 to 8, and `MULU` a multiplication.",
+      "indices": ["D2 needs a value first, and RTS must be the last instruction.", "Addition before multiplication: (6 + 2), then × 5."]
+    },
+    "atari-ch01-exo-ecrire": {
+      "titre": "Your own calculation",
+      "enonce": "Put 100 in D1 and 25 in D2, then subtract D2 from D1 to end up with D1 = 75.",
+      "indices": ["Two `MOVE.W` instructions to load the values.", "Subtraction is written `SUB.W source,destination`: the destination receives destination − source."]
+    },
+    "atari-ch01-exo-autonome": {
+      "titre": "Multiplying without multiplication",
+      "enonce": "Compute D0 = 3 × (4 + 5) using only `MOVE` and `ADD`, without `MULU`.",
+      "indices": ["First compute 4 + 5 in D0.", "Multiplying by 3 means adding the same value three times: keep a copy in another register."]
+    },
+    "atari-ch01-cours-deboguer": {
+      "titre": "Two kinds of errors and a method",
+      "source": "Written for 68k Trainer; method taken from the literature review (explicit teaching of debugging)"
+    },
+    "atari-ch01-ex-bug": {
+      "titre": "A logic error, tracked down step by step",
+      "introduction": "This program should compute D0 = 2 × (3 + 4) = 14. It assembles without errors, but D0 is 7 at the end. Follow the method: hypothesis, step-by-step inspection, check.",
+      "explications": {
+        "3": "D0 = 3, as expected.",
+        "4": "D0 = 3 + 4 = 7, still as expected.",
+        "5": "D1 receives a copy of 7, with no discrepancy so far.",
+        "6": "This is where the discrepancy appears: D1 becomes 14 but D0 stays at 7, because D1 was doubled instead of being added to D0. The fix is `ADD.W D1,D0`.",
+        "7": "The program ends with D0 = 7 instead of 14; you fix the first line where reality departed from what was expected."
+      },
+      "conclusion": "When you move step by step and predict each line, the first surprise points to the error."
+    },
+    "atari-ch01-pred-crash": {
+      "titre": "What is going to happen?",
+      "introduction": "This program assembles without errors. Look carefully at the destination address.",
+      "questions": {
+        "q1": {
+          "enonce": "When you run it…",
+          "choix": ["it writes $1234 at address $3001 and ends normally", "it stops on an address error ([[atari:3 bombs on an ST|amiga:Guru Meditation #00000003 on the Amiga]])", "the assembler rejects the program"],
+          "explication": "A word is always read and written at an even address. Since $3001 is odd, the 68000 raises an address error, exception no. 3, [[atari:hence the 3 bombs|amiga:hence Guru #00000003]]. The assembler cannot see this: it is a runtime error."
+        }
+      }
+    },
+    "atari-ch01-exo-syntaxe": {
+      "titre": "Fix the syntax error",
+      "enonce": "This program should put 5 + 7 = 12 in D2, but it does not assemble. Click Check, read the message and fix the faulty line.",
+      "indices": ["The message mentions an unknown instruction.", "Addition is written `ADD`, with a single D."]
+    },
+    "atari-ch01-exo-logique": {
+      "titre": "Fix the logic error",
+      "enonce": "This program assembles, but D3 is not 30 at the end as intended. Find the faulty line step by step.",
+      "indices": ["Look at which register changes on the addition line.", "In `ADD.W source,destination`, it is the destination that receives the result."]
+    },
+    "atari-ch01-exo-diese": {
+      "titre": "The forgotten hash",
+      "enonce": "We wanted D5 = $1001. The program assembles and runs without crashing, but D5 holds a strange value. Before fixing it, find out what is stored at address `$1000`.",
+      "indices": ["Without `#`, `$1000` is an address, not a value.", "At address $1000 you find… the code of your own first instruction."]
+    },
+    "atari-ch01-bonus-fond": {
+      "titre": "Paint the screen red",
+      "enonce": "[[atari:On the Atari ST, the screen background takes color no. 0 of the palette, which you set by writing a word at the hardware address `$FF8240`, in the format `$0RGB`, each component ranging from 0 to 7: bright red is `$700`.\n\nPaint the background red, then watch the screen change step by step.|amiga:On the Amiga, the screen background takes color no. 0, the `COLOR00` register of the Denise chip, at address `$DFF180`. A color is written `$0RGB`, each component ranging from 0 to 15: bright red is `$F00`.\n\nSince the Copper, a small processor inside the chips, repaints the background 50 times a second with the Workbench color, a single `MOVE` only lasts an instant. So repaint the background red in a loop, until a click of the left mouse button: bit 6 of the byte `$BFE001` then drops to 0. Run the program in Real time and click on the screen to finish.]]",
+      "indices": ["[[atari:A single instruction is enough: a `MOVE.W` of an immediate value to an address.|amiga:A loop: `MOVE.W #$F00,$DFF180`, then `BTST #6,$BFE001` and `BNE` back to the start of the loop.]]", "[[atari:`MOVE.W #$700,$FF8240`|amiga:`BTST` sets Z to 1 when the bit is 0: `BNE` loops back as long as the button is not pressed.]]"]
+    }
+  },
+  "qcm": {
+    "q1": { "enonce": "Which program turns your assembly text into machine code?", "choix": ["The debugger", "The assembler", "[[atari:TOS|amiga:Kickstart]]"], "explication": "The assembler ([[atari:GENST|amiga:GenAm]] in Devpac, the 68k Trainer one here) translates each instruction into machine code. The debugger is for watching the program run." },
+    "q2": { "enonce": "In `MOVE.W #5,D0`, what does the `#` mean?", "choix": ["5 is a memory address", "5 is the value itself (immediate)", "the rest of the line is a comment"], "explication": "`#` marks an immediate value. Without `#`, 5 would be memory address 5." },
+    "q3": { "enonce": "`$1F` is a number written in…", "choix": ["binary", "decimal", "hexadecimal"], "explication": "The `$` prefix marks hexadecimal and `%` binary; with no prefix, it is decimal." },
+    "q4": { "enonce": "What is `%101` in decimal?", "explication": "%101 = 1×4 + 0×2 + 1×1 = 5." },
+    "q5": { "enonce": "In the line `BOUCLE: ADD.W D1,D0 ; total`, what is `BOUCLE`?", "choix": ["A label", "An instruction", "A comment"], "explication": "A label starts in the first column: it is a name given to the address of the line." },
+    "q6": { "enonce": "What is D0 after these two instructions?", "explication": "8 + 8 = 16, which is $10 in hexadecimal. Be careful not to confuse $10 (sixteen) with 10 (ten)." },
+    "q7": { "enonce": "What is the final `RTS` of our programs for?", "choix": ["To clear the registers", "To hand control back to [[atari:TOS|amiga:the system]]", "To start the program again"], "explication": "[[atari:TOS|amiga:The CLI]] starts the program as a subroutine; RTS returns to the caller." },
+    "q8": { "enonce": "In what order does the debugging method go?", "choix": ["Fix, then test, then think", "Hypothesis, inspection, check", "Inspection, fixing every suspicious line, check"], "explication": "You form a hypothesis, inspect step by step to find the first faulty line, then fix that line and check." },
+    "q9": { "enonce": "[[atari:On an Atari ST|amiga:On a 68000]], a `.W` access at an odd address causes…", "choix": ["[[atari:2 bombs|amiga:a Guru #00000002]] (bus error)", "[[atari:3 bombs|amiga:a Guru #00000003]] (address error)", "[[atari:4 bombs|amiga:a Guru #00000004]] (illegal instruction)"], "explication": "[[atari:The number of bombs|amiga:The Guru number]] is the exception number: 3 = address error." },
+    "q10": { "enonce": "An error reported by the assembler (line underlined in red) is…", "choix": ["a syntax error", "a logic error", "a 68000 exception"], "explication": "The assembler only sees the text: it reports syntax errors. Logic errors and exceptions only show up when the program runs." }
+  }
+}

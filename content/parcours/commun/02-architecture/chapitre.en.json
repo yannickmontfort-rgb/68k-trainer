@@ -1,0 +1,243 @@
+{
+  "titre": "68000 architecture and fundamentals",
+  "resume": "The 68000 handles bits, bytes, words and long words, which it stores in memory following the even-alignment rule. It works with its registers and sums up each result in the flags of the status register. As soon as a program grows, the stack becomes indispensable. [[atari:Module 1 of the Atari ST manual.|amiga:Chapter 1 of the Amiga manual.]]",
+  "notions": {
+    "atari-ch02-n0": { "titre": "Review of chapter 1" },
+    "atari-ch02-n1": { "titre": "Bits, bytes, words and long words" },
+    "atari-ch02-n2": { "titre": "Memory and even alignment" },
+    "atari-ch02-n3": { "titre": "The registers" },
+    "atari-ch02-n4": { "titre": "The status register and the flags" },
+    "atari-ch02-n5": { "titre": "The stack" }
+  },
+  "contenus": {
+    "atari-ch02-rappel": {
+      "titre": "What you already know",
+      "introduction": "Three questions on chapter 1, without rereading the lesson. Getting it wrong here does not matter: searching is what makes it stick.",
+      "questions": {
+        "q1": { "enonce": "What is D0 at the end?", "explication": "7 + 3 − 10 = 0." },
+        "q2": { "enonce": "You remove the `#` from `ADD.W #3,D0`. What happens?", "choix": ["The assembler rejects the line", "The 68000 reads a word at address 3: address error", "Nothing changes"], "explication": "Without `#`, 3 is an address, not a value. And a word at an odd address causes an address error." },
+        "q3": { "enonce": "`MOVX.W #3,D0` is…", "choix": ["a syntax error: the assembler rejects it", "a logic error: the program runs but computes the wrong result"], "explication": "`MOVX` does not exist: the assembler stops before anything runs." }
+      }
+    },
+    "atari-ch02-cours-unites": {
+      "titre": "Sizes, bases and negative numbers",
+      "source": "Rephrased from the Atari ST manual v2 (§ 1.1), David Bouchet's EPITA course and notation_hexadecimale.txt"
+    },
+    "atari-ch02-ex-unites": {
+      "titre": "An operation only touches its own size",
+      "introduction": "Go step by step and watch D0.",
+      "explications": {
+        "2": "In `.L`, all 32 bits of D0 are replaced: D0 = `$12345678`.",
+        "3": "In `.B`, only the low byte changes: D0 = `$123456FF`.",
+        "4": "In `.W`, only the low word changes: D0 = `$1234ABCD`.",
+        "5": "−1 on 32 bits: `$FFFFFFFF`, all bits at 1.",
+        "6": "`1010` = A, `0011` = 3: D2 = `$000000A3`."
+      },
+      "conclusion": "`.B` and `.W` only change the bottom of the register. The top keeps its old bits."
+    },
+    "atari-ch02-pred-unites": {
+      "titre": "Pieces of a register",
+      "introduction": "Follow D0 and D1 on paper, then check.",
+      "questions": {
+        "q1": { "enonce": "What is D0 at the end?", "explication": "`MOVE.B` replaces the low byte ($44 → $AA), then `MOVE.W` replaces the whole low word ($33AA → $BBCC). The high word $1122 is never touched." },
+        "q2": { "enonce": "What is D1?", "explication": "`MOVEQ` always loads all 32 bits, with sign extension: −1 gives $FFFFFFFF." }
+      }
+    },
+    "atari-ch02-exo-binaire": {
+      "titre": "Fifteen in binary",
+      "enonce": "Replace `%0000` with 15 written in **binary**, so that D0 = `$0000000F`.",
+      "indices": ["15 = 8 + 4 + 2 + 1.", "`%1111`"]
+    },
+    "atari-ch02-exo-octet": {
+      "titre": "Change only the low byte",
+      "enonce": "D3 is `$12345678`. With **a single** instruction, make D3 = `$123456FF`.",
+      "indices": ["Which instruction size changes only 8 bits?", "`MOVE.B #$FF,D3`"]
+    },
+    "atari-ch02-exo-bases": {
+      "titre": "The same number, written three ways",
+      "enonce": "Put **200** in D1, D2 and D3, writing it in **decimal** for D1, in **hexadecimal** for D2 and in **binary** for D3.",
+      "indices": ["200 = 12 × 16 + 8.", "In binary: 128 + 64 + 8 = 200."]
+    },
+    "atari-ch02-cours-memoire": {
+      "titre": "Addresses, big endian and the DC/DS/EVEN directives",
+      "source": "Rephrased from the Atari ST manual v2 (§ 1.2, 2.1, 6.2), the v1 manual and the EPITA course (directives)"
+    },
+    "atari-ch02-ex-memoire": {
+      "titre": "Most significant byte first",
+      "introduction": "The Memory view, on the right, shows address `$2000`. Watch the bytes being written.",
+      "explications": {
+        "2": "`12 34 56 78` is written at $2000-$2003: most significant byte first.",
+        "3": "The byte at $2000 is `$12`: D0 = `$00000012`.",
+        "4": "The byte at $2003 is `$78`.",
+        "5": "The word at $2002 (an even address) is `$5678`."
+      },
+      "conclusion": "Memory reads in the order you write the number. Words are read at even addresses."
+    },
+    "atari-ch02-pred-memoire": {
+      "titre": "Three reads of the same data",
+      "introduction": "The same bytes, `$01 $02 $03 $04`, read with three sizes. `VALEURS` is an even address.",
+      "questions": {
+        "q1": { "enonce": "What is D1?", "explication": "A word is two bytes read in order: $01, then $02." },
+        "q2": { "enonce": "What is D2?", "explication": "Big endian: the first byte in memory is the most significant one." }
+      }
+    },
+    "atari-ch02-exo-even": {
+      "titre": "[[atari:The three bombs|amiga:The Guru]] of the lone label",
+      "enonce": "This program should put [[atari:1040|amiga:500]] in D0, but it stops on an address error. The assembler aligned the `DC.W` (read its warning), but not the label `NOMBRE`, alone on its line. Watch step by step which address `MOVE.W` reads from, then fix it by adding one line.",
+      "indices": ["Count the bytes of `'[[atari:ST|amiga:KS]]',0`: at what address does the label `NOMBRE` fall?", "Add `EVEN` just before `NOMBRE:`: the label and the data will both be at an even address."]
+    },
+    "atari-ch02-exo-poids-fort": {
+      "titre": "The most significant byte",
+      "enonce": "Store the word `$ABCD` at address `$3000`, then copy its **most significant byte** into D1 (D1 must be `$000000AB`).",
+      "indices": ["The most significant byte is at the lowest address.", "`MOVE.B $3000,D1`"]
+    },
+    "atari-ch02-exo-inverser": {
+      "titre": "Swapping the two bytes of a word",
+      "enonce": "The word at `$3000` is `$1234`. Handling **only bytes** (`.B`), turn it into `$3412`.",
+      "indices": ["You need to set one of the two bytes aside in a register.", "A `MOVE.B` can go directly from one memory address to another."]
+    },
+    "atari-ch02-cours-registres": {
+      "titre": "Data, addresses and the program counter",
+      "source": "Rephrased from the Atari ST manual v2 (§ 1.3), the EPITA course (II.3) and the Féroce Lapin course"
+    },
+    "atari-ch02-ex-registres": {
+      "titre": "Data and address registers",
+      "introduction": "The same `.W` operation on a data register, then on an address register.",
+      "explications": {
+        "2": "D0 = `$FFFFFFFF`.",
+        "3": "Data register: only the low word changes. D0 = `$FFFF0001`.",
+        "4": "Address register: the whole register is filled. Bit 15 of `$1234` is 0, copied upwards: A0 = `$00001234`.",
+        "5": "Bit 15 of `$8000` is 1: A1 = `$FFFF8000`. The flags have not moved.",
+        "6": "`LEA` loads an address: A2 = `[[atari:$000F8000`, the start of a 1040 ST's screen|amiga:$00DFF000`, the address of the Amiga's custom chips]]."
+      },
+      "conclusion": "Above `$7FFF`, load an address with `LEA` or `MOVEA.L`. `MOVEA.W` would give `$FFFFxxxx`."
+    },
+    "atari-ch02-pred-registres": {
+      "titre": "Extension or not?",
+      "introduction": "A data register, then an address register.",
+      "questions": {
+        "q1": { "enonce": "What is D1 at the end?", "explication": "`MOVEQ #-2` gives $FFFFFFFE, then `MOVE.B #5` replaces only the low byte: $FFFFFF05." },
+        "q2": { "enonce": "What is A0?", "explication": "Address register in `.W`: sign extension, bit 15 (1) is copied into bits 16 to 31." }
+      }
+    },
+    "atari-ch02-exo-movea": {
+      "titre": "No bytes in an address register",
+      "enonce": "This program should put 1 in A0, but it does not assemble. Read the error message and fix it.",
+      "indices": ["Address registers only accept `.W` or `.L`.", "`MOVEA.L #1,A0` (or `MOVEA.W #1,A0`)."]
+    },
+    "atari-ch02-exo-ecran": {
+      "titre": "[[atari:Pointing at the screen|amiga:Pointing at the custom chips]]",
+      "enonce": "[[atari:Put the address of the 1040 ST's screen in A0: `$F8000`. Watch out for the sign-extension trap.|amiga:The Amiga's chip registers start at address `$DFF000`. Demo programmers keep it in A5 for the whole program. Put it in A5, without falling into the sign-extension trap.]]",
+      "indices": ["`MOVEA.W` will not do for such a large address.", "[[atari:`LEA $F8000,A0` or `MOVEA.L #$F8000,A0`.|amiga:`LEA $DFF000,A5` or `MOVEA.L #$DFF000,A5`.]]"]
+    },
+    "atari-ch02-exo-extension": {
+      "titre": "Making use of sign extension",
+      "enonce": "With a single `.W` instruction, put `$FFFFFFF0` in A1.",
+      "indices": ["Which 16-bit word, sign-extended, gives $FFFFFFF0?", "`MOVEA.W #$FFF0,A1` (or `#-16`)."]
+    },
+    "atari-ch02-cours-sr": {
+      "titre": "SR, CCR and the five flags",
+      "source": "Rephrased from the Atari ST manual v2 (§ 1.4), the EPITA course (II.3.4) and the M68000PRM"
+    },
+    "atari-ch02-ex-flags": {
+      "titre": "The flags at work",
+      "introduction": "Watch the Status register line: a flag at 1 is shown in blue.",
+      "explications": {
+        "2": "The result is 0: **Z = 1**.",
+        "3": "`$80` has its bit 7 at 1: N = 1.",
+        "4": "D2 = `$7F`, which is 127: the largest signed byte.",
+        "5": "127 + 1 gives `$80`, which reads as −128 when signed: V = 1. Unsigned, 128 is correct: C = 0.",
+        "6": "D3 = `$FF` (255, or −1 when signed).",
+        "7": "255 + 1 gives `$00` with a carry: C = X = Z = 1. Signed, −1 + 1 = 0 is correct: V = 0."
+      },
+      "conclusion": "C says an unsigned result is wrong, V that a signed result is wrong. The processor computes both; it is up to you to read the right one."
+    },
+    "atari-ch02-pred-flags": {
+      "titre": "3 − 5 on a byte",
+      "introduction": "Predict the result and the flags, then check.",
+      "questions": {
+        "q1": { "enonce": "What is D0 at the end?", "explication": "3 − 5 = −2, which is `$FE` on a byte. Only the low byte of D0 is written." },
+        "q2": { "enonce": "The C flag (carry) is…", "explication": "Unsigned, 3 − 5 has to \"borrow\": C = 1." },
+        "q3": { "enonce": "The N flag is…", "explication": "`$FE` has its bit 7 at 1: N = 1." }
+      }
+    },
+    "atari-ch02-exo-z": {
+      "titre": "Set the Z flag",
+      "enonce": "Replace the `0` in the subtraction so that Z is 1 at the end.",
+      "indices": ["Z is 1 when the result is zero.", "5 − 5 = 0."]
+    },
+    "atari-ch02-exo-v": {
+      "titre": "Cause an overflow",
+      "enonce": "Write two instructions that end with V = 1, using an addition in `.B`.",
+      "indices": ["Signed bytes range from −128 to +127.", "Add two positive numbers whose sum is over 127, for example $70 + $20."]
+    },
+    "atari-ch02-exo-negatif": {
+      "titre": "A negative result",
+      "enonce": "This program should compute 5 − 8 in D0 and end with N = 1, but N is 0 at the end. Fix a single instruction.",
+      "indices": ["Which register receives the result of the subtraction?", "`SUB.W D1,D0` computes D0 − D1."]
+    },
+    "atari-ch02-exo-c": {
+      "titre": "Carry without overflow",
+      "enonce": "With an addition in `.W`, end with C = 1 and V = 0: wrong when unsigned, correct when signed.",
+      "indices": ["Which word is both 65,535 unsigned and −1 signed?", "$FFFF + 1."]
+    },
+    "atari-ch02-cours-pile": {
+      "titre": "Push, pop, stay balanced",
+      "source": "Rephrased from the Atari ST manual v1 (§ 1.5) and the EPITA course (VI)"
+    },
+    "atari-ch02-ex-pile": {
+      "titre": "Last in, first out",
+      "introduction": "Watch the Stack column and the value of A7.",
+      "explications": {
+        "2": "A7 moves back by 4, then `$11111111` is written at the top. Just below it you can see the return address to [[atari:TOS|amiga:the CLI]].",
+        "3": "`$22222222` is now at the top.",
+        "4": "You take back the last value put down: D0 = `$22222222`.",
+        "5": "Then the first one: D1 = `$11111111`.",
+        "6": "The stack is back where it started: `RTS` finds the return address."
+      },
+      "conclusion": "Values come back out in reverse order."
+    },
+    "atari-ch02-pred-pile": {
+      "titre": "Two words, one long",
+      "introduction": "Two words are pushed, then one long word is popped. D7 measures how far SP has moved.",
+      "questions": {
+        "q1": { "enonce": "What is D1?", "explication": "Word 2, pushed last, is at the lowest address (the top): it becomes the high word of the long that is read. Word 1 comes next." },
+        "q2": { "enonce": "What is D7 (how far did SP move in total)?", "explication": "2 + 2 bytes pushed, 4 bytes popped: SP is back to its starting value." }
+      }
+    },
+    "atari-ch02-exo-echange": {
+      "titre": "Swapping two registers",
+      "enonce": "D0 and D1 have been pushed. Add two instructions to end with D0 = `$BBBB` and D1 = `$AAAA`.",
+      "indices": ["The first value popped is the last one pushed (D1).", "`MOVE.L (SP)+,D0` then `MOVE.L (SP)+,D1`."]
+    },
+    "atari-ch02-exo-desequilibre": {
+      "titre": "The unbalanced stack",
+      "enonce": "This program correctly computes D2 = 10, then crashes on `RTS`. Step by step, look at the top of the stack just before `RTS`, then fix it.",
+      "indices": ["When `RTS` runs, what value is at the top of the stack?", "You have to remove the 4 bytes that were pushed: `ADDQ.L #4,SP` before `RTS`."]
+    },
+    "atari-ch02-exo-rotation": {
+      "titre": "Reversing three registers",
+      "enonce": "At the start, D0 = 1, D1 = 2, D2 = 3. Going through the stack, get D0 = 3, D1 = 2, D2 = 1.",
+      "indices": ["Push the three registers in the order D0, D1, D2.", "Then pop into D0, D1, D2: the order reverses by itself."]
+    },
+    "atari-ch02-bonus-ligne": {
+      "titre": "[[atari:Sixteen pixels at once|amiga:The Kickstart version]]",
+      "enonce": "[[atari:The 1040 ST's screen starts at `$F8000`. In low resolution, its first word holds 16 pixels, one bit each. Light up the first 16 pixels of the top line. The Graphics chapter will explain the rest.|amiga:On the Amiga, the long word at `$4` holds the address of ExecBase, the central structure of the system. The word located 20 bytes further on is the exec version: 34 for Kickstart 1.3.\n\nPut the address of ExecBase in A6, then the version in D0 (clear D0 first).]]",
+      "indices": ["[[atari:16 pixels lit = 16 bits at 1.|amiga:`MOVEA.L 4.W,A6` reads the long word at address 4.]]", "[[atari:`MOVE.W #$FFFF,$F8000`|amiga:Addressing with displacement: `MOVE.W 20(A6),D0` reads the word 20 bytes after the address held in A6. Do not forget `MOVEQ #0,D0` first.]]"]
+    }
+  },
+  "qcm": {
+    "q1": { "enonce": "How many bits in a word (`.W`)?", "explication": "Byte = 8 bits, word = 16 bits, long word = 32 bits." },
+    "q2": { "enonce": "What is the largest value of a **signed** byte?", "explication": "A signed byte ranges from −128 to +127; 255 is the unsigned maximum." },
+    "q3": { "enonce": "After `MOVE.L #$AABBCCDD,$2000`, what does the byte at address `$2000` contain?", "explication": "The 68000 is *big endian*: the most significant byte is at the lowest address." },
+    "q4": { "enonce": "Which of these instructions causes an address error?", "explication": "A word (or a long) must be at an even address; a byte can be anywhere." },
+    "q5": { "enonce": "What is the `EVEN` directive for?", "choix": ["To clear memory", "To place the next piece of data at an even address", "To make a number even"], "explication": "After an odd number of `DC.B` bytes, `EVEN` avoids an address error on the `.W` or `.L` data that follows." },
+    "q6": { "enonce": "After `MOVEA.W #$FFFE,A0`, A0 is…", "choix": ["$0000FFFE", "$FFFFFFFE", "an assembly error"], "explication": "Address register in `.W`: sign extension to 32 bits." },
+    "q7": { "enonce": "What is D0 after these instructions, and which flags are at 1?", "choix": ["$00000100, no flag", "$00000000, Z and C (and X)", "$000000FF, N"], "explication": "255 + 1 = 256 does not fit in a byte: what is left is $00 with a carry. Z = 1, C = X = 1. Only the low byte of D0 is written." },
+    "q8": { "enonce": "Which flag says that the result of a **signed** calculation is wrong?", "explication": "V (overflow) is about signed numbers; C (carry) is about unsigned ones." },
+    "q9": { "enonce": "What does `MOVE.L (SP)+,D0` do?", "choix": ["SP increases by 4, then a read", "A read at address SP, then SP increases by 4", "D0 is written on the stack"], "explication": "Postincrement: read first, move forward afterwards. This is a pop." },
+    "q10": { "enonce": "Why must you pop everything you pushed before `RTS`?", "choix": ["To free memory", "Because RTS takes the return address from the top of the stack", "It is not required"], "explication": "If a forgotten value is at the top, RTS takes it for a return address and the program jumps anywhere." },
+    "q11": { "enonce": "After `SUB.W D1,D0`, which register holds the result?", "choix": ["D0", "D1", "both"], "explication": "The result goes into the destination, D0, which receives D0 − D1." },
+    "q12": { "enonce": "Why does an instruction never start in the first column?", "choix": ["The assembler would take it for a label", "It would be ignored like a comment", "It would be executed twice"], "explication": "The first column is reserved for labels." }
+  }
+}
