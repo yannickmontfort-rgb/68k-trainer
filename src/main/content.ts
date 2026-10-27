@@ -43,7 +43,8 @@ async function listMarkdownFiles(dir: string): Promise<string[]> {
 
 async function listJsonFiles(dir: string): Promise<string[]> {
   const entries = await readdir(dir, { withFileTypes: true }).catch(() => [])
-  return entries.filter((e) => e.isFile() && e.name.endsWith('.json')).map((e) => e.name)
+  // Les traductions (niveau-1.en.json) ne sont pas des niveaux à part
+  return entries.filter((e) => e.isFile() && e.name.endsWith('.json') && !/\.[a-z]{2}\.json$/.test(e.name)).map((e) => e.name)
 }
 
 async function loadCourseFile(root: string, trackId: string, filename: string, langue: Langue = 'fr'): Promise<CourseFile> {
@@ -59,8 +60,9 @@ async function loadCourseFile(root: string, trackId: string, filename: string, l
   }
 }
 
-async function loadExerciseLevel(root: string, trackId: string, filename: string): Promise<ExerciseLevel> {
-  const raw = await readFile(join(root, 'exercises', trackId, filename), 'utf-8')
+async function loadExerciseLevel(root: string, trackId: string, filename: string, langue: Langue = 'fr'): Promise<ExerciseLevel> {
+  const dir = join(root, 'exercises', trackId)
+  const raw = await readFile(join(dir, await versionTraduite(dir, filename, langue)), 'utf-8')
   const parsed = JSON.parse(raw) as { level: number; title: string; exercises: Exercise[] }
   return parsed
 }
@@ -208,7 +210,7 @@ export async function loadContent(root = getContentRoot(), langue: Langue = 'fr'
     courses[track.id] = await Promise.all(courseFiles.map((f) => loadCourseFile(root, track.id, f, langue)))
 
     const exerciseFiles = await listJsonFiles(join(root, 'exercises', track.id))
-    const levels = await Promise.all(exerciseFiles.map((f) => loadExerciseLevel(root, track.id, f)))
+    const levels = await Promise.all(exerciseFiles.map((f) => loadExerciseLevel(root, track.id, f, langue)))
     exercises[track.id] = levels.sort((a, b) => a.level - b.level)
   }
 

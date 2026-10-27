@@ -2,6 +2,12 @@ import { Cpu } from '../../cpu/cpu'
 import type { Exercise } from '../../shared/ipc'
 import { evaluateCheck, type CheckResult } from '../../shared/checkResult'
 import { getPlatformForTrack } from './platformForTrack'
+import { traducteur } from './langue'
+
+const t = traducteur({
+  fr: { erreur: "Erreur d'assemblage : {lignes}", ligne: 'ligne {ligne} : {message}' },
+  en: { erreur: 'Assembly error: {lignes}', ligne: 'line {ligne}: {message}' }
+})
 
 export type { CheckResult }
 
@@ -11,7 +17,7 @@ export async function checkExercise(source: string, exercise: Exercise, trackId:
   if (!asm.success) {
     return {
       success: false,
-      message: "Erreur d'assemblage : " + asm.errors.map((e) => `ligne ${e.line} : ${e.message}`).join(' ; ')
+      message: t('erreur', { lignes: asm.errors.map((e) => t('ligne', { ligne: e.line, message: e.message })).join(' ; ') })
     }
   }
 

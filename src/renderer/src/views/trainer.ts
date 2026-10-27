@@ -8,9 +8,117 @@ import { machineActive } from '../progressionStore'
 import { materielAmiga } from '../../../platforms/amiga/chipset'
 import { MACHINES, type Machine } from '../../../shared/machines'
 import { confirmer } from '../components/dialogue'
+import { langueCourante, traducteur } from '../langue'
 
-const PROGRAMMES: Record<Machine, string> = {
-  atari: `; Bac à sable : écris ici ce que tu veux, puis Assembler et Pas / Exécuter.
+const t = traducteur({
+  fr: {
+    ouvrir: 'Ouvrir…',
+    ouvrirTitre: 'Ouvrir un source .s (Ctrl+O)',
+    enregistrer: 'Enregistrer',
+    enregistrerTitre: 'Enregistrer le source (Ctrl+S)',
+    enregistrerSous: 'Enregistrer sous…',
+    enregistrerSousTitre: 'Enregistrer le source sous un autre nom',
+    exemple: 'Exemple',
+    exempleTitre: "Remettre le programme d'exemple dans l'éditeur",
+    assembler: 'Assembler',
+    pas: 'Pas',
+    executer: 'Exécuter',
+    reinitialiser: 'Réinitialiser',
+    exportBoutonAtari: MACHINES.atari.export.bouton,
+    exportTitreAtari: MACHINES.atari.export.titre,
+    exportBoutonAmiga: MACHINES.amiga.export.bouton,
+    exportTitreAmiga: MACHINES.amiga.export.titre,
+    essayer: 'Essayer dans {emulateur}',
+    essayerTitre: "Lancer le programme dans un vrai émulateur (onglet « Émulateurs » pour l'installer)",
+    modeUtilisateur: 'Mode utilisateur',
+    modeUtilisateurTitre: 'Comme sous le vrai TOS : vecteurs, variables système et matériel protégés',
+    pret: 'Prêt',
+    sansNom: 'Sans nom',
+    modifie: ' (modifié, pas encore enregistré)',
+    pasEnregistre: 'Pas encore enregistré dans un fichier',
+    enregistreSous: 'Enregistré : {nom}',
+    ouvrirConfirmer: 'Ouvrir un autre source ? Les modifications non enregistrées seront perdues (Ctrl+Z pour revenir en arrière).',
+    ouvrirBouton: 'Ouvrir',
+    ouvert: 'Ouvert : {nom}',
+    remplacerConfirmer: "Remplacer ton programme par l'exemple ? (Ctrl+Z pour revenir en arrière)",
+    remplacer: 'Remplacer',
+    assemblage: 'Assemblage…',
+    ligne: 'Ligne {ligne} : {message}',
+    erreurAssemblage: 'Erreur d’assemblage',
+    assemble: 'Assemblé ({octets} octets)',
+    arretException: 'Arrêt sur exception',
+    termine: 'Programme terminé',
+    arreter: 'Arrêter',
+    locale: 'fr-FR',
+    tempsReel: 'Exécution en temps réel ({mhz} MHz, 50 images/s)…',
+    arrete: 'Arrêté : tu peux continuer pas à pas',
+    pointArret: "Point d'arrêt : continue pas à pas ou relance",
+    exporte: 'Programme exporté',
+    exportImpossible: 'Export impossible',
+    preparationEssai: 'Préparation de l’essai…',
+    essaiLance: 'Essai lancé',
+    essaiImpossible: 'Essai impossible',
+    reinitialise: 'Réinitialisé',
+    modeUtilisateurTos: 'Mode utilisateur (comme le TOS)',
+    modeSuperviseur: 'Mode superviseur'
+  },
+  en: {
+    ouvrir: 'Open…',
+    ouvrirTitre: 'Open a .s source file (Ctrl+O)',
+    enregistrer: 'Save',
+    enregistrerTitre: 'Save the source (Ctrl+S)',
+    enregistrerSous: 'Save as…',
+    enregistrerSousTitre: 'Save the source under another name',
+    exemple: 'Example',
+    exempleTitre: 'Put the example program back in the editor',
+    assembler: 'Assemble',
+    pas: 'Step',
+    executer: 'Run',
+    reinitialiser: 'Reset',
+    exportBoutonAtari: 'Export .PRG',
+    exportTitreAtari: 'Builds a .PRG program to run in the Hatari emulator or on a real Atari ST',
+    exportBoutonAmiga: 'Export for the Amiga',
+    exportTitreAmiga: 'Builds an AmigaDOS executable to run in WinUAE, FS-UAE or on a real Amiga',
+    essayer: 'Try in {emulateur}',
+    essayerTitre: 'Run the program in a real emulator (install it from the “Emulators” tab)',
+    modeUtilisateur: 'User mode',
+    modeUtilisateurTitre: 'As under the real TOS: vectors, system variables and hardware are protected',
+    pret: 'Ready',
+    sansNom: 'Untitled',
+    modifie: ' (modified, not saved yet)',
+    pasEnregistre: 'Not saved to a file yet',
+    enregistreSous: 'Saved: {nom}',
+    ouvrirConfirmer: 'Open another source file? Unsaved changes will be lost (Ctrl+Z to undo).',
+    ouvrirBouton: 'Open',
+    ouvert: 'Opened: {nom}',
+    remplacerConfirmer: 'Replace your program with the example? (Ctrl+Z to undo)',
+    remplacer: 'Replace',
+    assemblage: 'Assembling…',
+    ligne: 'Line {ligne}: {message}',
+    erreurAssemblage: 'Assembly error',
+    assemble: 'Assembled ({octets} bytes)',
+    arretException: 'Stopped on an exception',
+    termine: 'Program finished',
+    arreter: 'Stop',
+    locale: 'en-US',
+    tempsReel: 'Running in real time ({mhz} MHz, 50 frames/s)…',
+    arrete: 'Stopped: you can continue step by step',
+    pointArret: 'Breakpoint: continue step by step or run again',
+    exporte: 'Program exported',
+    exportImpossible: 'Export failed',
+    preparationEssai: 'Preparing the test run…',
+    essaiLance: 'Test run started',
+    essaiImpossible: 'Test run failed',
+    reinitialise: 'Reset done',
+    modeUtilisateurTos: 'User mode (like TOS)',
+    modeSuperviseur: 'Supervisor mode'
+  }
+})
+
+/** Programme d'exemple du bac à sable, dans chaque langue (les chaînes affichées restent en français). */
+const PROGRAMMES: Record<'fr' | 'en', Record<Machine, string>> = {
+  fr: {
+    atari: `; Bac à sable : écris ici ce que tu veux, puis Assembler et Pas / Exécuter.
 ; La machine simulée est un Atari 1040 STF (TOS, écran en $F8000).
 START:
     PEA     texte(PC)
@@ -22,7 +130,7 @@ START:
 texte:  DC.B    'Bonjour Atari !',13,10,0
     EVEN
 `,
-  amiga: `; Bac à sable : écris ici ce que tu veux, puis Assembler et Pas / Exécuter.
+    amiga: `; Bac à sable : écris ici ce que tu veux, puis Assembler et Pas / Exécuter.
 ; La machine simulée est un Amiga 500 (Kickstart 1.3, puces custom en $DFF000).
 START:
     MOVEA.L 4.W,A6          ; A6 = ExecBase
@@ -46,7 +154,52 @@ texte:  DC.B    'Bonjour Amiga !',10
 fin:
     EVEN
 `
+  },
+  en: {
+    atari: `; Sandbox: write whatever you want here, then Assemble and Step / Run.
+; The simulated machine is an Atari 1040 STF (TOS, screen at $F8000).
+START:
+    PEA     texte(PC)
+    MOVE.W  #9,-(SP)
+    TRAP    #1              ; GEMDOS Cconws: prints the text
+    ADDQ.L  #6,SP
+    CLR.W   -(SP)
+    TRAP    #1              ; GEMDOS Pterm0: end of the program
+texte:  DC.B    'Bonjour Atari !',13,10,0
+    EVEN
+`,
+    amiga: `; Sandbox: write whatever you want here, then Assemble and Step / Run.
+; The simulated machine is an Amiga 500 (Kickstart 1.3, custom chips at $DFF000).
+START:
+    MOVEA.L 4.W,A6          ; A6 = ExecBase
+    LEA     dosnom(PC),A1
+    MOVEQ   #0,D0
+    JSR     -552(A6)        ; OpenLibrary("dos.library", 0)
+    MOVEA.L D0,A6           ; A6 = DOSBase
+    JSR     -60(A6)         ; Output(): the CLI window
+    MOVE.L  D0,D1
+    LEA     texte(PC),A0
+    MOVE.L  A0,D2
+    MOVEQ   #fin-texte,D3
+    JSR     -48(A6)         ; Write(output, text, length)
+    MOVEA.L A6,A1
+    MOVEA.L 4.W,A6
+    JSR     -414(A6)        ; CloseLibrary(DOSBase)
+    MOVEQ   #0,D0           ; return code: all is well
+    RTS
+dosnom: DC.B    'dos.library',0
+texte:  DC.B    'Bonjour Amiga !',10
+fin:
+    EVEN
+`
+  }
 }
+
+/** Le programme d'exemple dans la langue de l'interface. */
+const exemple = (m: Machine): string => PROGRAMMES[langueCourante()][m]
+
+/** Vrai si le texte est le programme d'exemple, dans l'une ou l'autre langue. */
+const estExemple = (m: Machine, texte: string): boolean => texte === PROGRAMMES.fr[m] || texte === PROGRAMMES.en[m]
 
 /** Anciens programmes d'exemple : un brouillon resté identique est remplacé par l'exemple actuel. */
 const ANCIENS_EXEMPLES: Record<Machine, string[]> = {
@@ -68,7 +221,8 @@ START:
 function brouillon(machine: Machine, texte: string | null): string | null {
   if (texte === null) return null
   const net = (t: string): string => t.replace(/\r\n/g, '\n').trim()
-  return ANCIENS_EXEMPLES[machine].some((ancien) => net(ancien) === net(texte)) ? null : texte
+  const anciens = [...ANCIENS_EXEMPLES[machine], PROGRAMMES.fr[machine], PROGRAMMES.en[machine]]
+  return anciens.some((ancien) => net(ancien) === net(texte)) ? null : texte
 }
 
 const cleProgramme = (m: Machine): string => (m === 'atari' ? 'bac-a-sable:programme' : `bac-a-sable:programme:${m}`)
@@ -85,21 +239,21 @@ export function renderTrainer(container: HTMLElement, initialProgram?: string): 
   const CLE_PROGRAMME = cleProgramme(machine)
   container.innerHTML = `
     <div class="toolbar">
-      <button id="btn-ouvrir" title="Ouvrir un source .s (Ctrl+O)">Ouvrir…</button>
-      <button id="btn-enregistrer" title="Enregistrer le source (Ctrl+S)">Enregistrer</button>
-      <button id="btn-enregistrer-sous" title="Enregistrer le source sous un autre nom">Enregistrer sous…</button>
+      <button id="btn-ouvrir" title="${t('ouvrirTitre')}">${t('ouvrir')}</button>
+      <button id="btn-enregistrer" title="${t('enregistrerTitre')}">${t('enregistrer')}</button>
+      <button id="btn-enregistrer-sous" title="${t('enregistrerSousTitre')}">${t('enregistrerSous')}</button>
       <span class="toolbar-fichier" id="fichier"></span>
-      <button id="btn-exemple" title="Remettre le programme d'exemple dans l'éditeur">Exemple</button>
-      <button id="btn-assemble">Assembler</button>
-      <button id="btn-step" disabled>Pas</button>
-      <button id="btn-run" disabled>Exécuter</button>
-      <button id="btn-reset" disabled>Réinitialiser</button>
-      <button id="btn-prg" title="${MACHINES[machine].export.titre}">${MACHINES[machine].export.bouton}</button>
-      <button id="btn-essayer" title="Lancer le programme dans un vrai émulateur (onglet « Émulateurs » pour l'installer)">Essayer dans ${machine === 'amiga' ? 'WinUAE' : 'Hatari'}</button>
-      <label class="toolbar-option" ${machine === 'atari' ? '' : 'style="display:none"'} title="Comme sous le vrai TOS : vecteurs, variables système et matériel protégés">
-        <input type="checkbox" id="opt-utilisateur" /> Mode utilisateur
+      <button id="btn-exemple" title="${t('exempleTitre')}">${t('exemple')}</button>
+      <button id="btn-assemble">${t('assembler')}</button>
+      <button id="btn-step" disabled>${t('pas')}</button>
+      <button id="btn-run" disabled>${t('executer')}</button>
+      <button id="btn-reset" disabled>${t('reinitialiser')}</button>
+      <button id="btn-prg" title="${machine === 'amiga' ? t('exportTitreAmiga') : t('exportTitreAtari')}">${machine === 'amiga' ? t('exportBoutonAmiga') : t('exportBoutonAtari')}</button>
+      <button id="btn-essayer" title="${t('essayerTitre')}">${t('essayer', { emulateur: machine === 'amiga' ? 'WinUAE' : 'Hatari' })}</button>
+      <label class="toolbar-option" ${machine === 'atari' ? '' : 'style="display:none"'} title="${t('modeUtilisateurTitre')}">
+        <input type="checkbox" id="opt-utilisateur" /> ${t('modeUtilisateur')}
       </label>
-      <span class="status" id="status">Prêt</span>
+      <span class="status" id="status">${t('pret')}</span>
     </div>
     <div class="main">
       <div id="editor"></div>
@@ -109,7 +263,7 @@ export function renderTrainer(container: HTMLElement, initialProgram?: string): 
   `
 
   const editor = monaco.editor.create(container.querySelector('#editor') as HTMLDivElement, {
-    value: initialProgram ?? brouillon(machine, lire(CLE_PROGRAMME)) ?? PROGRAMMES[machine],
+    value: initialProgram ?? brouillon(machine, lire(CLE_PROGRAMME)) ?? exemple(machine),
     language: 'm68k',
     theme: 'm68k-dark',
     fontSize: 14,
@@ -124,8 +278,8 @@ export function renderTrainer(container: HTMLElement, initialProgram?: string): 
   const fichierEl = container.querySelector('#fichier') as HTMLSpanElement
   function afficherFichier(): void {
     const modifie = enregistre !== editor.getValue()
-    fichierEl.textContent = fichier ? `${nomCourt(fichier)}${modifie ? ' ●' : ''}` : 'Sans nom'
-    fichierEl.title = fichier ? `${fichier}${modifie ? ' (modifié, pas encore enregistré)' : ''}` : 'Pas encore enregistré dans un fichier'
+    fichierEl.textContent = fichier ? `${nomCourt(fichier)}${modifie ? ' ●' : ''}` : t('sansNom')
+    fichierEl.title = fichier ? `${fichier}${modifie ? t('modifie') : ''}` : t('pasEnregistre')
   }
   function associer(chemin: string | null): void {
     fichier = chemin
@@ -149,11 +303,11 @@ export function renderTrainer(container: HTMLElement, initialProgram?: string): 
     const r = await window.api.enregistrerSource(editor.getValue(), sous ? null : fichier, machine, nom)
     if (!r.ok) return
     associer(r.chemin!)
-    statusEl.textContent = `Enregistré : ${nomCourt(r.chemin!)}`
+    statusEl.textContent = t('enregistreSous', { nom: nomCourt(r.chemin!) })
   }
   async function ouvrir(): Promise<void> {
-    if (enregistre !== editor.getValue() && editor.getValue() !== PROGRAMMES[machine]) {
-      const oui = await confirmer('Ouvrir un autre source ? Les modifications non enregistrées seront perdues (Ctrl+Z pour revenir en arrière).', 'Ouvrir')
+    if (enregistre !== editor.getValue() && !estExemple(machine, editor.getValue())) {
+      const oui = await confirmer(t('ouvrirConfirmer'), t('ouvrirBouton'))
       if (!oui) return
     }
     const r = await window.api.ouvrirSource(machine)
@@ -162,7 +316,7 @@ export function renderTrainer(container: HTMLElement, initialProgram?: string): 
     editor.executeEdits('ouvrir', [{ range: editor.getModel()!.getFullModelRange(), text: r.texte! }])
     editor.pushUndoStop()
     associer(r.chemin!)
-    statusEl.textContent = `Ouvert : ${nomCourt(r.chemin!)}`
+    statusEl.textContent = t('ouvert', { nom: nomCourt(r.chemin!) })
   }
   container.querySelector('#btn-ouvrir')!.addEventListener('click', () => void ouvrir())
   container.querySelector('#btn-enregistrer')!.addEventListener('click', () => void enregistrer(false))
@@ -173,11 +327,11 @@ export function renderTrainer(container: HTMLElement, initialProgram?: string): 
     const remettre = (): void => {
       // Comme une frappe : Ctrl+Z rend le programme d'avant
       editor.pushUndoStop()
-      editor.executeEdits('exemple', [{ range: editor.getModel()!.getFullModelRange(), text: PROGRAMMES[machine] }])
+      editor.executeEdits('exemple', [{ range: editor.getModel()!.getFullModelRange(), text: exemple(machine) }])
       editor.pushUndoStop()
     }
-    if (editor.getValue() === PROGRAMMES[machine]) return
-    void confirmer("Remplacer ton programme par l'exemple ? (Ctrl+Z pour revenir en arrière)", 'Remplacer').then((oui) => {
+    if (editor.getValue() === exemple(machine)) return
+    void confirmer(t('remplacerConfirmer'), t('remplacer')).then((oui) => {
       if (oui) {
         remettre()
         associer(null)
@@ -211,16 +365,16 @@ export function renderTrainer(container: HTMLElement, initialProgram?: string): 
   }
 
   async function onAssemble(): Promise<void> {
-    statusEl.textContent = 'Assemblage…'
+    statusEl.textContent = t('assemblage')
     const result = await exec.assembler(editor.getValue(), dossierSource())
     if (!result.success) {
-      errorsEl.textContent = result.errors.map((e) => (e.line > 0 ? `Ligne ${e.line} : ${e.message}` : e.message)).join('\n')
-      statusEl.textContent = 'Erreur d’assemblage'
+      errorsEl.textContent = result.errors.map((e) => (e.line > 0 ? t('ligne', { ligne: e.line, message: e.message }) : e.message)).join('\n')
+      statusEl.textContent = t('erreurAssemblage')
       activer(false)
       return
     }
     errorsEl.textContent = ''
-    statusEl.textContent = `Assemblé (${result.binary!.length} octets)`
+    statusEl.textContent = t('assemble', { octets: result.binary!.length })
     activer(true)
   }
 
@@ -228,17 +382,17 @@ export function renderTrainer(container: HTMLElement, initialProgram?: string): 
     const alertes = exec.cpu ? (materielAmiga(exec.cpu)?.alertes ?? []) : []
     const remarques = alertes.map((a) => '⚠ ' + a).join('\n')
     if (error) {
-      statusEl.textContent = 'Arrêt sur exception'
+      statusEl.textContent = t('arretException')
       errorsEl.textContent = error + (remarques ? '\n' + remarques : '')
     } else {
-      if (exec.cpu?.halted) statusEl.textContent = 'Programme terminé'
+      if (exec.cpu?.halted) statusEl.textContent = t('termine')
       if (remarques) errorsEl.textContent = remarques
     }
   }
 
   function doStep(): void {
     if (exec.cpu?.halted) {
-      statusEl.textContent = 'Programme terminé'
+      statusEl.textContent = t('termine')
       return
     }
     const effects = exec.pas()
@@ -248,31 +402,31 @@ export function renderTrainer(container: HTMLElement, initialProgram?: string): 
   /** Exécution à la vitesse de la vraie machine : l'écran s'anime à 50 images par seconde. */
   function doRun(): void {
     if (!exec.cpu || exec.cpu.halted) return
-    btnRun.textContent = 'Arrêter'
+    btnRun.textContent = t('arreter')
     btnStep.disabled = true
-    statusEl.textContent = `Exécution en temps réel (${(MACHINES[machine].cpuHz / 1e6).toLocaleString('fr-FR', { maximumFractionDigits: 2 })} MHz, 50 images/s)…`
+    statusEl.textContent = t('tempsReel', { mhz: (MACHINES[machine].cpuHz / 1e6).toLocaleString(t('locale'), { maximumFractionDigits: 2 }) })
     exec.tempsReel((raison, effects) => {
-      btnRun.textContent = 'Exécuter'
+      btnRun.textContent = t('executer')
       btnStep.disabled = false
-      if (raison === 'arret') statusEl.textContent = 'Arrêté : tu peux continuer pas à pas'
-      else if (raison === 'point') statusEl.textContent = "Point d'arrêt : continue pas à pas ou relance"
+      if (raison === 'arret') statusEl.textContent = t('arrete')
+      else if (raison === 'point') statusEl.textContent = t('pointArret')
       afficherFin(effects?.error)
     })
   }
 
   container.querySelector('#btn-prg')!.addEventListener('click', () => {
     void exporterPrg(editor.getValue(), machine === 'amiga' ? 'bac_a_sable' : 'BACASABL', machine, dossierSource()).then((r) => {
-      statusEl.textContent = r.ok ? 'Programme exporté' : 'Export impossible'
+      statusEl.textContent = r.ok ? t('exporte') : t('exportImpossible')
       errorsEl.textContent = r.message
     })
   })
   container.querySelector('#btn-essayer')!.addEventListener('click', () => {
-    statusEl.textContent = 'Préparation de l’essai…'
+    statusEl.textContent = t('preparationEssai')
     void essayerDansEmulateur(editor.getValue(), machine === 'amiga' ? 'bac_a_sable' : 'BACASABL', machine, dossierSource(), (fin) => {
-      statusEl.textContent = 'Programme terminé'
+      statusEl.textContent = t('termine')
       errorsEl.textContent = fin
     }).then((r) => {
-      statusEl.textContent = r.ok ? 'Essai lancé' : 'Essai impossible'
+      statusEl.textContent = r.ok ? t('essaiLance') : t('essaiImpossible')
       errorsEl.textContent = r.message
     })
   })
@@ -281,13 +435,13 @@ export function renderTrainer(container: HTMLElement, initialProgram?: string): 
   btnReset.addEventListener('click', () => {
     exec.reinitialiser()
     errorsEl.textContent = ''
-    statusEl.textContent = 'Réinitialisé'
+    statusEl.textContent = t('reinitialise')
   })
   btnRun.addEventListener('click', () => (exec.enTempsReel ? exec.arreter() : doRun()))
   optUtilisateur.addEventListener('change', () => {
     ecrire(CLE_MODE, optUtilisateur.checked ? '1' : '0')
     exec.reinitialiser()
-    statusEl.textContent = optUtilisateur.checked ? 'Mode utilisateur (comme le TOS)' : 'Mode superviseur'
+    statusEl.textContent = optUtilisateur.checked ? t('modeUtilisateurTos') : t('modeSuperviseur')
   })
 
   void onAssemble()
