@@ -66,7 +66,8 @@ fin:
 ```
 
 Le texte n'a pas besoin d'un 0 final, puisqu'on donne sa longueur, et une fin de ligne s'écrit avec
-un seul caractère, 10 (*line feed*).
+un seul caractère, 10 (*line feed*). Ce sont deux différences avec l'Atari ST, où `Cconws` s'arrête
+au 0 final et où une fin de ligne demande 13 puis 10.
 
 Pour lire ce que l'utilisateur tape, `Input()` (−54) donne la poignée du clavier du CLI, et
 `Read(poignée, tampon, longueur)(D1, D2, D3)` (−42) attend une ligne complète, terminée par la

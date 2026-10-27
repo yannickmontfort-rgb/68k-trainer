@@ -55,7 +55,8 @@ Les principaux bits de `DMACON` :
 ## 4096 couleurs
 
 Une couleur s'écrit `$0RGB`, avec 4 bits de rouge, 4 de vert et 4 de bleu, chacun de 0 à `$F`,
-soit 16 × 16 × 16 = 4096 couleurs possibles. Le bleu du Workbench 1.3 est `$05A`, le blanc `$FFF`,
+soit 16 × 16 × 16 = 4096 couleurs possibles, là où l'Atari ST n'en offre que 512, avec 3 bits par
+composante (le STE en offre 4096, comme l'Amiga). Le bleu du Workbench 1.3 est `$05A`, le blanc `$FFF`,
 l'orange `$F80`.
 
 L'écran en montre au plus 32 à la fois, sauf modes spéciaux, rangées dans les registres `COLOR00`

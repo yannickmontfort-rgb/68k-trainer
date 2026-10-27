@@ -4,7 +4,8 @@ L'image de l'Amiga est faite de **plans de bits** (*bitplanes*). Un plan est une
 où chaque bit est un pixel : pour un écran de 320 × 256, une ligne fait 320 bits, soit 40 octets,
 et le plan entier 40 × 256 = 10 240 octets. Avec un seul plan, chaque pixel vaut 0 ou 1, et prend
 la couleur 0 (`COLOR00`) ou la couleur 1 (`COLOR01`). Chaque plan est un bloc séparé, dont les
-lignes se suivent.
+lignes se suivent, alors que sur l'Atari ST les plans d'un groupe de 16 pixels sont entrelacés mot
+par mot dans une seule zone d'écran.
 
 ## Trouver un pixel
 

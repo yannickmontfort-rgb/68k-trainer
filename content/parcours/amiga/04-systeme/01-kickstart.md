@@ -15,8 +15,9 @@ Le Kickstart est découpé en bibliothèques (*libraries*), chacune spécialisé
 
 ## Une seule adresse fixe : $4
 
-On appelle une fonction de bibliothèque par un `JSR`, et il faut pour cela connaître l'adresse de
-la bibliothèque, sa base. Ces adresses changent d'une machine à l'autre, selon la mémoire ou la
+Sur l'Atari ST, on appelle le système par des `TRAP`, dont le numéro suffit. Sur l'Amiga, on
+appelle une fonction de bibliothèque par un `JSR`, et il faut pour cela connaître l'adresse de la
+bibliothèque, sa base. Ces adresses changent d'une machine à l'autre, selon la mémoire ou la
 version du Kickstart, sauf une : le mot long rangé en `$4` contient l'adresse d'**ExecBase**, la
 base d'exec, et tout part de là.
 
