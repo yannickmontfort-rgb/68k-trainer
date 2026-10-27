@@ -46,6 +46,8 @@ export interface ProgressState {
   positions?: Record<string, { chapitreId: string; etapeId: string }>
   /** Machine choisie par l'apprenant (Atari ST par défaut). */
   machine?: 'atari' | 'amiga'
+  /** Langue de l'interface et du contenu choisie par l'apprenant. */
+  langue?: 'fr' | 'en'
 }
 
 export interface Track {

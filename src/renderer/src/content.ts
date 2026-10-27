@@ -1,8 +1,16 @@
 import type { ContentBundle } from '../../shared/ipc'
 
-let cached: Promise<ContentBundle> | null = null
+import { langueCourante } from './langue'
+
+/** Le contenu dans chaque langue déjà demandée. */
+const cache = new Map<string, Promise<ContentBundle>>()
 
 export function getContent(): Promise<ContentBundle> {
-  if (!cached) cached = window.api.loadContent()
-  return cached
+  const langue = langueCourante()
+  let contenu = cache.get(langue)
+  if (!contenu) {
+    contenu = window.api.loadContent(langue)
+    cache.set(langue, contenu)
+  }
+  return contenu
 }

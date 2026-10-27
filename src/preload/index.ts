@@ -18,7 +18,7 @@ const api = {
     ipcRenderer.invoke(IPC.assemble, { source, dossier } satisfies AssembleRequest),
   loadProgress: (): Promise<ProgressState> => ipcRenderer.invoke(IPC.loadProgress),
   saveProgress: (state: ProgressState): Promise<void> => ipcRenderer.invoke(IPC.saveProgress, state),
-  loadContent: (): Promise<ContentBundle> => ipcRenderer.invoke(IPC.loadContent),
+  loadContent: (langue: 'fr' | 'en' = 'fr'): Promise<ContentBundle> => ipcRenderer.invoke(IPC.loadContent, langue),
   getBuildInfo: (): Promise<BuildInfo> => ipcRenderer.invoke(IPC.getBuildInfo),
   listerProfils: (): Promise<{ profils: ProfilPublic[]; dernier?: string }> => ipcRenderer.invoke(IPC.listerProfils),
   creerProfil: (nom: string, motDePasse?: string, progression?: ProgressState): Promise<ResultatProfil> =>

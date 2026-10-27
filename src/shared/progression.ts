@@ -16,7 +16,8 @@ export function normaliserProgression(state: Partial<ProgressState> | null | und
     qcm: state?.qcm ?? {},
     derniere: state?.derniere,
     positions: state?.positions ?? (state?.derniere ? { [state.derniere.parcoursId]: { chapitreId: state.derniere.chapitreId, etapeId: state.derniere.etapeId } } : {}),
-    machine: state?.machine ?? 'atari'
+    machine: state?.machine ?? 'atari',
+    langue: state?.langue
   }
 }
 

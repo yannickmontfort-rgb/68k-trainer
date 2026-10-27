@@ -260,7 +260,7 @@ app.whenReady().then(() => {
     void shell.openPath(choix.filePath)
     return { ok: true, chemin: choix.filePath }
   })
-  ipcMain.handle(IPC.loadContent, () => loadContent())
+  ipcMain.handle(IPC.loadContent, (_e, langue: 'fr' | 'en' = 'fr') => loadContent(undefined, langue === 'en' ? 'en' : 'fr'))
   ipcMain.handle(IPC.getBuildInfo, () => getBuildInfo())
 
   // macOS : le menu de l'application (« 68k Trainer », Quitter avec Cmd+Q) est obligatoire
