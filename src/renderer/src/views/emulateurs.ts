@@ -122,7 +122,8 @@ export function renderEmulateurs(container: HTMLElement): () => void {
     const barre = root.querySelector<HTMLProgressElement>(`#progression-${p.id}`)
     const etape = root.querySelector<HTMLElement>(`#etape-${p.id}`)
     // Installation lancée ailleurs (au premier lancement, après l'installateur) ou terminée
-    if (!barre || p.etape === 'Terminé') void rafraichir()
+    // Dernière étape de l'installation : « Terminé » ou « Done » selon la langue du processus principal
+    if (!barre || p.etape === 'Terminé' || p.etape === 'Done') void rafraichir()
     if (barre) {
       barre.max = Math.max(1, p.total)
       barre.value = p.fait

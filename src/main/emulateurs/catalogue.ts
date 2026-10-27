@@ -3,6 +3,8 @@
  * sommes SHA-256 figées (un fichier modifié ou corrompu est refusé). Uniquement des logiciels
  * libres : aucune ROM sous droits (TOS, Kickstart) n'est jamais fournie ni téléchargée.
  */
+import type { Langue } from '../../shared/traduction'
+
 export type IdEmulateur = 'hatari' | 'winuae'
 
 export interface Paquet {
@@ -24,8 +26,9 @@ export interface Emulateur {
   nom: string
   machine: 'atari' | 'amiga'
   version: string
-  licence: string
-  description: string
+  /** Licence et description, dans chaque langue de l'interface. */
+  licence: Record<Langue, string>
+  description: Record<Langue, string>
   /** Paquets à installer (l'émulateur, puis son système libre). */
   paquets: Paquet[]
   /** Exécutable, relatif au dossier de l'émulateur. */
@@ -38,8 +41,14 @@ export const EMULATEURS: Record<IdEmulateur, Emulateur> = {
     nom: 'Hatari',
     machine: 'atari',
     version: '2.6.1',
-    licence: 'GPL v2 ; EmuTOS (système libre qui remplace le TOS d’Atari) : GPL v2',
-    description: 'Atari ST 1 Mo avec EmuTOS. Le dossier de partage est son disque C:.',
+    licence: {
+      fr: 'GPL v2 ; EmuTOS (système libre qui remplace le TOS d’Atari) : GPL v2',
+      en: 'GPL v2; EmuTOS (free system that replaces Atari’s TOS): GPL v2'
+    },
+    description: {
+      fr: 'Atari ST 1 Mo avec EmuTOS. Le dossier de partage est son disque C:.',
+      en: 'Atari ST with 1 MB and EmuTOS. The shared folder is its C: drive.'
+    },
     paquets: [
       {
         fichier: 'hatari-2.6.1_windows64.zip',
@@ -58,8 +67,14 @@ export const EMULATEURS: Record<IdEmulateur, Emulateur> = {
     nom: 'WinUAE',
     machine: 'amiga',
     version: '6.0.3',
-    licence: 'GPL v2 ; AROS (système libre compatible Kickstart) : licence publique AROS',
-    description: 'Amiga AGA 68020 avec le Kickstart libre AROS (AROS demande un 68020). Le dossier de partage est le disque PARTAGE:.',
+    licence: {
+      fr: 'GPL v2 ; AROS (système libre compatible Kickstart) : licence publique AROS',
+      en: 'GPL v2; AROS (free Kickstart-compatible system): AROS Public License'
+    },
+    description: {
+      fr: 'Amiga AGA 68020 avec le Kickstart libre AROS (AROS demande un 68020). Le dossier de partage est le disque PARTAGE:.',
+      en: 'AGA Amiga with a 68020 and the free AROS Kickstart (AROS needs a 68020). The shared folder is the PARTAGE: drive.'
+    },
     paquets: [
       {
         fichier: 'WinUAE6030_x64.zip',

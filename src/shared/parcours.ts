@@ -171,11 +171,3 @@ export interface Parcours {
 }
 
 export const SEUIL_QCM_DEFAUT = 0.7
-
-export const LIBELLE_VARIANTE: Record<VarianteExercice, string> = {
-  completer: 'À compléter',
-  modifier: 'À modifier',
-  ecrire: 'À écrire',
-  corriger: 'À corriger',
-  ordonner: 'À remettre dans l’ordre'
-}

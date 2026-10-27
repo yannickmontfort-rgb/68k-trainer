@@ -4,6 +4,7 @@
  * langues, et les lit par `traducteur` : TypeScript vérifie qu'aucun texte anglais ne manque.
  */
 import type { Langue } from '../../shared/traduction'
+import { traduireMessage } from '../../shared/messagesEn'
 
 const CLE = '68k-langue'
 
@@ -18,6 +19,15 @@ function langueParDefaut(): Langue {
 }
 
 let courante: Langue = langueParDefaut()
+
+/** Le processus principal écrit ses dialogues et ses erreurs dans la langue de l'interface. */
+function prevenirMain(): void {
+  try {
+    void window.api?.definirLangue?.(courante)
+  } catch {
+    // hors de l'appli (tests) : pas de processus principal
+  }
+}
 const ecouteurs = new Set<() => void>()
 
 export function langueCourante(): Langue {
@@ -34,6 +44,7 @@ export function definirLangue(langue: Langue): void {
     // tant pis : la langue reste celle du profil
   }
   document.documentElement.lang = langue
+  prevenirMain()
   for (const f of ecouteurs) f()
 }
 
@@ -57,3 +68,14 @@ export function traducteur<K extends string>(textes: Textes<K>): (cle: K, valeur
 }
 
 document.documentElement.lang = courante
+prevenirMain()
+
+/**
+ * Un message du cœur (assembleur, simulateur, vérification), écrit en français, dans la langue de
+ * l'interface : voir src/shared/messagesEn.ts.
+ */
+export function traduireCoeur(message: string): string
+export function traduireCoeur(message: string | undefined): string | undefined
+export function traduireCoeur(message: string | undefined): string | undefined {
+  return traduireMessage(message, courante)
+}

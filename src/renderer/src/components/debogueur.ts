@@ -7,7 +7,7 @@ import { materielAtari } from '../../../platforms/atari-st/materiel'
 import { materielAmiga } from '../../../platforms/amiga/chipset'
 import { R, nomRegistre } from '../../../platforms/amiga/machine'
 import { MACHINES, type Machine } from '../../../shared/machines'
-import { langueCourante, traducteur } from '../langue'
+import { langueCourante, traducteur, traduireCoeur } from '../langue'
 
 const t = traducteur({
   fr: {
@@ -426,7 +426,7 @@ export class Debogueur {
       '</div>'
     parties.push('</div>', timers('CIA-A ($BFE001)', m.ciaA.etatTimers()), timers('CIA-B ($BFD000)', m.ciaB.etatTimers()))
     if (m.alertes.length) parties.push(`<h5>${t('remarques')}</h5>` +
- m.alertes.map((a) => `<p class="dbg-alerte">⚠ ${a.replace(/</g, '&lt;')}</p>`).join(''))
+ m.alertes.map((a) => `<p class="dbg-alerte">⚠ ${traduireCoeur(a).replace(/</g, '&lt;')}</p>`).join(''))
     return parties.join('')
   }
 

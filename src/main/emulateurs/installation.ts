@@ -18,8 +18,41 @@ import { tmpdir } from 'os'
 import { join } from 'path'
 import { EMULATEURS, type Emulateur, type IdEmulateur, type Paquet } from './catalogue'
 import { sortieAtari } from './lanceurAtari'
-import { STARTUP_KICKSTART, analyserRom, configUaeKickstart, dossierRoms, type MachineRom, type RomReconnue } from './roms'
+import { STARTUP_KICKSTART, analyserRom, nomRom, configUaeKickstart, dossierRoms, type MachineRom, type RomReconnue } from './roms'
 export { sourceLanceurAtari } from './lanceurAtari'
+import { langueMain, traducteurMain } from '../langue'
+
+const t = traducteurMain({
+  fr: {
+    telechargementImpossible: 'Téléchargement impossible ({statut}) : {url}',
+    telechargement: 'Téléchargement de {fichier}',
+    verification: 'Vérification de {fichier}',
+    sommeDifferente: "{fichier} n'est pas le fichier attendu (somme SHA-256 différente) : installation annulée.",
+    extractionImpossible: 'Extraction impossible de {zip} : {erreur}',
+    windowsSeulement: "L'installation automatique de {nom} n'existe que sous Windows pour l'instant.",
+    dejaEnCours: "{nom} est déjà en cours d'installation.",
+    installation: 'Installation de {fichier}',
+    termine: 'Terminé',
+    pasInstalle: "{nom} n'est pas installé.",
+    tailleAdf: "Une disquette Amiga (.adf) fait 880 Ko ; ce fichier n'en est pas une.",
+    kickstartDabord: "Choisis d'abord ton Kickstart."
+  },
+  en: {
+    telechargementImpossible: 'Download failed ({statut}): {url}',
+    telechargement: 'Downloading {fichier}',
+    verification: 'Checking {fichier}',
+    sommeDifferente: '{fichier} is not the expected file (different SHA-256 checksum): installation cancelled.',
+    extractionImpossible: 'Could not extract {zip}: {erreur}',
+    windowsSeulement: 'Automatic installation of {nom} is only available on Windows for now.',
+    dejaEnCours: '{nom} is already being installed.',
+    installation: 'Installing {fichier}',
+    termine: 'Done',
+    pasInstalle: '{nom} is not installed.',
+    tailleAdf: 'An Amiga disk (.adf) is 880 KB; this file is not one.',
+    kickstartDabord: 'Choose your Kickstart first.'
+  }
+})
+
 
 export interface EtatEmulateur {
   id: IdEmulateur
@@ -85,8 +118,8 @@ export function etatEmulateurs(): EtatEmulateur[] {
     nom: e.nom,
     machine: e.machine,
     version: e.version,
-    licence: e.licence,
-    description: e.description,
+    licence: e.licence[langueMain()],
+    description: e.description[langueMain()],
     installe: !!etat[e.id] && existsSync(join(dossierEmulateur(e.id), e.executable)),
     versionInstallee: etat[e.id],
     embarque: e.paquets.every((p) => existsSync(join(dossierPaquetsEmbarques(), p.fichier))),
@@ -124,7 +157,7 @@ async function sha256(chemin: string): Promise<string> {
 
 async function telecharger(p: Paquet, cible: string, progression: Progression, deja: number, total: number): Promise<void> {
   const reponse = await net.fetch(p.url)
-  if (!reponse.ok || !reponse.body) throw new Error(`Téléchargement impossible (${reponse.status}) : ${p.url}`)
+  if (!reponse.ok || !reponse.body) throw new Error(t('telechargementImpossible', { statut: reponse.status, url: p.url }))
   const morceaux: Uint8Array[] = []
   let recu = 0
   const lecteur = reponse.body.getReader()
@@ -133,7 +166,7 @@ async function telecharger(p: Paquet, cible: string, progression: Progression, d
     if (done) break
     morceaux.push(value)
     recu += value.length
-    progression(deja + recu, total, `Téléchargement de ${p.fichier}`)
+    progression(deja + recu, total, t('telechargement', { fichier: p.fichier }))
   }
   writeFileSync(cible, Buffer.concat(morceaux))
 }
@@ -143,9 +176,9 @@ async function obtenir(p: Paquet, temp: string, progression: Progression, deja: 
   const embarque = join(dossierPaquetsEmbarques(), p.fichier)
   const chemin = existsSync(embarque) ? embarque : join(temp, p.fichier)
   if (chemin !== embarque) await telecharger(p, chemin, progression, deja, total)
-  progression(deja + p.taille, total, `Vérification de ${p.fichier}`)
+  progression(deja + p.taille, total, t('verification', { fichier: p.fichier }))
   const somme = await sha256(chemin)
-  if (somme !== p.sha256) throw new Error(`${p.fichier} n'est pas le fichier attendu (somme SHA-256 différente) : installation annulée.`)
+  if (somme !== p.sha256) throw new Error(t('sommeDifferente', { fichier: p.fichier }))
   return chemin
 }
 
@@ -154,7 +187,7 @@ function extraire(zip: string, vers: string): void {
   mkdirSync(vers, { recursive: true })
   const tar = windows ? join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'tar.exe') : 'unzip'
   const r = windows ? spawnSync(tar, ['-xf', zip, '-C', vers]) : spawnSync(tar, ['-q', '-o', zip, '-d', vers])
-  if (r.status !== 0) throw new Error(`Extraction impossible de ${zip} : ${r.stderr?.toString() ?? ''}`)
+  if (r.status !== 0) throw new Error(t('extractionImpossible', { zip, erreur: r.stderr?.toString() ?? '' }))
 }
 
 /** Déplace le contenu de `source` dans `cible` (sans les fichiers exclus). */
@@ -173,8 +206,8 @@ function deplacer(source: string, cible: string, exclure: string[]): void {
 
 export async function installer(id: IdEmulateur, progression: Progression = () => {}): Promise<void> {
   const e = EMULATEURS[id]
-  if (!windows) throw new Error(`L'installation automatique de ${e.nom} n'existe que sous Windows pour l'instant.`)
-  if (enCours.has(id)) throw new Error(`${e.nom} est déjà en cours d'installation.`)
+  if (!windows) throw new Error(t('windowsSeulement', { nom: e.nom }))
+  if (enCours.has(id)) throw new Error(t('dejaEnCours', { nom: e.nom }))
   const dest = dossierEmulateur(id)
   const temp = join(tmpdir(), `68k-trainer-${id}-${Date.now()}`)
   const total = e.paquets.reduce((s, p) => s + p.taille, 0)
@@ -185,7 +218,7 @@ export async function installer(id: IdEmulateur, progression: Progression = () =
     let deja = 0
     for (const p of e.paquets) {
       const zip = await obtenir(p, temp, progression, deja, total)
-      progression(deja + p.taille, total, `Installation de ${p.fichier}`)
+      progression(deja + p.taille, total, t('installation', { fichier: p.fichier }))
       const extrait = join(temp, 'x-' + p.fichier)
       extraire(zip, extrait)
       deplacer(p.racine ? join(extrait, p.racine) : extrait, dest, p.exclure)
@@ -195,7 +228,7 @@ export async function installer(id: IdEmulateur, progression: Progression = () =
     const etat = lireEtat()
     etat[id] = e.version
     ecrireEtat(etat)
-    progression(total, total, 'Terminé')
+    progression(total, total, t('termine'))
   } finally {
     enCours.delete(id)
     rmSync(temp, { recursive: true, force: true })
@@ -288,7 +321,7 @@ const processus = new Map<IdEmulateur, ChildProcess>()
 /** Arrête l'émulateur lancé par 68k Trainer (s'il tourne), puis le (re)lance : c'est son « reset ». */
 async function lancerProcessus(e: Emulateur, args: string[], surSortie?: (texte: string) => void): Promise<ChildProcess> {
   const exe = join(dossierEmulateur(e.id), e.executable)
-  if (!existsSync(exe)) throw new Error(`${e.nom} n'est pas installé.`)
+  if (!existsSync(exe)) throw new Error(t('pasInstalle', { nom: e.nom }))
   const ancien = processus.get(e.id)
   if (ancien && ancien.exitCode === null && ancien.signalCode === null) {
     await new Promise<void>((fini) => {
@@ -350,16 +383,16 @@ export function importerRom(machine: MachineRom, chemin: string): { ok: boolean;
   const roms = romsUtilisateur()
   roms[machine] = { fichier, nom: rom.nom, taille: rom.taille, modele: rom.modele, shellEnRom: rom.shellEnRom, actif: true, adf: roms[machine]?.adf }
   ecrireRoms(roms)
-  return { ok: true, nom: rom.nom }
+  return { ok: true, nom: nomRom(rom.nom) }
 }
 
 /** Disquette Workbench (fichier .adf) pour démarrer un Amiga sous Kickstart 1.3. */
 export function importerAdf(chemin: string): { ok: boolean; erreur?: string } {
   const octets = readFileSync(chemin)
   // Une disquette double densité : 80 pistes × 2 faces × 11 secteurs de 512 octets
-  if (octets.length !== 901120) return { ok: false, erreur: "Une disquette Amiga (.adf) fait 880 Ko ; ce fichier n'en est pas une." }
+  if (octets.length !== 901120) return { ok: false, erreur: t('tailleAdf') }
   const roms = romsUtilisateur()
-  if (!roms.amiga) return { ok: false, erreur: "Choisis d'abord ton Kickstart." }
+  if (!roms.amiga) return { ok: false, erreur: t('kickstartDabord') }
   const fichier = join(dossierRoms(dossierEmulateurs()), 'workbench.adf')
   writeFileSync(fichier, octets)
   roms.amiga.adf = fichier

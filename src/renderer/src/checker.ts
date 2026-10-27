@@ -2,7 +2,7 @@ import { Cpu } from '../../cpu/cpu'
 import type { Exercise } from '../../shared/ipc'
 import { evaluateCheck, type CheckResult } from '../../shared/checkResult'
 import { getPlatformForTrack } from './platformForTrack'
-import { traducteur } from './langue'
+import { traducteur, traduireCoeur } from './langue'
 
 const t = traducteur({
   fr: { erreur: "Erreur d'assemblage : {lignes}", ligne: 'ligne {ligne} : {message}' },
@@ -29,5 +29,6 @@ export async function checkExercise(source: string, exercise: Exercise, trackId:
     if (effects.halted) break
   }
 
-  return evaluateCheck(cpu, exercise.check)
+  const resultat = evaluateCheck(cpu, exercise.check)
+  return { ...resultat, message: traduireCoeur(resultat.message) }
 }

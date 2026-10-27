@@ -15,7 +15,7 @@ import { chargerProgression, machineActive, memoriserPosition } from '../../prog
 import { echapper } from './markdown'
 import { htmlCertificat } from '../../../../shared/certificat'
 import { profilActif } from '../../profilActif'
-import { traducteur } from '../../langue'
+import { langueCourante, traducteur } from '../../langue'
 import {
   ecranChapitre,
   ecranCours,
@@ -207,7 +207,7 @@ export function renderParcours(container: HTMLElement): () => void {
       enteteEl.querySelector('#btn-certificat')?.addEventListener('click', () => {
         void window.api.getBuildInfo().then((info) => {
           const nom = profilActif()?.nom ?? t('apprenant')
-          const html = htmlCertificat(parcours!, p, { nom, version: info.version })
+          const html = htmlCertificat(parcours!, p, { nom, version: info.version, langue: langueCourante() })
           return window.api.exporterPdf(html, t('nomPdf', { nom }))
         })
       })

@@ -4,6 +4,28 @@ import { copyFile, mkdir, readFile, rm, writeFile } from 'fs/promises'
 import { join } from 'path'
 import type { ExportProfil, ProfilPublic, ProgressState, ResultatProfil } from '../shared/ipc'
 import { normaliserProgression } from '../shared/progression'
+import { traducteurMain } from './langue'
+
+const t = traducteurMain({
+  fr: {
+    nomVide: 'Le nom du profil ne peut pas être vide.',
+    introuvable: 'Profil introuvable.',
+    motDePasseIncorrect: 'Mot de passe incorrect.',
+    aucunProfil: 'Aucun profil ouvert.',
+    motDePasseActuelIncorrect: 'Mot de passe actuel incorrect.',
+    nomPris: 'Un autre profil porte déjà ce nom.',
+    pasUnProfil: "Ce fichier n'est pas un profil 68k Trainer."
+  },
+  en: {
+    nomVide: 'The profile name cannot be empty.',
+    introuvable: 'Profile not found.',
+    motDePasseIncorrect: 'Wrong password.',
+    aucunProfil: 'No profile is open.',
+    motDePasseActuelIncorrect: 'Wrong current password.',
+    nomPris: 'Another profile already has this name.',
+    pasUnProfil: 'This file is not a 68k Trainer profile.'
+  }
+})
 
 /**
  * Profils d'utilisateurs, 100 % locaux : un dossier par profil dans le dossier de données de
@@ -44,7 +66,7 @@ function verifier(motDePasse: string, attendu: MotDePasse): boolean {
 
 function nomValide(nom: string): string {
   const propre = nom.trim().replace(/\s+/g, ' ').slice(0, 40)
-  if (!propre) throw new Error('Le nom du profil ne peut pas être vide.')
+  if (!propre) throw new Error(t('nomVide'))
   return propre
 }
 
@@ -124,9 +146,9 @@ export class GestionProfils {
   async ouvrir(id: string, motDePasse?: string): Promise<ResultatProfil> {
     const index = await this.lireIndex()
     const profil = index.profils.find((p) => p.id === id)
-    if (!profil) return { ok: false, erreur: 'Profil introuvable.' }
+    if (!profil) return { ok: false, erreur: t('introuvable') }
     if (profil.motDePasse && !verifier(motDePasse ?? '', profil.motDePasse)) {
-      return { ok: false, erreur: 'Mot de passe incorrect.' }
+      return { ok: false, erreur: t('motDePasseIncorrect') }
     }
     this.actif = profil
     index.dernier = id
@@ -139,7 +161,7 @@ export class GestionProfils {
   }
 
   private exigerActif(): Profil {
-    if (!this.actif) throw new Error('Aucun profil ouvert.')
+    if (!this.actif) throw new Error(t('aucunProfil'))
     return this.actif
   }
 
@@ -163,9 +185,9 @@ export class GestionProfils {
     const actif = this.exigerActif()
     const index = await this.lireIndex()
     const profil = index.profils.find((p) => p.id === actif.id)
-    if (!profil) throw new Error('Profil introuvable.')
+    if (!profil) throw new Error(t('introuvable'))
     if (profil.motDePasse && !verifier(motDePasseActuel ?? '', profil.motDePasse)) {
-      throw new Error('Mot de passe actuel incorrect.')
+      throw new Error(t('motDePasseActuelIncorrect'))
     }
     return { index, profil }
   }
@@ -176,7 +198,7 @@ export class GestionProfils {
     const profil = index.profils.find((p) => p.id === actif.id)!
     const propre = nomValide(nom)
     if (index.profils.some((p) => p.id !== profil.id && p.nom.toLowerCase() === propre.toLowerCase())) {
-      return { ok: false, erreur: 'Un autre profil porte déjà ce nom.' }
+      return { ok: false, erreur: t('nomPris') }
     }
     profil.nom = propre
     this.actif = profil
@@ -229,7 +251,7 @@ export class GestionProfils {
   async importer(donnees: unknown, motDePasse?: string): Promise<ResultatProfil & { brouillons?: Record<string, string> }> {
     const d = donnees as Partial<ExportProfil>
     if (!d || d.format !== FORMAT_EXPORT || typeof d.nom !== 'string') {
-      return { ok: false, erreur: "Ce fichier n'est pas un profil 68k Trainer." }
+      return { ok: false, erreur: t('pasUnProfil') }
     }
     const res = await this.creer(d.nom, motDePasse, d.progression)
     return { ...res, brouillons: d.brouillons ?? {} }

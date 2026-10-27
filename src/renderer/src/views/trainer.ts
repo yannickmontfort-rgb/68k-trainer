@@ -8,7 +8,7 @@ import { machineActive } from '../progressionStore'
 import { materielAmiga } from '../../../platforms/amiga/chipset'
 import { MACHINES, type Machine } from '../../../shared/machines'
 import { confirmer } from '../components/dialogue'
-import { langueCourante, traducteur } from '../langue'
+import { langueCourante, traducteur, traduireCoeur } from '../langue'
 
 const t = traducteur({
   fr: {
@@ -24,10 +24,10 @@ const t = traducteur({
     pas: 'Pas',
     executer: 'Exécuter',
     reinitialiser: 'Réinitialiser',
-    exportBoutonAtari: MACHINES.atari.export.bouton,
-    exportTitreAtari: MACHINES.atari.export.titre,
-    exportBoutonAmiga: MACHINES.amiga.export.bouton,
-    exportTitreAmiga: MACHINES.amiga.export.titre,
+    exportBoutonAtari: MACHINES.atari.export.bouton.fr,
+    exportTitreAtari: MACHINES.atari.export.titre.fr,
+    exportBoutonAmiga: MACHINES.amiga.export.bouton.fr,
+    exportTitreAmiga: MACHINES.amiga.export.titre.fr,
     essayer: 'Essayer dans {emulateur}',
     essayerTitre: "Lancer le programme dans un vrai émulateur (onglet « Émulateurs » pour l'installer)",
     modeUtilisateur: 'Mode utilisateur',
@@ -75,10 +75,10 @@ const t = traducteur({
     pas: 'Step',
     executer: 'Run',
     reinitialiser: 'Reset',
-    exportBoutonAtari: 'Export .PRG',
-    exportTitreAtari: 'Builds a .PRG program to run in the Hatari emulator or on a real Atari ST',
-    exportBoutonAmiga: 'Export for the Amiga',
-    exportTitreAmiga: 'Builds an AmigaDOS executable to run in WinUAE, FS-UAE or on a real Amiga',
+    exportBoutonAtari: MACHINES.atari.export.bouton.en,
+    exportTitreAtari: MACHINES.atari.export.titre.en,
+    exportBoutonAmiga: MACHINES.amiga.export.bouton.en,
+    exportTitreAmiga: MACHINES.amiga.export.titre.en,
     essayer: 'Try in {emulateur}',
     essayerTitre: 'Run the program in a real emulator (install it from the “Emulators” tab)',
     modeUtilisateur: 'User mode',
@@ -380,10 +380,10 @@ export function renderTrainer(container: HTMLElement, initialProgram?: string): 
 
   function afficherFin(error?: string): void {
     const alertes = exec.cpu ? (materielAmiga(exec.cpu)?.alertes ?? []) : []
-    const remarques = alertes.map((a) => '⚠ ' + a).join('\n')
+    const remarques = alertes.map((a) => '⚠ ' + traduireCoeur(a)).join('\n')
     if (error) {
       statusEl.textContent = t('arretException')
-      errorsEl.textContent = error + (remarques ? '\n' + remarques : '')
+      errorsEl.textContent = traduireCoeur(error) + (remarques ? '\n' + remarques : '')
     } else {
       if (exec.cpu?.halted) statusEl.textContent = t('termine')
       if (remarques) errorsEl.textContent = remarques

@@ -21,7 +21,7 @@ import { ecrireLocal, lireLocal } from '../../profilActif'
 import { sourceOrdonne, verifierExercice } from '../../verifier'
 import { blocCode, echapper, renderMarkdown } from './markdown'
 import { confirmer, informer } from '../../components/dialogue'
-import { traducteur } from '../../langue'
+import { langueCourante, traducteur, traduireCoeur } from '../../langue'
 
 const t = traducteur({
   fr: {
@@ -355,7 +355,7 @@ export function ecranExemple(el: HTMLElement, ex: ContenuExemple, ctx: ContexteE
     btnPas.disabled = true
     btnTout.disabled = true
     statut.textContent = error ? t('arretException') : t('termineOk')
-    if (error) explicationEl.innerHTML += `<p class="erreur">${echapper(error)}</p>`
+    if (error) explicationEl.innerHTML += `<p class="erreur">${echapper(traduireCoeur(error))}</p>`
     conclusionEl.hidden = !ex.conclusion
     if (marquerVu(ex.id)) ctx.progressionChangee()
   }
@@ -458,7 +458,7 @@ export function ecranExercice(el: HTMLElement, ex: ContenuExercice, ctx: Context
             <button id="btn-indice">${t('indice', { vus: 0, total: ex.indices.length })}</button>
             <button id="btn-solution" disabled title="${t('solutionTitre')}">${t('voirSolution')}</button>
             ${ordonner ? '' : `<button id="btn-reinit" title="${t('reinitTitre')}">↺</button>`}
-            <button id="btn-prg" ${reussi ? '' : 'hidden'} title="${machineDe(ctx.plateforme).export.titre}">${machineDe(ctx.plateforme).export.bouton}</button>
+            <button id="btn-prg" ${reussi ? '' : 'hidden'} title="${machineDe(ctx.plateforme).export.titre[langueCourante()]}">${machineDe(ctx.plateforme).export.bouton[langueCourante()]}</button>
             <button id="btn-essayer" ${reussi ? '' : 'hidden'} title="${t('essayerTitre')}">${t('essayer', { emulateur: ctx.plateforme === 'amiga' ? 'WinUAE' : 'Hatari' })}</button>
           </div>
           <p class="export-prg" id="export-prg" hidden></p>
@@ -661,7 +661,7 @@ export function ecranExercice(el: HTMLElement, ex: ContenuExercice, ctx: Context
     })()
   }
   const apres = (effects: ReturnType<Execution['pas']>): void => {
-    if (effects?.error) dbgStatut.textContent = effects.error
+    if (effects?.error) dbgStatut.textContent = traduireCoeur(effects.error)
     else if (exec?.arreteSurPoint) dbgStatut.textContent = t('pointArret')
     else if (effects?.halted) dbgStatut.textContent = t('programmeTermine')
   }
@@ -801,7 +801,7 @@ export function ecranPrediction(el: HTMLElement, pred: ContenuPrediction, ctx: C
       const effects = exec.toutExecuter(100000)
       const bilan = document.createElement('p')
       bilan.className = effects?.error ? 'verdict verdict-ko' : 'verdict verdict-ok'
-      bilan.textContent = effects?.error ?? t('executeBout')
+      bilan.textContent = traduireCoeur(effects?.error) ?? t('executeBout')
       dbgEl.prepend(bilan)
     })()
   })

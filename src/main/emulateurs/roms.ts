@@ -6,6 +6,33 @@
  * Code pur (sans Electron) : reconnaissance d'une ROM et réglages de WinUAE, testés à part.
  */
 import { join } from 'path'
+import { langueMain, traducteurMain } from '../langue'
+
+const t = traducteurMain({
+  fr: {
+    chiffree:
+      "Cette ROM est chiffrée (Amiga Forever) : elle ne fonctionne qu'avec son fichier rom.key. Choisis plutôt une ROM non chiffrée, par exemple celle que copie le logiciel d'Amiga Forever pour WinUAE.",
+    tailleKickstart: 'Un Kickstart fait 256 ou 512 Ko ; ce fichier fait {ko} Ko.',
+    pasKickstart: "Ce fichier ne commence pas comme un Kickstart (mot $1111 ou $1114) : ce n'est sans doute pas une ROM d'Amiga.",
+    tailleTos: 'Une ROM du TOS fait 192 ou 256 Ko ; ce fichier fait {ko} Ko.',
+    pasTos: "Ce fichier ne commence pas comme un TOS (un saut BRA, octet $60) : ce n'est sans doute pas une ROM d'Atari.",
+    tosTT: 'Les TOS de 512 Ko sont ceux du TT et du Falcon : 68k Trainer étudie le ST et le STE.'
+  },
+  en: {
+    chiffree:
+      'This ROM is encrypted (Amiga Forever): it only works with its rom.key file. Choose an unencrypted ROM instead, for example the one that the Amiga Forever software copies for WinUAE.',
+    tailleKickstart: 'A Kickstart is 256 or 512 KB; this file is {ko} KB.',
+    pasKickstart: 'This file does not start like a Kickstart (word $1111 or $1114): it is probably not an Amiga ROM.',
+    tailleTos: 'A TOS ROM is 192 or 256 KB; this file is {ko} KB.',
+    pasTos: 'This file does not start like a TOS (a BRA branch, byte $60): it is probably not an Atari ROM.',
+    tosTT: 'The 512 KB TOS versions are those of the TT and the Falcon: 68k Trainer studies the ST and the STE.'
+  }
+})
+
+/** Nom d'une ROM reconnue (gardé en français dans roms.json) dans la langue de l'interface. */
+export function nomRom(nom: string): string {
+  return langueMain() === 'en' ? nom.replace(/ ou plus/, ' or later') : nom
+}
 
 export type MachineRom = 'atari' | 'amiga'
 
@@ -53,16 +80,15 @@ export function analyserRom(fichier: Uint8Array, machine: MachineRom): RomReconn
     if (new TextDecoder('latin1').decode(octets.subarray(0, 11)) === 'AMIROMTYPE1') {
       return {
         ok: false,
-        raison:
-          "Cette ROM est chiffrée (Amiga Forever) : elle ne fonctionne qu'avec son fichier rom.key. Choisis plutôt une ROM non chiffrée, par exemple celle que copie le logiciel d'Amiga Forever pour WinUAE."
+        raison: t('chiffree')
       }
     }
     if (taille !== 256 * Ko && taille !== 512 * Ko) {
-      return { ok: false, raison: `Un Kickstart fait 256 ou 512 Ko ; ce fichier fait ${Math.round(taille / Ko)} Ko.` }
+      return { ok: false, raison: t('tailleKickstart', { ko: Math.round(taille / Ko) }) }
     }
     const debut = mot(0)
     if (debut !== 0x1111 && debut !== 0x1114) {
-      return { ok: false, raison: "Ce fichier ne commence pas comme un Kickstart (mot $1111 ou $1114) : ce n'est sans doute pas une ROM d'Amiga." }
+      return { ok: false, raison: t('pasKickstart') }
     }
     const version = mot(12)
     const revision = mot(14)
@@ -77,13 +103,13 @@ export function analyserRom(fichier: Uint8Array, machine: MachineRom): RomReconn
     }
   }
   if (taille !== 192 * Ko && taille !== 256 * Ko && taille !== 512 * Ko) {
-    return { ok: false, raison: `Une ROM du TOS fait 192 ou 256 Ko ; ce fichier fait ${Math.round(taille / Ko)} Ko.` }
+    return { ok: false, raison: t('tailleTos', { ko: Math.round(taille / Ko) }) }
   }
   if (octets[0] !== 0x60) {
-    return { ok: false, raison: "Ce fichier ne commence pas comme un TOS (un saut BRA, octet $60) : ce n'est sans doute pas une ROM d'Atari." }
+    return { ok: false, raison: t('pasTos') }
   }
   if (taille === 512 * Ko) {
-    return { ok: false, raison: 'Les TOS de 512 Ko sont ceux du TT et du Falcon : 68k Trainer étudie le ST et le STE.' }
+    return { ok: false, raison: t('tosTT') }
   }
   const version = mot(2)
   return {

@@ -2,7 +2,7 @@ import { evaluateCheck } from '../../shared/checkResult'
 import type { ContenuExercice, Plateforme } from '../../shared/parcours'
 import { platformFor, runBinary } from '../../shared/runProgram'
 import { materielAmiga } from '../../platforms/amiga/chipset'
-import { traducteur } from './langue'
+import { traducteur, traduireCoeur } from './langue'
 
 const t = traducteur({
   fr: {
@@ -103,12 +103,12 @@ export async function verifierExercice(source: string, ex: ContenuExercice, plat
   const result = evaluateCheck(cpu, ex.check)
   // Remarques de la machine (Amiga : WaitBlit oublié, Copper arrêté…)
   const alertes = materielAmiga(cpu)?.alertes ?? []
-  const remarques = alertes.length ? '\n\n' + t('remarques') + '\n' + alertes.map((a) => '⚠ ' + a).join('\n') : ''
+  const remarques = alertes.length ? '\n\n' + t('remarques') + '\n' + alertes.map((a) => '⚠ ' + traduireCoeur(a)).join('\n') : ''
   // Un programme qui plante n'est jamais réussi, même si les registres sont justes
-  if (result.success && !last.error) return { success: true, message: result.message + remarques, pistes: [] }
-  const message =
-    (last.error
-      ? `${t('pasTermine')}\n${last.error}${result.success ? '' : '\n\n' + result.message}`
-      : result.message) + remarques
-  return { success: false, message, pistes: pistesPour(ex, message) }
+  if (result.success && !last.error) return { success: true, message: traduireCoeur(result.message) + remarques, pistes: [] }
+  const erreur = traduireCoeur(last.error)
+  const resultat = traduireCoeur(result.message)
+  const message = (erreur ? `${t('pasTermine')}\n${erreur}${result.success ? '' : '\n\n' + resultat}` : resultat) + remarques
+  // Les pistes se choisissent sur les messages français du simulateur (« bombes », « Guru »)
+  return { success: false, message, pistes: pistesPour(ex, `${last.error ?? ''}\n${result.message}`) }
 }

@@ -7,6 +7,12 @@ import { creerPrg, empechementPrg } from '../asm/prg'
 import { creerHunk, empechementHunk } from '../asm/hunk'
 import { avecDemarrageAmiga } from '../asm/demarrageAmiga'
 import type { AssembleResult } from '../shared/ipc'
+import { messageMain, traducteurMain } from './langue'
+
+const t = traducteurMain({
+  fr: { ligne: 'Ligne {ligne} : {message}', exportImpossible: 'Export impossible : {message}', erreurInconnue: 'erreur inconnue' },
+  en: { ligne: 'Line {ligne}: {message}', exportImpossible: 'Export failed: {message}', erreurInconnue: 'unknown error' }
+})
 
 /**
  * Fichiers accessibles à INCLUDE et INCBIN : d'abord le dossier du source ouvert dans le bac à
@@ -62,7 +68,10 @@ function lecteurs(dossierSource?: string) {
 }
 
 export function assemblerDansApplication(source: string, dossierSource?: string): AssembleResult {
-  return assemblerSource(source, lecteurs(dossierSource))
+  // Erreurs et avertissements dans la langue de l'interface (l'assembleur écrit en français)
+  const r = assemblerSource(source, lecteurs(dossierSource))
+  const traduire = <T extends { message: string }>(d: T): T => ({ ...d, message: messageMain(d.message) })
+  return { ...r, errors: r.errors.map(traduire), warnings: r.warnings?.map(traduire) }
 }
 
 /**
@@ -78,11 +87,14 @@ export function fabriquerPrg(
   const raison = format === 'hunk' ? empechementHunk(r) : empechementPrg(r)
   if (raison) {
     const premiere = r.erreurs[0]
-    return { raison: premiere ? `${raison}\nLigne ${premiere.ligne} : ${premiere.message}` : raison }
+    const texte = messageMain(raison)
+    return { raison: premiere ? `${texte}\n${t('ligne', { ligne: premiere.ligne, message: messageMain(premiere.message) })}` : texte }
   }
   if (format === 'prg') return { octets: creerPrg(r) }
   // Amiga : le code de démarrage (Shell ou icône du Workbench) est ajouté devant le programme
   const exe = assembler(avecDemarrageAmiga(source), { ...lecteurs(dossierSource), prg: true })
-  if (!exe.ok) return { raison: 'Export impossible : ' + (exe.erreurs[0]?.message ?? 'erreur inconnue') }
+  if (!exe.ok) {
+    return { raison: t('exportImpossible', { message: exe.erreurs[0] ? messageMain(exe.erreurs[0].message) : t('erreurInconnue') }) }
+  }
   return { octets: creerHunk(exe) }
 }

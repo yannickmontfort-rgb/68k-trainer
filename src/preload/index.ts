@@ -20,6 +20,8 @@ const api = {
   saveProgress: (state: ProgressState): Promise<void> => ipcRenderer.invoke(IPC.saveProgress, state),
   loadContent: (langue: 'fr' | 'en' = 'fr'): Promise<ContentBundle> => ipcRenderer.invoke(IPC.loadContent, langue),
   getBuildInfo: (): Promise<BuildInfo> => ipcRenderer.invoke(IPC.getBuildInfo),
+  /** Langue de l'interface, pour les textes du processus principal (dialogues, erreurs). */
+  definirLangue: (langue: 'fr' | 'en'): Promise<void> => ipcRenderer.invoke(IPC.definirLangue, langue),
   listerProfils: (): Promise<{ profils: ProfilPublic[]; dernier?: string }> => ipcRenderer.invoke(IPC.listerProfils),
   creerProfil: (nom: string, motDePasse?: string, progression?: ProgressState): Promise<ResultatProfil> =>
     ipcRenderer.invoke(IPC.creerProfil, nom, motDePasse, progression),

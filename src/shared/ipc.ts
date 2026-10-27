@@ -225,5 +225,6 @@ export const IPC = {
   loadProgress: '68k:loadProgress',
   saveProgress: '68k:saveProgress',
   loadContent: '68k:loadContent',
-  getBuildInfo: '68k:getBuildInfo'
+  getBuildInfo: '68k:getBuildInfo',
+  definirLangue: '68k:definirLangue'
 } as const
