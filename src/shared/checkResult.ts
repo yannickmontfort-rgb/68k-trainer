@@ -3,6 +3,7 @@ import type { CpuSnapshot } from '../cpu/types'
 import type { ExerciseCheck } from './ipc'
 import { readPixel, screenAddress } from '../platforms/atari-st/screen'
 import { materielAtari } from '../platforms/atari-st/materiel'
+import { PALETTE_BASE } from '../platforms/atari-st/machine'
 import { materielAmiga } from '../platforms/amiga/chipset'
 import { bilanAmiga } from '../platforms/amiga/kickstart'
 import { decalageRegistre, R } from '../platforms/amiga/machine'
@@ -90,6 +91,23 @@ function evaluer(cpu: Cpu, check: ExerciseCheck): CheckResult {
       }
     }
     if (mismatches.length > 0) return { success: false, message: mismatches.join('\n') }
+    return { success: true, message: 'Bravo, l’écran est exactement comme prévu !' }
+  }
+
+  if (check.type === 'image' && materielAtari(cpu)) {
+    // Atari : la teinte affichée, lue dans la palette de chaque ligne de la dernière image complète
+    // (rasters compris), pour le numéro de couleur du pixel
+    const lignes = materielAtari(cpu)!.palettesParLigne()
+    const base = screenAddress(cpu.memory)
+    const ecarts: string[] = []
+    for (const [cle, attendu] of Object.entries(check.expected)) {
+      const [x, y] = cle.split(',').map((v) => parseInt(v, 10))
+      const numero = readPixel(cpu.memory, base, x, y)
+      const obtenu = (lignes ? lignes[y * 16 + numero] : cpu.memory.readU16(PALETTE_BASE + numero * 2)) & 0x0777
+      const voulu = parseInt(attendu.replace('$', ''), 16)
+      if (obtenu !== voulu) ecarts.push(`Point (${x}, ${y}) : couleur ${hex4(voulu)} attendue, ${hex4(obtenu)} affichée`)
+    }
+    if (ecarts.length) return { success: false, message: ecarts.join('\n') }
     return { success: true, message: 'Bravo, l’écran est exactement comme prévu !' }
   }
 

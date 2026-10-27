@@ -172,6 +172,48 @@
           "check": { "type": "memory", "maxSteps": 20000, "terminer": true, "expected": { "$70.L": "$00FC0100", "$466.L": "$0000000A" } },
           "machine": { "modeUtilisateur": true } }
       ]
+    },
+    {
+      "id": "atari-ch08-n5",
+      "titre": "Les rasters",
+      "contenus": [
+        { "type": "cours", "id": "atari-ch08-cours-rasters", "titre": "Le Timer B et les couleurs ligne par ligne", "fichier": "05-rasters.md", "source": "Rédigé pour 68k Trainer d'après la fiche MFP 68901 et le comportement du simulateur (Timer B en comptage d'événements, palette lue à chaque ligne)" },
+        {
+          "type": "exemple", "id": "atari-ch08-ex-rasters", "titre": "Trois bandes de couleur",
+          "introduction": "Le programme installe une VBL et une routine du Timer B, laisse passer trois images, puis remet tout en place. Lance-le en « Temps réel » pour voir le fond changer de couleur toutes les 50 lignes, ou avance pas à pas.",
+          "code": "@code.s#rasters-exemple",
+          "machine": { "modeUtilisateur": true, "ecran": true },
+          "explications": [
+            { "ligne": 4, "texte": "Supexec exécute INSTALLER en superviseur, puisque les vecteurs et le MFP sont protégés en mode utilisateur." },
+            { "ligne": 24, "texte": "Les deux routines du programme sont maintenant branchées, la VBL en `$70` et le Timer B en `$120`." },
+            { "ligne": 27, "texte": "Le Timer B est autorisé et démasqué ; il est encore arrêté, c'est la VBL qui le lancera." },
+            { "ligne": 41, "texte": "Au début de chaque image, la VBL remet le fond en noir pour le haut de l'écran." },
+            { "ligne": 44, "texte": "TBDR reçoit 50 : le premier changement aura lieu après 50 lignes." },
+            { "ligne": 45, "texte": "En mode 8, le Timer B compte les fins de ligne au lieu du temps." },
+            { "ligne": 55, "texte": "La routine du Timer B range la couleur suivante dans le registre du fond : le Shifter l'affichera dès la ligne suivante." },
+            { "ligne": 59, "texte": "La remise à 0 du bit 0 de ISRA dit au MFP que l'interruption est traitée ; sans elle, il n'en signalerait plus d'autre." },
+            { "ligne": 11, "texte": "Trois images ont passé, chacune avec ses bandes noire, rouge, verte et bleue." },
+            { "ligne": 14, "texte": "RETIRER arrête le timer et rend les vecteurs et la couleur du fond, comme le programme les a trouvés." }
+          ],
+          "conclusion": "La VBL prépare chaque image et le Timer B change la couleur à la ligne voulue : c'est tout le secret des rasters."
+        },
+        {
+          "type": "prediction", "id": "atari-ch08-pred-rasters", "titre": "Le compte des lignes",
+          "introduction": "Relis l'exemple des trois bandes avant de répondre.",
+          "code": "@code.s#rasters-exemple",
+          "machine": { "modeUtilisateur": true, "ecran": true },
+          "questions": [
+            { "id": "q1", "enonce": "La routine du Timer B ne range jamais rien dans TBDR. Pourquoi le changement suivant arrive-t-il quand même 50 lignes plus loin ?", "choix": ["Parce que la VBL le relance à chaque ligne", "Parce que le Timer B recharge tout seul sa valeur de départ quand il arrive à 0", "Par hasard"], "bonne": 1, "explication": "Le Timer B repart de la valeur rangée dans TBDR à chaque passage à 0 : il déclenche donc son interruption toutes les 50 lignes." },
+            { "id": "q2", "enonce": "Pourquoi la VBL remet-elle le fond en noir au début de chaque image ?", "choix": ["Parce qu'à la fin de l'image précédente, le fond est resté de la couleur de la dernière bande", "Parce que le Shifter efface la palette à chaque image", "Pour économiser des cycles"], "bonne": 0, "explication": "La palette garde la dernière couleur rangée : sans la VBL, le haut de l'image suivante serait bleu." }
+          ]
+        },
+        { "type": "exercice", "id": "atari-ch08-exo-rasters", "titre": "Des bandes deux fois plus fines", "variante": "modifier", "niveau": 2,
+          "enonce": "Le programme découpe le fond en bandes de 50 lignes. Modifie-le pour qu'elles fassent 25 lignes : noir, puis rouge, vert, bleu, jaune et cyan, dans l'ordre de la table COULEURS.",
+          "indices": ["Une seule valeur décide de la hauteur des bandes.", "C'est le nombre de lignes rangé dans TBDR par la VBL : `MOVE.B #25,$FFFFFA21.W`."],
+          "codeDepart": "@code.s#rasters-exemple", "solution": "@code.s#rasters25-solution",
+          "check": { "type": "image", "maxSteps": 3000000, "terminer": true, "expected": { "160,10": "$0000", "160,35": "$0700", "160,60": "$0070", "160,85": "$0007", "160,110": "$0770", "160,135": "$0077" } },
+          "machine": { "modeUtilisateur": true, "ecran": true } }
+      ]
     }
   ],
   "qcm": {
@@ -189,7 +231,9 @@
       { "id": "q7", "enonce": "Pour comparer deux adresses (non signées), après CMP on utilise…", "choix": ["BGT", "BHI", "BMI"], "bonne": 1, "explication": "BGT compare en signé, alors que BHI, plus grand en non signé, convient aux adresses et aux valeurs de 0 à 65 535." },
       { "id": "q8", "enonce": "Quels registres un appel au TOS laisse-t-il intacts ?", "choix": ["D0-D2 et A0-A2", "D3-D7 et A3-A6", "Tous"], "bonne": 1, "explication": "D0-D2 et A0-A2 peuvent être modifiés, D0 portant le résultat, alors que D3-D7 et A3-A6 sont préservés." },
       { "id": "q9", "enonce": "Pourquoi une routine VBL à soi doit-elle se « chaîner » à l'ancienne ?", "choix": ["Pour aller plus vite", "Pour que le TOS continue son travail (compteurs, file VBL, palette…)", "Parce que RTE est interdit"], "bonne": 1, "explication": "Sans cela, _frclock ne bouge plus, Vsync attend pour toujours et la file VBL n'est plus appelée." },
-      { "id": "q10", "enonce": "Avant de quitter, un programme doit…", "choix": ["remettre les vecteurs et le matériel dans leur état", "effacer la mémoire", "repasser en superviseur"], "bonne": 0, "explication": "Un programme laisse la machine comme il l'a trouvée, et quitte par Pterm0." }
+      { "id": "q10", "enonce": "Avant de quitter, un programme doit…", "choix": ["remettre les vecteurs et le matériel dans leur état", "effacer la mémoire", "repasser en superviseur"], "bonne": 0, "explication": "Un programme laisse la machine comme il l'a trouvée, et quitte par Pterm0." },
+      { "id": "q13", "enonce": "En mode 8, que compte le Timer B du ST ?", "choix": ["Le temps, en microsecondes", "Les fins de ligne affichées", "Les images"], "bonne": 1, "explication": "Chaque fin de ligne affichée est un événement pour le Timer B : c'est ce qui permet de changer une couleur à une ligne précise." },
+      { "id": "q14", "enonce": "Que doit faire une routine du Timer B avant son RTE ?", "choix": ["Remettre à 0 le bit 0 de ISRA", "Remettre la couleur 0 en noir", "Rendre le vecteur $120"], "bonne": 0, "explication": "Le TOS fait fonctionner le MFP en fin d'interruption logicielle : tant que ce bit reste à 1, le MFP ne signale plus d'autre interruption de ce niveau." }
     ]
   },
   "bonus": [

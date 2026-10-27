@@ -558,3 +558,139 @@ START:
     ADDQ.L  #2,SP
     CLR.W   -(SP)           ; Pterm0
     TRAP    #1
+
+;=== rasters-exemple
+START:
+    PEA     INSTALLER(PC)
+    MOVE.W  #38,-(SP)       ; Supexec : installer en superviseur
+    TRAP    #14
+    ADDQ.L  #6,SP
+    MOVEQ   #2,D7           ; laisser passer trois images
+.image:
+    MOVE.W  #37,-(SP)       ; Vsync
+    TRAP    #14
+    ADDQ.L  #2,SP
+    DBF     D7,.image
+    PEA     RETIRER(PC)
+    MOVE.W  #38,-(SP)       ; Supexec : tout remettre en place
+    TRAP    #14
+    ADDQ.L  #6,SP
+    CLR.W   -(SP)
+    TRAP    #1
+
+INSTALLER:
+    MOVE.W  $FFFF8240.W,ANCIENFOND
+    MOVE.L  $70.W,ANCIENVBL ; on garde les vecteurs du système
+    MOVE.L  $120.W,ANCIENTB
+    MOVE.L  #VBL,$70.W
+    MOVE.L  #TIMERB,$120.W
+    CLR.B   $FFFFFA1B.W     ; TBCR : timer B arrêté
+    BSET    #0,$FFFFFA07.W  ; IERA : interruption du timer B autorisée
+    BSET    #0,$FFFFFA13.W  ; IMRA : et démasquée
+    RTS
+
+RETIRER:
+    CLR.B   $FFFFFA1B.W     ; timer B arrêté
+    BCLR    #0,$FFFFFA07.W
+    BCLR    #0,$FFFFFA13.W
+    MOVE.L  ANCIENVBL,$70.W ; vecteurs rendus
+    MOVE.L  ANCIENTB,$120.W
+    MOVE.W  ANCIENFOND,$FFFF8240.W
+    RTS
+
+; À chaque image : fond noir en haut, puis le timer B compte 50 lignes
+VBL:
+    MOVE.W  #$000,$FFFF8240.W
+    CLR.W   BANDE
+    CLR.B   $FFFFFA1B.W     ; timer B arrêté...
+    MOVE.B  #50,$FFFFFA21.W ; ... TBDR : 50 lignes avant le premier changement...
+    MOVE.B  #8,$FFFFFA1B.W  ; ... puis TBCR : mode 8, il compte les lignes
+    MOVE.L  ANCIENVBL(PC),-(SP) ; et la VBL du TOS fait son travail
+    RTS
+
+; Toutes les 50 lignes : la couleur suivante pour le fond
+TIMERB:
+    MOVE.L  A0,-(SP)
+    MOVE.W  D0,-(SP)
+    MOVE.W  BANDE(PC),D0
+    LEA     COULEURS(PC),A0
+    MOVE.W  0(A0,D0.W),$FFFF8240.W
+    ADDQ.W  #2,BANDE
+    MOVE.W  (SP)+,D0
+    MOVEA.L (SP)+,A0
+    BCLR    #0,$FFFFFA0F.W  ; ISRA : fin de l'interruption du timer B
+    RTE
+
+COULEURS:   DC.W    $700,$070,$007,$770,$077,$707,$777,$777
+BANDE:      DC.W    0
+ANCIENFOND: DC.W    0
+ANCIENVBL:  DC.L    0
+ANCIENTB:   DC.L    0
+
+;=== rasters25-solution
+START:
+    PEA     INSTALLER(PC)
+    MOVE.W  #38,-(SP)       ; Supexec : installer en superviseur
+    TRAP    #14
+    ADDQ.L  #6,SP
+    MOVEQ   #2,D7           ; laisser passer trois images
+.image:
+    MOVE.W  #37,-(SP)       ; Vsync
+    TRAP    #14
+    ADDQ.L  #2,SP
+    DBF     D7,.image
+    PEA     RETIRER(PC)
+    MOVE.W  #38,-(SP)       ; Supexec : tout remettre en place
+    TRAP    #14
+    ADDQ.L  #6,SP
+    CLR.W   -(SP)
+    TRAP    #1
+
+INSTALLER:
+    MOVE.W  $FFFF8240.W,ANCIENFOND
+    MOVE.L  $70.W,ANCIENVBL ; on garde les vecteurs du système
+    MOVE.L  $120.W,ANCIENTB
+    MOVE.L  #VBL,$70.W
+    MOVE.L  #TIMERB,$120.W
+    CLR.B   $FFFFFA1B.W     ; TBCR : timer B arrêté
+    BSET    #0,$FFFFFA07.W  ; IERA : interruption du timer B autorisée
+    BSET    #0,$FFFFFA13.W  ; IMRA : et démasquée
+    RTS
+
+RETIRER:
+    CLR.B   $FFFFFA1B.W     ; timer B arrêté
+    BCLR    #0,$FFFFFA07.W
+    BCLR    #0,$FFFFFA13.W
+    MOVE.L  ANCIENVBL,$70.W ; vecteurs rendus
+    MOVE.L  ANCIENTB,$120.W
+    MOVE.W  ANCIENFOND,$FFFF8240.W
+    RTS
+
+; À chaque image : fond noir en haut, puis le timer B compte 50 lignes
+VBL:
+    MOVE.W  #$000,$FFFF8240.W
+    CLR.W   BANDE
+    CLR.B   $FFFFFA1B.W     ; timer B arrêté...
+    MOVE.B  #25,$FFFFFA21.W ; ... TBDR : 25 lignes avant le premier changement...
+    MOVE.B  #8,$FFFFFA1B.W  ; ... puis TBCR : mode 8, il compte les lignes
+    MOVE.L  ANCIENVBL(PC),-(SP) ; et la VBL du TOS fait son travail
+    RTS
+
+; Toutes les 25 lignes : la couleur suivante pour le fond
+TIMERB:
+    MOVE.L  A0,-(SP)
+    MOVE.W  D0,-(SP)
+    MOVE.W  BANDE(PC),D0
+    LEA     COULEURS(PC),A0
+    MOVE.W  0(A0,D0.W),$FFFF8240.W
+    ADDQ.W  #2,BANDE
+    MOVE.W  (SP)+,D0
+    MOVEA.L (SP)+,A0
+    BCLR    #0,$FFFFFA0F.W  ; ISRA : fin de l'interruption du timer B
+    RTE
+
+COULEURS:   DC.W    $700,$070,$007,$770,$077,$707,$777,$777
+BANDE:      DC.W    0
+ANCIENFOND: DC.W    0
+ANCIENVBL:  DC.L    0
+ANCIENTB:   DC.L    0
