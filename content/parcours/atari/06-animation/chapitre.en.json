@@ -1,0 +1,184 @@
+{
+  "titre": "Animation, sprites and pixel shifting",
+  "resume": "To animate, the 68000 copies graphic blocks line by line in step with the VBL, 50 times a second, and double buffering makes the flicker disappear. To place a sprite to the nearest pixel, it shifts the sprite's bits over 32 bits and protects the background with a mask, which lets you repair routine 7.3 of the manual. The chapter matches module 4 of the manual.",
+  "notions": {
+    "atari-ch06-n0": { "titre": "Review of chapters 4 and 5" },
+    "atari-ch06-n1": { "titre": "Copying a graphic block" },
+    "atari-ch06-n2": { "titre": "Animating: the VBL and double buffering" },
+    "atari-ch06-n3": { "titre": "Sprites to the nearest pixel" },
+    "atari-ch06-n4": { "titre": "The edges and the mirror effect" }
+  },
+  "contenus": {
+    "atari-ch06-rappel": {
+      "titre": "What you already know",
+      "introduction": "Three questions on the previous chapters, without rereading the lessons. Getting it wrong here does not matter: searching is what makes it stick.",
+      "questions": {
+        "q1": { "enonce": "The program computes where, in the screen, the group of the pixel X = 50, Y = 10 is. What is D1 at the end?", "explication": "10 × 160 = 1,600, and 50 ÷ 16 = 3 in integer division, that is 3 × 8 = 24 bytes: 1,624 = $658. Dividing X by 2 directly would have given 25, an odd address." },
+        "q2": { "enonce": "To give color 6 to a pixel, in which planes must its bit be 1?", "choix": ["Planes 1 and 2", "Planes 0 and 3", "Plane 6"], "explication": "6 = %0110: bits 1 and 2 are at 1, so the pixel is on in planes 1 and 2 and off in planes 0 and 3." },
+        "q3": { "enonce": "A value must stay intact after a `TRAP #14` call. In which register should you keep it?", "explication": "TOS may modify D0-D2 and A0-A2, but it preserves D3-D7 and A3-A6." }
+      }
+    },
+    "atari-ch06-cours-blocs": {
+      "titre": "Sprites, line-by-line copying and the line skip",
+      "source": "Rephrased from the Atari ST manual v2 (§ 4.1)"
+    },
+    "atari-ch06-ex-copie": {
+      "titre": "Copying a 16 × 16 square",
+      "introduction": "The drawing of a square, with its border in color 3 and its inside in color 4, is stored at the end of the program in the screen format, and the program copies it to X = 128, Y = 50: follow A0, the source, and A1, the destination, while the screen fills line by line.",
+      "explications": {
+        "5": "A1 points to the start of the screen.",
+        "6": "The assembler computes 50 × 160 + 8 × 8 = 8,064: line 50, group no. 8, that is X = 128.",
+        "7": "A0 points to the drawing, in the program's memory.",
+        "8": "16 lines, since DBF goes round 15 + 1 times.",
+        "10": "A long word copies two words, planes 0 and 1 of the 16 pixels, and both pointers move on by 4.",
+        "11": "Planes 2 and 3 complete the line of the drawing, and A1 has moved on by 8 bytes.",
+        "12": "The 152-byte skip brings A1 back to X = 128 one line down, whereas A0 does not need it since the lines of the drawing follow one another.",
+        "13": "The loop moves on to the next line; with Run to the end, the whole square appears."
+      },
+      "conclusion": "For each line, you copy the width of the block then skip 160 minus that width."
+    },
+    "atari-ch06-pred-saut": {
+      "titre": "How far to skip?",
+      "introduction": "The program clears two lines of a block 32 pixels wide, that is 16 bytes, starting at address `$10000`.",
+      "questions": {
+        "q1": { "enonce": "What is A1 at the end?", "explication": "Each round moves on by 16 bytes with the 4 CLR.L, then by 144 with the skip, one 160-byte line in all: after two rounds, A1 = $10000 + 320 = $10140." },
+        "q2": { "enonce": "For a block 48 pixels wide, what skip do you need?", "explication": "48 pixels make 3 groups, that is 24 bytes, and 160 − 24 = 136." }
+      }
+    },
+    "atari-ch06-exo-saut": {
+      "titre": "The right line skip",
+      "enonce": "The program copies a block of 32 × 8 pixels in color 1 to the start of line 20, but its line skip is 0 and the block spreads over a single line. Replace this 0 with the right value.",
+      "indices": ["How many bytes are copied per line for a width of 32 pixels?", "2 groups make 16 bytes, and the skip is 160 − 16."]
+    },
+    "atari-ch06-exo-effacer": {
+      "titre": "Erasing a rectangle",
+      "enonce": "The program fills the whole screen in color 15. Add what is needed to erase, in color 0, the rectangle X = 64 to 95, Y = 20 to 39, without touching the rest.",
+      "indices": ["The top left corner is at screen + 20 × 160 + (64 ÷ 16) × 8, and `LEA 20*160+64/16*8(A1),A1` computes it for you.", "32 pixels make 16 bytes, so 4 `CLR.L (A1)+` per line then a skip of 160 − 16; for 20 lines, `MOVEQ #19,D7` and DBF."]
+    },
+    "atari-ch06-cours-animer": {
+      "titre": "Vsync, the budget of a frame and double buffering",
+      "source": "Rephrased from the Atari ST manual v2 (§ 4.1 and 5.3), ST Internals (Abacus) for Setscreen and the Shifter registers"
+    },
+    "atari-ch06-ex-descente": {
+      "titre": "A square moving down",
+      "introduction": "A 16 × 16 square moves down one line per frame for 60 frames: watch it first in Real time, then start again step by step, where each `TRAP #14` of the Vsync lets one frame go by and moves the cycle counter forward.",
+      "explications": {
+        "6": "A1 points to the top of the screen, at X = 64, the position of the square.",
+        "7": "60 frames at 50 frames per second make a little over one second of animation.",
+        "9": "The CARRE subroutine draws 16 lines of 16 pixels from A1.",
+        "11": "Vsync waits for the next VBL, and the frame counter under the status register goes up by 1: about 160,000 cycles have gone by.",
+        "13": "Since the square only moves down one line, erasing its top line is enough, and the next drawing covers the rest.",
+        "14": "The square moves down one line, so 160 bytes.",
+        "15": "The loop moves on to the next frame."
+      },
+      "conclusion": "One step per frame, locked to Vsync, sets the pace of every animation on the ST."
+    },
+    "atari-ch06-pred-aligner": {
+      "titre": "Rounding an address",
+      "introduction": "The program looks for the first multiple of 256 starting from an address.",
+      "questions": {
+        "q1": { "enonce": "What is D0 at the end?", "explication": "$1234F + $FF = $1244E, then CLR.B sets the low-order byte to 0: $12400 is the first multiple of 256 that is not below $1234F." },
+        "q2": { "enonce": "Why must a screen start at a multiple of 256 on an STF?", "choix": ["Because the Shifter only stores bits 23 to 8 of its address", "Because memory is organized in pages of 256 bytes", "Because Setscreen refuses other addresses"], "explication": "The registers `$FF8201` and `$FF8203` only hold the high and middle bytes of the address, so Setscreen accepts any address and the Shifter rounds it down." }
+      }
+    },
+    "atari-ch06-ex-double": {
+      "titre": "Double buffering",
+      "introduction": "Two screens are reserved in the BSS section: the program draws on the hidden screen, displays it with Setscreen and waits for the VBL, and the square moves 16 pixels per frame. Follow the swap step by step in the debugger's Vectors and hardware panel, which shows the address of the displayed screen.",
+      "explications": {
+        "3": "The address of the reserved area + 255, stripped of its low byte, gives the first multiple of 256 inside the area.",
+        "5": "32,000 = $7D00, so the second screen also starts on a multiple of 256.",
+        "10": "A0 points to the hidden screen, where you can erase and draw without anything showing.",
+        "11": "DESSINER erases the square's band, then draws it in column D5.",
+        "14": "The two addresses are swapped: the screen just finished becomes the displayed screen, the other one becomes the next hidden screen.",
+        "19": "Setscreen makes the Shifter display the screen just drawn, and the square moves in one go, without ever appearing half drawn.",
+        "22": "Vsync waits for the VBL before the program touches the other screen.",
+        "24": "The next column is used for the next frame."
+      },
+      "conclusion": "You never draw on the displayed screen, at the cost of 32,000 more bytes of memory."
+    },
+    "atari-ch06-exo-aligne": {
+      "titre": "The misaligned screen",
+      "enonce": "The program draws a square at the top left of its own screen, then displays it with Setscreen, but the square does not appear at the top left. Fix the program.",
+      "indices": ["Is the address of MONECRAN a multiple of 256?", "Reserve 256 more bytes, round the address with `ADD.L #255` then `CLR.B`, and use the rounded address both to draw and for Setscreen."]
+    },
+    "atari-ch06-exo-dix": {
+      "titre": "Ten frames to the right",
+      "enonce": "Move a 16 × 16 square in color 1, on lines 50 to 65, 16 pixels to the right on each frame, 10 times, starting from X = 0. At the end, it must be at X = 160 and nowhere else, and each frame waits for the VBL.",
+      "indices": ["A subroutine that writes the word D1 into plane 0 of 16 lines from A1 draws with $FFFF and erases with 0.", "Draw at X = 0, then 10 times: Vsync, erase, `ADDQ.L #8,A1`, draw."]
+    },
+    "atari-ch06-cours-pixel": {
+      "titre": "Shifting over 32 bits, masking the background",
+      "source": "Rephrased from the Atari ST manual v2 (§ 4.2 and routine 7.3, corrected: see the errata)"
+    },
+    "atari-ch06-ex-pixel": {
+      "titre": "A ball at X = 44",
+      "introduction": "A ball of 8 × 8 pixels placed at X = 44 starts at the 13th pixel of a group and overflows into the next one: keep an eye on D0 on each round of the loop.",
+      "explications": {
+        "6": "A0 points to the start of line 10.",
+        "11": "44 ÷ 16 = 2, and 2 × 8 = 16 bytes: A0 points to the group of pixels 32 to 47.",
+        "12": "44 mod 16 = 12, so the drawing will be shifted 12 pixels to the right.",
+        "17": "D0 = `$0000003C`, the first line of the ball (`%00111100`).",
+        "18": "ROR.L #8 rotates D0 by 8 bits and the byte ends up at the top: D0 = `$3C000000`.",
+        "19": "Shifted by 12, D0 = `$0003C000`, and the pixels that stick out of the first group have dropped into the low word instead of being lost.",
+        "20": "SWAP exchanges the two halves, and D0.W = `$0003` holds the left part.",
+        "21": "Bits 1 and 0 of the first group turn on pixels 46 and 47.",
+        "23": "D0.W = `$C000` turns on bits 15 and 14 of the next group, pixels 48 and 49: the line of the ball straddles two groups.",
+        "25": "The loop moves on to the next line of the ball."
+      },
+      "conclusion": "Shifted over 32 bits with LSR.L, then written in two steps thanks to SWAP, the drawing loses no bit."
+    },
+    "atari-ch06-pred-decalage": {
+      "titre": "Shifting over 32 bits",
+      "introduction": "The program shifts by 12 bits 8 pixels that are on at the far left of a register.",
+      "questions": {
+        "q1": { "enonce": "What is D0 after `LSR.L D1,D0` (a shift of 12)?", "explication": "Shifting by 12 bits amounts to shifting by 3 hexadecimal digits: `$FF000000` becomes `$000FF000`." },
+        "q2": { "enonce": "And after a `SWAP D0`?", "explication": "The two halves are exchanged, and the low word `$000F`, the 4-pixel left part, is ready for the first group." }
+      }
+    },
+    "atari-ch06-exo-masque": {
+      "titre": "A hole in the background",
+      "enonce": "On a background in color 2 (plane 1), the program draws 8 pixels in color 1 (plane 0), which appear in color 3 because the background bits stay on underneath. Add a single instruction that turns off plane 1 under the drawing.",
+      "indices": ["D3 holds the inverted mask, 0 under the drawing and 1 elsewhere.", "`AND.W D3,2(A0)`, since plane 1 is the word at offset 2."]
+    },
+    "atari-ch06-exo-routine73": {
+      "titre": "Repairing routine 7.3",
+      "enonce": "Routine 7.3 of the manual should draw a ball of 8 × 8 pixels at X = 44, Y = 10. It does not crash, but the ball does not appear, because it contains several errors: fix them.",
+      "indices": ["Step through it while watching A0 and D0: the start looks like PSET, in chapter 5, with the high word of D0 and the `$FFFE` alignment.", "`LSR.W` loses the pixels that overflow, `SWAP` brings back a high word that was never prepared and `OR.B` targets the wrong byte; work on 32 bits with `MOVEQ #0,D0`, `MOVE.B`, `ROR.L #8`, `LSR.L D1,D0`, then SWAP, `OR.W`, SWAP, `OR.W`."],
+      "source": "Routine 7.3 from the Atari ST manual v2, reproduced with its errors (see the errata)"
+    },
+    "atari-ch06-cours-bords": {
+      "titre": "Clipping at the edges, flipping with a table",
+      "source": "Rephrased from the Atari ST manual v2 (§ 4.3)"
+    },
+    "atari-ch06-pred-bord": {
+      "titre": "Overflowing on the right",
+      "introduction": "The program draws 8 pixels at X = 316 on line 10, and the drawing overflows from the last group of the line.",
+      "questions": {
+        "q1": { "enonce": "Where do the 4 overflowing pixels appear?", "choix": ["On the left of the screen, on line 11", "Nowhere: they are lost", "On the right, on line 10"], "explication": "8 bytes after the last group of line 10 begins the first group of line 11, because screen memory carries on." }
+      }
+    },
+    "atari-ch06-exo-miroir": {
+      "titre": "The mirror table",
+      "enonce": "Build at `$20000` a table of 256 bytes whose byte no. n holds n read backwards, bit 7 becoming bit 0, bit 6 bit 1, and so on: entry 1 holds `$80` and entry `$0C` holds `$30`.",
+      "indices": ["You need two loops, one over n from 0 to 255, the other over the 8 bits of n.", "For each bit, `LSR.B #1,D1` shifts the rightmost bit of n out into the X flag, then `ROXL.B #1,D2` shifts it in on the right of the mirror."]
+    },
+    "atari-ch06-bonus-rebond": {
+      "titre": "The bouncing ball",
+      "enonce": "A 16 × 16 square in color 1, on lines 92 to 107, starts from X = 0 and moves 2 pixels to the right on each frame. When it reaches X = 304, the right edge, it heads back to the left, and at X = 0 it heads back to the right. The program stops after 200 frames; in Real time, you see it bounce.",
+      "indices": ["A speed variable, +2 or −2, is added to X on each frame, and changes sign at the edge.", "To draw at any X, `MOVE.L #$FFFF0000,D2` then `LSR.L` by X mod 16; the high word goes into the group of X and the low word into the next one, after erasing the band."]
+    }
+  },
+  "qcm": {
+    "q1": { "enonce": "To copy a block 32 pixels wide, what skip do you add at the end of each line?", "explication": "32 pixels make 16 bytes, and 160 − 16 = 144." },
+    "q2": { "enonce": "How many frames per second does a European ST display?", "explication": "50 Hz in PAL, and 60 Hz on an American ST." },
+    "q10": { "enonce": "How many rounds does a loop make that starts with `MOVEQ #15,D7` and ends with `DBF D7,.ligne`?", "explication": "DBF goes round N + 1 times: 15 + 1 = 16, one per line of a 16-line sprite." },
+    "q3": { "enonce": "What does `Vsync` (XBIOS 37) do?", "choix": ["It clears the screen", "It waits for the next VBL", "It switches screens"], "explication": "It waits for the next vertical retrace, just after a frame has been displayed." },
+    "q4": { "enonce": "Why does double buffering remove the flicker?", "choix": ["Because the displayed screen is never being modified", "Because it draws twice as fast", "Because it doubles the VBL frequency"], "explication": "You draw on the hidden screen, then display it in one go during the retrace of the beam." },
+    "q5": { "enonce": "On an STF, on what condition can an address be used as a screen?", "choix": ["Being even", "Being a multiple of 256", "Being below $80000"], "explication": "The Shifter only stores the high and middle bytes of the address." },
+    "q11": { "enonce": "In a plane word, which bit matches the leftmost of the 16 pixels of the group?", "choix": ["Bit 0", "Bit 15", "Bit 7"], "explication": "Bit 15 is the leftmost pixel and bit 0 the rightmost one: this is why the drawing is shifted to the right with LSR." },
+    "q6": { "enonce": "Why shift a sprite with `LSR.L` rather than with `LSR.W`?", "choix": ["It is faster", "The overflowing bits go into the low word instead of being lost", "LSR.W does not accept a shift in a register"], "explication": "The low word catches the overflow, which you write into the next group." },
+    "q7": { "enonce": "What is the inverted mask of a sprite for?", "choix": ["Making a hole in the background with AND before laying the sprite", "Turning on the pixels of the sprite", "Flipping the sprite"], "explication": "The AND with the inverted mask turns off the background bits under the sprite, then the OR lays the drawing." },
+    "q8": { "enonce": "A frame on an ST lasts about…", "choix": ["16,000 cycles", "160,000 cycles", "1,600,000 cycles"], "explication": "8 MHz ÷ 50 frames gives about 160,000 cycles, 160,256 exactly." },
+    "q9": { "enonce": "A sprite drawn in the last group of a line overflows…", "choix": ["at the start of the next line", "into the line above", "nowhere"], "explication": "Memory carries on, and the next group is the first one of the line below: the sprite must be clipped." }
+  }
+}

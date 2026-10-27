@@ -1,0 +1,119 @@
+{
+  "titre": "Graphics: the screen, bitplanes and the palette",
+  "resume": "The Atari's screen is an area of memory where, in low resolution, each pixel is made of four bits spread over four **interleaved bitplanes**. You compute the address of a pixel there, fix the manual's PSET routine, which contains two errors, and change the colors of the whole screen through the palette. Module 3 of the Atari ST manual and exercises 7.1-1 and 7.2 of its module 7.",
+  "notions": {
+    "atari-ch05-n0": { "titre": "Review of chapters 3 and 4" },
+    "atari-ch05-n1": { "titre": "The screen and bitplanes" },
+    "atari-ch05-n2": { "titre": "The palette" }
+  },
+  "contenus": {
+    "atari-ch05-rappel": {
+      "titre": "What you already know",
+      "introduction": "Three questions on the previous chapters, without rereading the lessons. Getting it wrong here does not matter: searching is what makes it stick.",
+      "questions": {
+        "q1": { "enonce": "What does this program display?", "explication": "The counter starts at 2, so DBRA goes round 3 times, and D3 goes from 'A' to 'C'." },
+        "q2": { "enonce": "Why does the program count the rounds in D4 rather than in D1?", "choix": ["Because TOS may modify D0-D2 during a call", "Because DBRA does not accept D1", "Out of habit: D1 would work too"], "explication": "TOS preserves D3-D7 and A3-A6, but may modify D0-D2 and A0-A2: a counter in D1 could be damaged by the TRAP." },
+        "q3": { "enonce": "Started in user mode, could this program write directly to `$FF8240`?", "choix": ["Yes, as to any memory location", "No: bus error, 2 bombs", "No: privilege violation, 8 bombs"], "explication": "The hardware registers are protected in user mode: you have to go through Supexec, or through a function such as Setcolor." }
+      }
+    },
+    "atari-ch05-cours-ecran": {
+      "titre": "Framebuffer, resolutions and interleaved bitplanes",
+      "source": "Rephrased from the Atari ST manual v1 (§ 3.1-3.3) and v2 (§ 3.1-3.3), formulas corrected (see the errata of the manual v2)"
+    },
+    "atari-ch05-ex-pixel": {
+      "titre": "Turning on a pixel, step by step",
+      "introduction": "The program turns on the pixel (37, 100) in color 1: follow the computation of the address in A0, then look at the screen in the right-hand panel, where a small red dot appears halfway down, on the left.",
+      "explications": {
+        "4": "Physbase has returned the address of the screen in D0, `$000F8000`.",
+        "5": "A0 points to the first byte of the screen, at the top left.",
+        "7": "100 × 160 = 16,000 bytes separate the start of the screen from the start of line 100.",
+        "8": "A0 now points to the start of line 100, `$FBE80`.",
+        "11": "37 ÷ 16 = 2 in integer division: the pixel is in the 3rd group of 16 pixels.",
+        "12": "Each group takes up 8 bytes, which gives an offset of 16 bytes.",
+        "13": "A0 points to plane 0 of the group that holds pixels 32 to 47.",
+        "14": "37 mod 16 = 5: it is the 6th pixel of the group.",
+        "16": "Since the leftmost pixel is bit 15, the 6th one is bit 15 − 5 = 10.",
+        "18": "D5 becomes a mask in which only bit 10 is 1, `%0000 0100 0000 0000`.",
+        "19": "OR turns this bit on in plane 0 without touching the other 15 pixels of the word: the pixel takes color %0001 = 1, red with the default palette."
+      },
+      "conclusion": "The pixel (X, Y) is in the word at screen + Y × 160 + (X ÷ 16) × 8, at bit 15 − (X mod 16), and every graphics routine on the ST relies on this computation."
+    },
+    "atari-ch05-pred-adresse": {
+      "titre": "Exercise 1 of the manual",
+      "introduction": "This is exercise 1 of module 7 of the manual: with the screen of a 1040 ST at `$F8000`, where is the group that holds the pixel (160, 100)? Devpac, like vasm, computes the expression at assembly time.",
+      "questions": {
+        "q1": { "enonce": "What is A0?", "explication": "100 × 160 = 16,000 = $3E80 and (160 ÷ 16) × 8 = 80 = $50, so $F8000 + $3E80 + $50 = $FBED0." },
+        "q2": { "enonce": "And D2, the number of the pixel's bit in its word?", "explication": "160 mod 16 = 0: it is the first pixel of the group, the one at bit 15." }
+      }
+    },
+    "atari-ch05-exo-couleur3": {
+      "titre": "A pixel of color 3",
+      "enonce": "The program turns on the pixel (0, 0) in plane 0. Add one instruction so that it takes color 3 (`%0011`).",
+      "indices": ["Color 3 has its bits 0 and 1 at 1: planes 0 and 1.", "Plane 1 is the next word: `OR.W #$8000,2(A0)`."]
+    },
+    "atari-ch05-exo-ligne": {
+      "titre": "A 32-pixel stroke",
+      "enonce": "On line Y = 10, draw a 32-pixel stroke, from X = 0 to X = 31, in color 1.",
+      "indices": ["The start of line 10 is at screen + 10 × 160 (`LEA 10*160(A0),A0`).", "32 pixels make 2 groups, and plane 0 of the 2nd group is 8 bytes further on."]
+    },
+    "atari-ch05-exo-pset": {
+      "titre": "The two errors in PSET",
+      "enonce": "The PSET routine from the manual (module 7.2) should draw the pixel (37, 10) in color 5. It assembles and does not crash, but the pixel does not appear: find and fix its two errors.",
+      "indices": ["Step through PSET and compare A0 with the computation in the lesson.", "Look at A0 after `ADDA.L D0,A0`: what did the high word of D0 hold?", "(X ÷ 16) × 8 is not X ÷ 2: you must align on 8 bytes (`$FFF8`), not on 2, and add only the low word of D0 (`ADDA.W`)."],
+      "source": "PSET routine from the Atari ST manual v2, module 7.2, reproduced with its errors"
+    },
+    "atari-ch05-cours-palette": {
+      "titre": "Color numbers and the palette",
+      "source": "Rephrased from the Atari ST manual v1 (§ 3.4) and the \"low-level graphics\" sheet of v0.1"
+    },
+    "atari-ch05-ex-palette": {
+      "titre": "Changing the whole screen without redrawing it",
+      "introduction": "The program fills the screen with color no. 2, green by default, then changes only the palette; step through one or two rounds of the loop, then use Run to the end for the 4,000 rounds.",
+      "explications": {
+        "6": "32,000 bytes make 4,000 groups of 8 bytes, and DBRA will go round 3,999 + 1 times.",
+        "8": "Plane 0 of the group receives 16 bits at 0.",
+        "9": "Plane 1 receives 16 bits at 1.",
+        "10": "A long word at 0 fills planes 2 and 3 in one go, and the 16 pixels of the group have color %0010 = 2.",
+        "11": "The loop moves on to the next group, and the top of the screen fills with green.",
+        "15": "`Setcolor(2, $007)` makes color 2 blue, and the whole screen changes color at once without a single one of its bytes being modified."
+      },
+      "conclusion": "Filling the screen takes 16,000 instructions, whereas a single call to Setcolor is enough to change its color."
+    },
+    "atari-ch05-pred-palette": {
+      "titre": "What color on the screen?",
+      "introduction": "The program fills the screen in color 2, then calls Setcolor with another value.",
+      "questions": {
+        "q1": { "enonce": "What color is the screen at the end?", "choix": ["Green", "Red", "Black"], "explication": "The pixels carry number 2, and Setcolor has put $700, red, into color 2." },
+        "q2": { "enonce": "How many bytes of screen memory did the Setcolor modify?", "choix": ["32,000", "16", "None"], "explication": "Setcolor changes only one palette register, not the screen memory." }
+      }
+    },
+    "atari-ch05-exo-rouge15": {
+      "titre": "A color of the palette",
+      "enonce": "Give color 15 the value bright red (`$700`) with Setcolor.",
+      "indices": ["Push the color, then the number 15, then the function 7.", "Three words pushed: 6 bytes to clean up."]
+    },
+    "atari-ch05-exo-remplir": {
+      "titre": "The whole screen in color 15",
+      "enonce": "Fill the whole screen with color 15 (`%1111`).",
+      "indices": ["Color 15 sets every bit of every plane to 1.", "32,000 bytes make 8,000 long words: `MOVE.L #-1,(A0)+` in a loop of 7,999 + 1 rounds."]
+    },
+    "atari-ch05-bonus-carre": {
+      "titre": "A colored square",
+      "enonce": "At the top left of the screen, draw a filled square of 16 × 16 pixels in color 4.",
+      "indices": ["A group is 16 pixels wide: one word per line, in the right plane, is enough.", "Color 4, `%0100`, is in plane 2, at offset 4 of the group; the next line is 160 bytes further on."]
+    }
+  },
+  "qcm": {
+    "q1": { "enonce": "How many bytes does the ST screen take up?", "explication": "320 × 200 pixels of 4 bits make 32,000 bytes, as in medium and high resolution." },
+    "q2": { "enonce": "In low resolution, how many bytes is a line?", "explication": "A line holds 20 groups of 16 pixels, 8 bytes each." },
+    "q3": { "enonce": "In a word of a plane, which bit matches the leftmost pixel?", "choix": ["Bit 0", "Bit 15", "Bit 7"], "explication": "The most significant bit matches the leftmost pixel." },
+    "q10": { "enonce": "After a `TRAP #14`, which of these registers has certainly kept its value?", "explication": "TOS preserves D3-D7 and A3-A6, but may modify D0-D2 and A0-A2; D0 receives its return value, besides." },
+    "q4": { "enonce": "A pixel of color 6 (`%0110`) has its bit at 1 in planes…", "choix": ["0 and 1", "1 and 2", "2 and 3"], "explication": "%0110 has its bits 1 and 2 at 1." },
+    "q5": { "enonce": "Which expression gives the offset of the group that holds pixel X?", "explication": "You first divide by 16 in integer division, then multiply by 8; X ÷ 2 is only right when X is a multiple of 16." },
+    "q6": { "enonce": "How many different colors can an ST (STF) produce?", "choix": ["16", "512", "4,096"], "explication": "With 3 bits per component, it produces 8 × 8 × 8 = 512 colors, 16 of them on screen; 4,096 is the STE." },
+    "q7": { "enonce": "Which color does the palette value `$770` give?", "choix": ["Yellow", "Cyan", "Purple"], "explication": "Red at 7, green at 7 and blue at 0 give yellow." },
+    "q8": { "enonce": "Why is changing the palette so fast?", "choix": ["Because the Shifter redraws the screen by itself", "Because you modify a single register instead of thousands of bytes", "Because the palette is in ROM"], "explication": "All the pixels with the same number change color at the same time." },
+    "q11": { "enonce": "Which instruction inverts every bit of D6.W, to build an inverted mask?", "explication": "`NOT` inverts each bit, whereas `NEG` computes 0 − D6 and `EXT` extends the sign." },
+    "q9": { "enonce": "On a 1040 STF, you write `$0FFF` into a color register, then read it back. What do you read?", "explication": "The ST's Shifter keeps only 3 bits per component, in the format `0RRR0GGG0BBB`, so the extra bits are lost and you read back `$0777`; the STE keeps 4." }
+  }
+}
