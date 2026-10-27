@@ -7,22 +7,168 @@ import { materielAtari } from '../../../platforms/atari-st/materiel'
 import { materielAmiga } from '../../../platforms/amiga/chipset'
 import { R, nomRegistre } from '../../../platforms/amiga/machine'
 import { MACHINES, type Machine } from '../../../shared/machines'
+import { langueCourante, traducteur } from '../langue'
+
+const t = traducteur({
+  fr: {
+    ecran: 'Écran',
+    registres: 'Registres',
+    registreEtat: "Registre d'état (SR)",
+    desassemblage: 'Désassemblage (à partir du PC)',
+    pile: 'Pile (sommet = A7)',
+    memoire: 'Mémoire',
+    memoireA: 'à $',
+    sortieTexte: 'Sortie texte',
+    materiel: 'Vecteurs et matériel',
+    pileActive: 'Pointeur de pile actif',
+    prochaineInstruction: 'Adresse de la prochaine instruction',
+    pileUtilisateur: 'Pile utilisateur',
+    pileSuperviseur: 'Pile superviseur',
+    bitT: 'Trace (pas à pas matériel)',
+    bitS: 'Superviseur (1) ou utilisateur (0)',
+    bitX: 'Extension (retenue pour ADDX/SUBX)',
+    bitN: 'Négatif : bit de poids fort du résultat',
+    bitZ: 'Zéro : le résultat vaut 0',
+    bitV: 'Débordement signé (oVerflow)',
+    bitC: 'Retenue (Carry)',
+    masque: "Masque d'interruption",
+    superviseur: 'superviseur',
+    utilisateur: 'utilisateur',
+    temps: '{cycles} cycles · {ms} ms · image n° {image}',
+    titreTemps:
+      'Approximation : 4 cycles par accès mémoire, plus les calculs longs (MUL, DIV, décalages). Un {modele} tourne à {mhz} MHz et affiche 50 images par seconde ({cycles} cycles par image).',
+    faisceau: ' · faisceau : ligne ${v}, h ${h}',
+    vecteurs: 'Vecteurs',
+    variablesSysteme: 'Variables système',
+    frclock: '$466 _frclock (trames)',
+    vbasad: '$44E _v_bas_ad (écran logique)',
+    ecranAffiche: '$FF8201/03 écran affiché',
+    ym: 'YM2149 (registres 0-13)',
+    'vec-bus2': 'Erreur de bus (2 bombes)',
+    'vec-adresse3': "Erreur d'adresse (3 bombes)",
+    'vec-illegale4': 'Instruction illégale (4)',
+    'vec-privilege8': 'Violation de privilège (8)',
+    'vec-hbl': 'HBL (niveau 2)',
+    'vec-vbl': 'VBL (niveau 4)',
+    'vec-trap1': 'TRAP #1 (GEMDOS)',
+    'vec-trap13': 'TRAP #13 (BIOS)',
+    'vec-trap14': 'TRAP #14 (XBIOS)',
+    'vec-timerC': 'MFP timer C (200 Hz)',
+    'vec-acia': 'MFP ACIA clavier',
+    'vec-timerB': 'MFP timer B',
+    'vec-timerA': 'MFP timer A',
+    'vec-execbase': 'ExecBase (pas un vecteur)',
+    'vec-bus': 'Erreur de bus',
+    'vec-adresse': "Erreur d'adresse",
+    'vec-illegale': 'Instruction illégale',
+    'vec-privilege': 'Violation de privilège',
+    'vec-niveau1': 'Niveau 1 (disque, série, logiciel)',
+    'vec-niveau2': 'Niveau 2 (CIA-A : clavier, timers)',
+    'vec-niveau3': 'Niveau 3 (VBL, Copper, Blitter)',
+    'vec-niveau4': 'Niveau 4 (son, Paula)',
+    'vec-niveau5': 'Niveau 5 (série, disque)',
+    'vec-niveau6': 'Niveau 6 (CIA-B)',
+    dmaInterruptions: 'DMA et interruptions',
+    listeCopper: 'Liste Copper relue à chaque image',
+    occupe: 'occupé',
+    libre: 'libre',
+    affichage: 'Affichage',
+    couleurs: 'Couleurs (COLOR00 à COLOR31)',
+    enMarche: 'en marche',
+    arrete: 'arrêté',
+    remarques: 'Remarques'
+  },
+  en: {
+    ecran: 'Screen',
+    registres: 'Registers',
+    registreEtat: 'Status register (SR)',
+    desassemblage: 'Disassembly (from the PC)',
+    pile: 'Stack (top = A7)',
+    memoire: 'Memory',
+    memoireA: 'at $',
+    sortieTexte: 'Text output',
+    materiel: 'Vectors and hardware',
+    pileActive: 'Active stack pointer',
+    prochaineInstruction: 'Address of the next instruction',
+    pileUtilisateur: 'User stack',
+    pileSuperviseur: 'Supervisor stack',
+    bitT: 'Trace (hardware single-stepping)',
+    bitS: 'Supervisor (1) or user (0)',
+    bitX: 'Extend (carry for ADDX/SUBX)',
+    bitN: 'Negative: most significant bit of the result',
+    bitZ: 'Zero: the result is 0',
+    bitV: 'Signed overflow',
+    bitC: 'Carry',
+    masque: 'Interrupt mask',
+    superviseur: 'supervisor',
+    utilisateur: 'user',
+    temps: '{cycles} cycles · {ms} ms · frame {image}',
+    titreTemps:
+      'Approximation: 4 cycles per memory access, plus the long operations (MUL, DIV, shifts). A {modele} runs at {mhz} MHz and displays 50 frames per second ({cycles} cycles per frame).',
+    faisceau: ' · beam: line ${v}, h ${h}',
+    vecteurs: 'Vectors',
+    variablesSysteme: 'System variables',
+    frclock: '$466 _frclock (frames)',
+    vbasad: '$44E _v_bas_ad (logical screen)',
+    ecranAffiche: '$FF8201/03 displayed screen',
+    ym: 'YM2149 (registers 0-13)',
+    'vec-bus2': 'Bus error (2 bombs)',
+    'vec-adresse3': 'Address error (3 bombs)',
+    'vec-illegale4': 'Illegal instruction (4)',
+    'vec-privilege8': 'Privilege violation (8)',
+    'vec-hbl': 'HBL (level 2)',
+    'vec-vbl': 'VBL (level 4)',
+    'vec-trap1': 'TRAP #1 (GEMDOS)',
+    'vec-trap13': 'TRAP #13 (BIOS)',
+    'vec-trap14': 'TRAP #14 (XBIOS)',
+    'vec-timerC': 'MFP timer C (200 Hz)',
+    'vec-acia': 'MFP keyboard ACIA',
+    'vec-timerB': 'MFP timer B',
+    'vec-timerA': 'MFP timer A',
+    'vec-execbase': 'ExecBase (not a vector)',
+    'vec-bus': 'Bus error',
+    'vec-adresse': 'Address error',
+    'vec-illegale': 'Illegal instruction',
+    'vec-privilege': 'Privilege violation',
+    'vec-niveau1': 'Level 1 (disk, serial, software)',
+    'vec-niveau2': 'Level 2 (CIA-A: keyboard, timers)',
+    'vec-niveau3': 'Level 3 (VBL, Copper, Blitter)',
+    'vec-niveau4': 'Level 4 (sound, Paula)',
+    'vec-niveau5': 'Level 5 (serial, disk)',
+    'vec-niveau6': 'Level 6 (CIA-B)',
+    dmaInterruptions: 'DMA and interrupts',
+    listeCopper: 'Copper list reread every frame',
+    occupe: 'busy',
+    libre: 'idle',
+    affichage: 'Display',
+    couleurs: 'Colors (COLOR00 to COLOR31)',
+    enMarche: 'running',
+    arrete: 'stopped',
+    remarques: 'Notes'
+  }
+})
+
+type CleTexte = Parameters<typeof t>[0]
+
+/** Format des nombres affichés : celui de la langue de l'interface. */
+const nombre = (n: number, options?: Intl.NumberFormatOptions): string =>
+  n.toLocaleString(langueCourante() === 'en' ? 'en-US' : 'fr-FR', options)
 
 /** Vecteurs utiles sur ST : [adresse, nom]. */
-const VECTEURS: [number, string][] = [
-  [0x08, 'Erreur de bus (2 bombes)'],
-  [0x0c, "Erreur d'adresse (3 bombes)"],
-  [0x10, 'Instruction illégale (4)'],
-  [0x20, 'Violation de privilège (8)'],
-  [0x68, 'HBL (niveau 2)'],
-  [0x70, 'VBL (niveau 4)'],
-  [0x84, 'TRAP #1 (GEMDOS)'],
-  [0xb4, 'TRAP #13 (BIOS)'],
-  [0xb8, 'TRAP #14 (XBIOS)'],
-  [0x114, 'MFP timer C (200 Hz)'],
-  [0x118, 'MFP ACIA clavier'],
-  [0x120, 'MFP timer B'],
-  [0x134, 'MFP timer A']
+const VECTEURS: [number, CleTexte][] = [
+  [0x08, 'vec-bus2'],
+  [0x0c, 'vec-adresse3'],
+  [0x10, 'vec-illegale4'],
+  [0x20, 'vec-privilege8'],
+  [0x68, 'vec-hbl'],
+  [0x70, 'vec-vbl'],
+  [0x84, 'vec-trap1'],
+  [0xb4, 'vec-trap13'],
+  [0xb8, 'vec-trap14'],
+  [0x114, 'vec-timerC'],
+  [0x118, 'vec-acia'],
+  [0x120, 'vec-timerB'],
+  [0x134, 'vec-timerA']
 ]
 
 /** Registres du MFP affichés : [décalage depuis $FFFA00, nom]. */
@@ -33,18 +179,18 @@ const REGISTRES_MFP: [number, string][] = [
 ]
 
 /** Vecteurs utiles sur Amiga : [adresse, nom]. */
-const VECTEURS_AMIGA: [number, string][] = [
-  [0x04, 'ExecBase (pas un vecteur)'],
-  [0x08, 'Erreur de bus'],
-  [0x0c, "Erreur d'adresse"],
-  [0x10, 'Instruction illégale'],
-  [0x20, 'Violation de privilège'],
-  [0x64, 'Niveau 1 (disque, série, logiciel)'],
-  [0x68, 'Niveau 2 (CIA-A : clavier, timers)'],
-  [0x6c, 'Niveau 3 (VBL, Copper, Blitter)'],
-  [0x70, 'Niveau 4 (son, Paula)'],
-  [0x74, 'Niveau 5 (série, disque)'],
-  [0x78, 'Niveau 6 (CIA-B)']
+const VECTEURS_AMIGA: [number, CleTexte][] = [
+  [0x04, 'vec-execbase'],
+  [0x08, 'vec-bus'],
+  [0x0c, 'vec-adresse'],
+  [0x10, 'vec-illegale'],
+  [0x20, 'vec-privilege'],
+  [0x64, 'vec-niveau1'],
+  [0x68, 'vec-niveau2'],
+  [0x6c, 'vec-niveau3'],
+  [0x70, 'vec-niveau4'],
+  [0x74, 'vec-niveau5'],
+  [0x78, 'vec-niveau6']
 ]
 
 /** Registres custom affichés : dernière valeur écrite. */
@@ -87,14 +233,14 @@ export class Debogueur {
     this.element = document.createElement('div')
     this.element.className = 'debogueur'
     this.element.innerHTML = `
-      <div class="dbg-bloc dbg-ecran-bloc" hidden><h4>Écran</h4></div>
-      <div class="dbg-bloc"><h4>Registres</h4><div class="dbg-regs"></div></div>
-      <div class="dbg-bloc"><h4>Registre d'état (SR)</h4><div class="dbg-sr"></div></div>
-      <div class="dbg-bloc"><h4>Désassemblage (à partir du PC)</h4><div class="dbg-desasm"></div></div>
-      <div class="dbg-bloc"><h4>Pile (sommet = A7)</h4><div class="dbg-pile"></div></div>
-      <div class="dbg-bloc"><h4>Mémoire <label>à $<input class="dbg-mem-adr" value="${(options.adresseMemoire ?? 0x1000).toString(16).toUpperCase()}" size="7" /></label></h4><div class="dbg-mem"></div></div>
-      <div class="dbg-bloc"><h4>Sortie texte</h4><pre class="dbg-sortie"></pre></div>
-      <details class="dbg-bloc dbg-materiel"><summary>Vecteurs et matériel</summary><div class="dbg-materiel-contenu"></div></details>
+      <div class="dbg-bloc dbg-ecran-bloc" hidden><h4>${t('ecran')}</h4></div>
+      <div class="dbg-bloc"><h4>${t('registres')}</h4><div class="dbg-regs"></div></div>
+      <div class="dbg-bloc"><h4>${t('registreEtat')}</h4><div class="dbg-sr"></div></div>
+      <div class="dbg-bloc"><h4>${t('desassemblage')}</h4><div class="dbg-desasm"></div></div>
+      <div class="dbg-bloc"><h4>${t('pile')}</h4><div class="dbg-pile"></div></div>
+      <div class="dbg-bloc"><h4>${t('memoire')} <label>${t('memoireA')}<input class="dbg-mem-adr" value="${(options.adresseMemoire ?? 0x1000).toString(16).toUpperCase()}" size="7" /></label></h4><div class="dbg-mem"></div></div>
+      <div class="dbg-bloc"><h4>${t('sortieTexte')}</h4><pre class="dbg-sortie"></pre></div>
+      <details class="dbg-bloc dbg-materiel"><summary>${t('materiel')}</summary><div class="dbg-materiel-contenu"></div></details>
     `
     this.regsEl = this.element.querySelector('.dbg-regs')!
     this.srEl = this.element.querySelector('.dbg-sr')!
@@ -137,22 +283,22 @@ export class Debogueur {
     for (let i = 0; i < 8; i++) cells.push(cell(`D${i}`, snap.d[i], !!prev && prev.d[i] !== snap.d[i]))
     for (let i = 0; i < 8; i++) {
       const name = i === 7 ? 'A7/SP' : `A${i}`
-      cells.push(cell(name, snap.a[i], !!prev && prev.a[i] !== snap.a[i], i === 7 ? 'Pointeur de pile actif' : ''))
+      cells.push(cell(name, snap.a[i], !!prev && prev.a[i] !== snap.a[i], i === 7 ? t('pileActive') : ''))
     }
-    cells.push(cell('PC', snap.pc, !!prev && prev.pc !== snap.pc, 'Adresse de la prochaine instruction'))
-    cells.push(cell('USP', snap.usp, !!prev && prev.usp !== snap.usp, 'Pile utilisateur'))
-    cells.push(cell('SSP', snap.ssp, !!prev && prev.ssp !== snap.ssp, 'Pile superviseur'))
+    cells.push(cell('PC', snap.pc, !!prev && prev.pc !== snap.pc, t('prochaineInstruction')))
+    cells.push(cell('USP', snap.usp, !!prev && prev.usp !== snap.usp, t('pileUtilisateur')))
+    cells.push(cell('SSP', snap.ssp, !!prev && prev.ssp !== snap.ssp, t('pileSuperviseur')))
     this.regsEl.innerHTML = cells.join('')
 
     const bits: [string, boolean, string][] = [
-      ['T', (snap.sr & 0x8000) !== 0, 'Trace (pas à pas matériel)'],
-      ['S', snap.supervisor, 'Superviseur (1) ou utilisateur (0)'],
+      ['T', (snap.sr & 0x8000) !== 0, t('bitT')],
+      ['S', snap.supervisor, t('bitS')],
       ['I', false, ''],
-      ['X', snap.flags.x, 'Extension (retenue pour ADDX/SUBX)'],
-      ['N', snap.flags.n, 'Négatif : bit de poids fort du résultat'],
-      ['Z', snap.flags.z, 'Zéro : le résultat vaut 0'],
-      ['V', snap.flags.v, 'Débordement signé (oVerflow)'],
-      ['C', snap.flags.c, 'Retenue (Carry)']
+      ['X', snap.flags.x, t('bitX')],
+      ['N', snap.flags.n, t('bitN')],
+      ['Z', snap.flags.z, t('bitZ')],
+      ['V', snap.flags.v, t('bitV')],
+      ['C', snap.flags.c, t('bitC')]
     ]
     const prevSr = prev?.sr
     this.srEl.innerHTML =
@@ -160,13 +306,17 @@ export class Debogueur {
       bits
         .map(([n, on, title]) =>
           n === 'I'
-            ? `<span class="dbg-flag masque" title="Masque d'interruption">I=${(snap.sr >> 8) & 7}</span>`
+            ? `<span class="dbg-flag masque" title="${t('masque')}">I=${(snap.sr >> 8) & 7}</span>`
             : `<span class="dbg-flag${on ? ' actif' : ''}" title="${title}">${n}</span>`
         )
         .join('') +
-      `<span class="dbg-mode">${snap.supervisor ? 'superviseur' : 'utilisateur'}${snap.stopped ? ' · STOP' : ''}</span>` +
+      `<span class="dbg-mode">${snap.supervisor ? t('superviseur') : t('utilisateur')}${snap.stopped ? ' · STOP' : ''}</span>` +
       `<div class="dbg-temps" title="${this.titreTemps()}">` +
-      `${cpu.cycles.toLocaleString('fr-FR')} cycles · ${(cpu.cycles / (MACHINES[this.machine].cpuHz / 1000)).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} ms · image n° ${Math.floor(cpu.cycles / MACHINES[this.machine].cyclesParImage)}${this.faisceau(cpu)}</div>`
+      `${t('temps', {
+        cycles: nombre(cpu.cycles),
+        ms: nombre(cpu.cycles / (MACHINES[this.machine].cpuHz / 1000), { maximumFractionDigits: 1 }),
+        image: Math.floor(cpu.cycles / MACHINES[this.machine].cyclesParImage)
+      })}${this.faisceau(cpu)}</div>`
 
     const lignesPile: string[] = []
     for (let i = 0; i < 6; i++) {
@@ -186,10 +336,11 @@ export class Debogueur {
 
   private titreTemps(): string {
     const m = MACHINES[this.machine]
-    return (
-      'Approximation : 4 cycles par accès mémoire, plus les calculs longs (MUL, DIV, décalages). ' +
-      `Un ${m.modele} tourne à ${(m.cpuHz / 1e6).toLocaleString('fr-FR', { maximumFractionDigits: 2 })} MHz et affiche 50 images par seconde (${m.cyclesParImage.toLocaleString('fr-FR')} cycles par image).`
-    )
+    return t('titreTemps', {
+      modele: m.modele,
+      mhz: nombre(m.cpuHz / 1e6, { maximumFractionDigits: 2 }),
+      cycles: nombre(m.cyclesParImage)
+    })
   }
 
   /** Amiga : position du faisceau (ligne, position horizontale), comme VHPOSR. */
@@ -197,7 +348,7 @@ export class Debogueur {
     const m = this.machine === 'amiga' ? materielAmiga(cpu) : undefined
     if (!m) return ''
     const { v, h } = m.faisceau()
-    return ` · faisceau : ligne $${v.toString(16).toUpperCase()}, h $${h.toString(16).toUpperCase()}`
+    return t('faisceau', { v: v.toString(16).toUpperCase(), h: h.toString(16).toUpperCase() })
   }
 
   /** Les instructions à partir du PC, telles que le processeur va les lire. */
@@ -229,18 +380,18 @@ export class Debogueur {
       contenu.innerHTML = this.materielAmiga(cpu, cle)
       return
     }
-    const parties: string[] = ['<h5>Vecteurs</h5>']
-    for (const [adresse, nom] of VECTEURS) parties.push(cle(`${hex(adresse, 3)} ${nom}`, hex(mem.readU32(adresse), 6)))
-    parties.push('<h5>Variables système</h5>')
-    parties.push(cle('$466 _frclock (trames)', String(mem.readU32(0x466))))
+    const parties: string[] = [`<h5>${t('vecteurs')}</h5>`]
+    for (const [adresse, nom] of VECTEURS) parties.push(cle(`${hex(adresse, 3)} ${t(nom)}`, hex(mem.readU32(adresse), 6)))
+    parties.push(`<h5>${t('variablesSysteme')}</h5>`)
+    parties.push(cle(t('frclock'), String(mem.readU32(0x466))))
     parties.push(cle('$4BA _hz_200', String(mem.readU32(0x4ba))))
-    parties.push(cle('$44E _v_bas_ad (écran logique)', hex(mem.readU32(0x44e), 6)))
-    parties.push(cle('$FF8201/03 écran affiché', hex((mem.readU8(0xff8201) << 16) | (mem.readU8(0xff8203) << 8), 6)))
+    parties.push(cle(t('vbasad'), hex(mem.readU32(0x44e), 6)))
+    parties.push(cle(t('ecranAffiche'), hex((mem.readU8(0xff8201) << 16) | (mem.readU8(0xff8203) << 8), 6)))
     const m = materielAtari(cpu)
     if (m) {
       parties.push('<h5>MFP 68901 ($FFFA01…)</h5><div class="dbg-grille">')
       for (const [r, nom] of REGISTRES_MFP) parties.push(cle(nom, hex(m.mfp.lire(0xfffa00 + r, cpu.cycles), 2), `$FFFA${r.toString(16).toUpperCase().padStart(2, '0')}`))
-      parties.push('</div><h5>YM2149 (registres 0-13)</h5><div class="dbg-grille">')
+      parties.push(`</div><h5>${t('ym')}</h5><div class="dbg-grille">`)
       for (let r = 0; r < 14; r++) parties.push(cle(`R${r}`, hex(m.psg.etat.registres[r], 2)))
       parties.push('</div>')
     }
@@ -249,32 +400,33 @@ export class Debogueur {
 
   private materielAmiga(cpu: Cpu, cle: (nom: string, valeur: string, titre?: string) => string): string {
     const mem = cpu.memory
-    const parties: string[] = ['<h5>Vecteurs</h5>']
-    for (const [adresse, nom] of VECTEURS_AMIGA) parties.push(cle(`${hex(adresse, 3)} ${nom}`, hex(mem.readU32(adresse), 6)))
+    const parties: string[] = [`<h5>${t('vecteurs')}</h5>`]
+    for (const [adresse, nom] of VECTEURS_AMIGA) parties.push(cle(`${hex(adresse, 3)} ${t(nom)}`, hex(mem.readU32(adresse), 6)))
     const m = materielAmiga(cpu)
     if (!m) return parties.join('')
     const lireLong = (d: number): number => ((m.regs[d >> 1] << 16) | m.regs[(d >> 1) + 1]) >>> 0
     const bits = (v: number, noms: string[]): string => noms.filter((n, i) => v & (1 << i)).join(' ') || '—'
-    parties.push('<h5>DMA et interruptions</h5>')
+    parties.push(`<h5>${t('dmaInterruptions')}</h5>`)
     parties.push(cle('DMACON', hex(m.dmacon(), 4), bits(m.dmacon(), BITS_DMA)))
     parties.push(cle('INTENA', hex(m.intena(), 4), bits(m.intena(), BITS_INT)))
     parties.push(cle('INTREQ', hex(m.intreq(), 4), bits(m.intreq(), BITS_INT)))
-    parties.push(cle('COP1LC', hex(lireLong(R.COP1LCH), 6), 'Liste Copper relue à chaque image'))
-    parties.push(cle('Blitter', m.blitterOccupe() ? 'occupé' : 'libre'))
-    parties.push('<h5>Affichage</h5><div class="dbg-grille">')
+    parties.push(cle('COP1LC', hex(lireLong(R.COP1LCH), 6), t('listeCopper')))
+    parties.push(cle('Blitter', m.blitterOccupe() ? t('occupe') : t('libre')))
+    parties.push(`<h5>${t('affichage')}</h5><div class="dbg-grille">`)
     for (const d of REGISTRES_AMIGA) parties.push(cle(nomRegistre(d), hex(m.regs[d >> 1], 4), `$DFF${d.toString(16).toUpperCase().padStart(3, '0')}`))
-    parties.push('</div><h5>Couleurs (COLOR00 à COLOR31)</h5><div class="dbg-couleurs">')
+    parties.push(`</div><h5>${t('couleurs')}</h5><div class="dbg-couleurs">`)
     for (let i = 0; i < 32; i++) {
       const c = m.regs[(R.COLOR00 >> 1) + i] & 0xfff
       parties.push(`<span class="dbg-couleur" style="background:#${c.toString(16).padStart(3, '0')}" title="COLOR${String(i).padStart(2, '0')} = ${hex(c, 3)}"></span>`)
     }
-    const timers = (nom: string, t: { ta: number; tb: number; taMarche: boolean; tbMarche: boolean }): string =>
+    const timers = (nom: string, e: { ta: number; tb: number; taMarche: boolean; tbMarche: boolean }): string =>
       `<h5>${nom}</h5><div class="dbg-grille">` +
-      cle('Timer A', hex(t.ta, 4), t.taMarche ? 'en marche' : 'arrêté') +
-      cle('Timer B', hex(t.tb, 4), t.tbMarche ? 'en marche' : 'arrêté') +
+      cle('Timer A', hex(e.ta, 4), e.taMarche ? t('enMarche') : t('arrete')) +
+      cle('Timer B', hex(e.tb, 4), e.tbMarche ? t('enMarche') : t('arrete')) +
       '</div>'
     parties.push('</div>', timers('CIA-A ($BFE001)', m.ciaA.etatTimers()), timers('CIA-B ($BFD000)', m.ciaB.etatTimers()))
-    if (m.alertes.length) parties.push('<h5>Remarques</h5>' + m.alertes.map((a) => `<p class="dbg-alerte">⚠ ${a.replace(/</g, '&lt;')}</p>`).join(''))
+    if (m.alertes.length) parties.push(`<h5>${t('remarques')}</h5>` +
+ m.alertes.map((a) => `<p class="dbg-alerte">⚠ ${a.replace(/</g, '&lt;')}</p>`).join(''))
     return parties.join('')
   }
 

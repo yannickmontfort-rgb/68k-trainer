@@ -5,6 +5,24 @@ import { materielAtari } from '../../../platforms/atari-st/materiel'
 import { CODE_PC, toucheSt } from '../../../platforms/atari-st/clavier'
 import { JOY } from '../../../platforms/atari-st/ikbd'
 import { activerSon, sonActif } from './son'
+import { traducteur } from '../langue'
+
+const t = traducteur({
+  fr: {
+    ecranTitre: 'Écran Atari ST simulé (basse résolution 320 × 200). Clique dessus pour taper au clavier du ST.',
+    joystickTitre: 'Les flèches et Espace pilotent le joystick 1 au lieu du clavier (une manette branchée sur le PC marche toujours)',
+    joystick: '🕹 Flèches + Espace = joystick',
+    sonTitre: 'Le son de la puce YM2149, en mode Temps réel',
+    son: '🔊 Son'
+  },
+  en: {
+    ecranTitre: 'Simulated Atari ST screen (low resolution, 320 × 200). Click it to type on the ST keyboard.',
+    joystickTitre: 'The arrow keys and Space drive joystick 1 instead of the keyboard (a gamepad plugged into the PC always works)',
+    joystick: '🕹 Arrows + Space = joystick',
+    sonTitre: 'The sound of the YM2149 chip, in Real time mode',
+    son: '🔊 Sound'
+  }
+})
 
 /** Touches du PC qui pilotent le joystick 1 en mode joystick. */
 const JOY_PC: Record<string, number> = {
@@ -39,18 +57,19 @@ export class EcranAtari {
     this.canvas.height = SCREEN_HEIGHT
     this.canvas.className = 'ecran-atari'
     this.canvas.tabIndex = 0
-    this.canvas.title = 'Écran Atari ST simulé (basse résolution 320 × 200). Clique dessus pour taper au clavier du ST.'
+    this.canvas.title = t('ecranTitre')
     this.ctx = this.canvas.getContext('2d')!
     this.image = this.ctx.createImageData(SCREEN_WIDTH, SCREEN_HEIGHT)
     const options = document.createElement('label')
     options.className = 'ecran-options'
-    options.title = 'Les flèches et Espace pilotent le joystick 1 au lieu du clavier (une manette branchée sur le PC marche toujours)'
-    options.innerHTML = '<input type="checkbox" /> 🕹 Flèches + Espace = joystick'
+    options.title = t('joystickTitre')
+    options.innerHTML = `<input type="checkbox" /> ${t('joystick')}`
     this.modeJoystick = options.querySelector('input')!
     const son = document.createElement('label')
     son.className = 'ecran-options'
-    son.title = 'Le son de la puce YM2149, en mode Temps réel'
-    son.innerHTML = '<input type="checkbox" /> 🔊 Son'
+    son.title = t('sonTitre')
+    son.innerHTML = `<input type="checkbox" /> ${t('son')}`
+
     const caseSon = son.querySelector('input')!
     caseSon.checked = sonActif()
     caseSon.addEventListener('change', () => activerSon(caseSon.checked))
