@@ -1,0 +1,223 @@
+{
+  "titre": "The screen and the custom chips",
+  "resume": "The Agnus, Denise and Paula chips are controlled through registers stored starting at `$DFF000`, some of which follow the bit 15 rule. To use them without the system undoing everything, you take over from it, then give control back exactly as it was. You can then build your own screen, made of bitplanes in Chip RAM that the Copper presents on every frame. Matches chapter 3 of the Amiga manual (its skeleton is corrected: see the errata).",
+  "notions": {
+    "amiga-ch05-n0": { "titre": "Review of chapters 3 and 4" },
+    "amiga-ch05-n1": { "titre": "The chip registers" },
+    "amiga-ch05-n2": { "titre": "Taking over, and giving control back" },
+    "amiga-ch05-n3": { "titre": "Bitplanes" },
+    "amiga-ch05-n4": { "titre": "Several planes, more colors" }
+  },
+  "contenus": {
+    "amiga-ch05-rappel": {
+      "titre": "What you already know",
+      "introduction": "Three questions on the previous chapters, without rereading the lessons. Getting it wrong here does not matter: searching is what makes it stick.",
+      "questions": {
+        "q1": { "enonce": "What is D7, the address of the block?", "choix": ["$00040000, in Chip RAM", "$00C00000, in Slow RAM", "$00000000: the request is refused"], "explication": "Type $10002 asks for Chip RAM filled with zeros, and in 68k Trainer free Chip RAM starts at $40000." },
+        "q2": { "enonce": "If the program gave FreeMem 200 instead of 400…", "choix": ["it would stop on FreeMem, where a real Amiga would show a Guru Meditation", "exec would take back half of the block", "nothing would change"], "explication": "FreeMem wants exactly the size asked of AllocMem, because any other size damages the free memory lists." },
+        "q3": { "enonce": "What is D6, the number of bytes written?", "explication": "The loop runs 100 times, from 99 down to −1, and each `(A0)+` in `.L` moves A0 forward by 4 bytes: 400, that is $190." }
+      }
+    },
+    "amiga-ch05-cours-puces": {
+      "titre": "Agnus, Denise, Paula and their registers",
+      "source": "Written for 68k Trainer from Amiga Intern (Abacus, ch. 1 and 11) and La Bible de l'Amiga"
+    },
+    "amiga-ch05-ex-raster": {
+      "titre": "A red band as the beam goes by",
+      "introduction": "The 68000 watches the beam position and changes the background color at the right moment, on every frame: click Real time, then click on the screen to stop.",
+      "explications": {
+        "2": "A5 = `$DFF000`, and every chip register is now at an offset from A5.",
+        "4": "The high byte of VHPOSR (`$DFF006`) gives the line the beam is drawing, and you loop until line `$80`.",
+        "6": "COLOR00, the background color, turns red, and the rest of the image stays red until the next change.",
+        "8": "You wait for line `$90`, 16 lines further down.",
+        "10": "The Workbench blue comes back, so the band is 16 lines tall.",
+        "11": "Bit 6 of the byte at `$BFE001`, in CIA-A, goes to 0 when the left mouse button is pressed.",
+        "12": "Without a click, you wait for line `$80` of the next frame, at the start of which the system's Copper has set the background back to blue."
+      },
+      "conclusion": "Changing a register at a precise moment of the scan is the principle behind every Amiga effect, and the Copper will do it without tying up the 68000."
+    },
+    "amiga-ch05-pred-setclr": {
+      "titre": "Set to 1, clear to 0",
+      "introduction": "In 68k Trainer, the system turns on the DMAEN, BPLEN, COPEN, BLTEN and SPREN channels (`DMACONR` = `$03E0`), and the program touches the Blitter bit.",
+      "questions": {
+        "q1": { "enonce": "What is D0?", "explication": "With bit 15 at 0, the bits set to 1 in the word written ($0040) become 0 and the others do not move: $03E0 without $0040 gives $03A0." },
+        "q2": { "enonce": "And D1?", "explication": "With bit 15 at 1, bit 6 goes back to 1; DMACONR never shows bit 15, which only exists when writing." }
+      }
+    },
+    "amiga-ch05-exo-verte": {
+      "titre": "The green band",
+      "enonce": "This program must display a green band from line `$A0` to line `$B0`, until the click: fill in the starting line and the color.",
+      "indices": ["`CMP.B #$A0,$06(A5)` waits for line `$A0`.", "Bright green is written `$00F0`: no red, green at its maximum, no blue."]
+    },
+    "amiga-ch05-exo-fin-bande": {
+      "titre": "The band that overflows",
+      "enonce": "The yellow band should be 8 lines tall, from `$70` to `$78`, but the whole bottom of the screen turns yellow: fix the program.",
+      "indices": ["What does the program do when the beam reaches line `$78`?", "At the end of the band, you must put the Workbench blue, `$005A`, back."]
+    },
+    "amiga-ch05-exo-deux-bandes": {
+      "titre": "Two bands",
+      "enonce": "On every frame, until the left click, display a red band (`$F00`) from line `$60` to `$68`, then a yellow band (`$FF0`) from `$C0` to `$C8`, the rest of the background keeping the Workbench blue (`$05A`).",
+      "indices": ["Four line waits follow one another in the same loop: $60, $68, $C0, $C8.", "After the last one, test the button (`BTST #6,$BFE001`) and loop back with `BNE`."]
+    },
+    "amiga-ch05-cours-prendre": {
+      "titre": "Shutting the system down cleanly, and restoring it",
+      "source": "Written for 68k Trainer from Amiga Intern (Abacus), demo startups (Stash of Code) and the Amiga manual (ch. 5, corrected)"
+    },
+    "amiga-ch05-ex-prendre": {
+      "titre": "The complete skeleton",
+      "introduction": "Here is the core of `amiga-systeme.s`, which also handles the vector table of the 68010 and later (see chapter 6): the program takes over, displays its copper list, orange at the top and midnight blue at the bottom, then gives everything back on a click. Step through `prendre`, then click Real time and click on the screen.",
+      "explications": {
+        "3": "After `prendre`, nothing of the system runs any more, the screen, the interrupts and the DMA are off, and A5 = `$DFF000`.",
+        "4": "COP1LC (`$DFF080`) receives the address of our copper list, a long word that fills COP1LCH and COP1LCL in one go.",
+        "5": "Writing any value to COPJMP1 (`$DFF088`) makes the Copper jump to the start of the list.",
+        "6": "You turn back on just what is needed: `$8000` (SET) + DMAEN (`$0200`) + COPEN (`$0080`).",
+        "17": "You open graphics.library, which you will have to ask to let go of the screen, and whose copper list you will take back at the end.",
+        "20": "gb_ActiView, 34 bytes after the base, is the view the system is displaying, and you note it to put it back.",
+        "22": "After LoadView(0), graphics no longer displays anything.",
+        "23": "The two WaitTOF calls wait for the end of the current frame, and of the next one for interlaced screens.",
+        "25": "After OwnBlitter then WaitBlit, the Blitter is ours and it has finished the system's work.",
+        "28": "Forbid stops the other tasks while you use the chips.",
+        "30": "You note the state of the chips, to restore it exactly as it was.",
+        "33": "You also note the level 3 interrupt vector (VBL, Copper, Blitter), in case you put your own routine there.",
+        "34": "`$7FFF` with bit 15 at 0 clears all the bits: no more interrupts, no more requests, no more DMA.",
+        "49": "To give control back, you write the system's copper list, gb_copinit (38 bytes after the base of graphics), to COP1LC, then you write to COPJMP1.",
+        "55": "You add `$8000` to the saved value, otherwise you would turn the channels off instead of turning them back on.",
+        "58": "For INTENA, you also add INTEN (`$4000`), the master interrupt switch.",
+        "61": "LoadView of the old view makes the Workbench reappear.",
+        "66": "Permit, then closing graphics.library: the final report shows nothing, the system has been given back."
+      },
+      "conclusion": "Taking over means noting the state of the system then cutting everything; giving control back means cutting everything again then putting back exactly what you noted, bit 15 included."
+    },
+    "amiga-ch05-pred-bit15": {
+      "titre": "The bit 15 trap",
+      "introduction": "The program saves DMACONR then writes it back to DMACON, first as it is, then with bit 15.",
+      "questions": {
+        "q1": { "enonce": "What is D0 (after writing without bit 15)?", "choix": ["$00000000: everything is off", "$000003E0: nothing has changed", "$000083E0"], "explication": "With bit 15 at 0, the bits set to 1 in the word written become 0: you have turned off exactly the channels you wanted to turn back on." },
+        "q2": { "enonce": "And D1 (with `OR.W #$8000`)?", "explication": "With bit 15 at 1, the same bits go back to 1 and the system gets its channels back." }
+      }
+    },
+    "amiga-ch05-exo-copinit": {
+      "titre": "Putting the system's list back",
+      "enonce": "This program takes over in its own way (Forbid, DMA off, its own copper list), then gives control back on a click, but it puts a wrong address in COP1LC and the final report says so. Fill in the offset of gb_copinit in GfxBase.",
+      "indices": ["The base of graphics is in A4.", "gb_copinit is at 38 bytes: `MOVE.L 38(A4),$80(A5)`."]
+    },
+    "amiga-ch05-exo-bit15": {
+      "titre": "The screen that stayed black",
+      "enonce": "After the click, the Workbench screen should come back, but it stays black and the final report shows a DMA problem: fix it by adding one instruction.",
+      "indices": ["What does writing a value whose bit 15 is 0 to DMACON do?", "`OR.W #$8000,D7` before `MOVE.W D7,$96(A5)`."]
+    },
+    "amiga-ch05-exo-orange": {
+      "titre": "Your first screen",
+      "enonce": "With `prendre` and `rendre`, whose file is already included, display an entirely orange screen (`$F80`) until the left click, using your own copper list.",
+      "indices": ["The list: `DC.W $0100,$0200` (no plane), `DC.W $0180,$0F80`, then the end, `DC.W $FFFF,$FFFE`.", "After `prendre`: the address of the list in COP1LC (`$80(A5)`), a word in COPJMP1 (`$88(A5)`), then `MOVE.W #$8280,$96(A5)`."]
+    },
+    "amiga-ch05-cours-plans": {
+      "titre": "Bitplanes, window and pointers",
+      "source": "Written for 68k Trainer from Amiga Intern (Abacus, ch. 11) and the Hardware Reference Manual"
+    },
+    "amiga-ch05-ex-plan": {
+      "titre": "A one-plane screen",
+      "introduction": "A 320 × 256 screen in two colors, with a horizontal line and a diagonal: read the copper list at the end of the program, then click Real time and click to finish.",
+      "explications": {
+        "3": "A0 points to the plane, 10,240 bytes reserved in Chip RAM (`SECTION ecran,BSS_C`) and filled with zeros.",
+        "6": "The low half of the address goes into the MOVE to BPL1PTL in the copper list, 6 bytes after `cop_plans`…",
+        "8": "… and the high half, after SWAP, into the MOVE to BPL1PTH, which the Copper will execute on every frame.",
+        "9": "Line 128 starts 128 × 40 bytes after the start of the plane.",
+        "12": "Ten long words of bits set to 1 switch the 320 pixels of the line to color 1.",
+        "17": "The pixel's byte is at y × 40 + x ÷ 8.",
+        "22": "The bit, 7 − (x mod 8), comes directly from `NOT.B`, because BSET only keeps the 3 low bits of the number.",
+        "23": "BSET sets the pixel's bit, without touching the other 7 pixels of the byte.",
+        "29": "DMACON receives SET + DMAEN + BPLEN + COPEN: the bitplanes are read and the Copper sets up the screen."
+      },
+      "conclusion": "An Amiga screen is a plane in Chip RAM and a copper list that sets the window, the palette, BPLCON0 and the pointers, and all the 68000 has left to do is draw in the plane."
+    },
+    "amiga-ch05-pred-pixel": {
+      "titre": "Where is pixel (100, 10)?",
+      "introduction": "The program computes the address of a pixel in a plane with 40 bytes per line.",
+      "questions": {
+        "q1": { "enonce": "What is D1 (the byte, counted from the start of the plane)?", "explication": "10 × 40 + 100 ÷ 8 = 400 + 12 = 412, that is $19C." },
+        "q2": { "enonce": "And D3 (the bit number)?", "explication": "100 mod 8 = 4, and 7 − 4 = 3, since the leftmost pixel of the byte is bit 7." }
+      }
+    },
+    "amiga-ch05-exo-un-plan": {
+      "titre": "The invisible plane",
+      "enonce": "The program draws 16 white pixels at the start of line 20 and sets up the whole screen, but the screen stays black, because BPLCON0 declares no plane in the copper list: fix its value for one plane.",
+      "indices": ["The number of planes goes in bits 14-12 of BPLCON0; bit 9 (`$0200`) stays at 1.", "One plane: `$1200`."]
+    },
+    "amiga-ch05-exo-ordonner": {
+      "titre": "Setting a pixel",
+      "enonce": "D0 holds x = 203 and D1 holds y = 50: put back in order the seven lines that compute the byte and the bit of this pixel, then set it to white.",
+      "indices": ["Each register must receive its value before being transformed, and `BSET` comes last, once the byte and the bit are ready.", "The byte: y × 40 in D1, x ÷ 8 in D2, then their sum in D1. The bit: a copy of x in D3, then `NOT.B`."],
+      "lignes": ["    MOVE.W  D0,D2", "    LSR.W   #3,D2           ; x ÷ 8", "    MULU    #40,D1          ; y × 40", "    ADD.W   D2,D1           ; the byte", "    MOVE.W  D0,D3", "    NOT.B   D3              ; the bit", "    BSET    D3,0(A0,D1.W)"]
+    },
+    "amiga-ch05-exo-horizontale": {
+      "titre": "A horizontal line",
+      "enonce": "The screen, the copper list, `prendre` and `rendre` are ready: draw a white line across the whole width of the screen, at y = 100.",
+      "indices": ["Line 100 starts 100 × 40 bytes after the start of the plane: `LEA 100*40(A0),A1`.", "You need 40 bytes at `$FF`: a `MOVE.B #$FF,(A1)+` / `DBF` loop of 40 iterations."]
+    },
+    "amiga-ch05-exo-diagonale": {
+      "titre": "The diagonal",
+      "enonce": "Draw the 100 pixels (0, 0), (1, 1)… (99, 99) in white.",
+      "indices": ["A loop on D0, from 0 to 99, where x = y = D0 for each point.", "The byte: `MULU #40` of y, plus x ÷ 8 (`LSR.W #3`). The bit: `NOT.B` of x, then `BSET Dn,0(A0,D1.W)`."]
+    },
+    "amiga-ch05-cours-couleurs": {
+      "titre": "Stacking the planes: 2, 4… 32 colors",
+      "source": "Written for 68k Trainer from Amiga Intern (Abacus, ch. 11) and La Bible de l'Amiga"
+    },
+    "amiga-ch05-ex-bandes": {
+      "titre": "Four bands, two planes",
+      "introduction": "Two planes give four colors, black, red, green and blue, and each 80-pixel band shows one color number, from 0 to 3: put the address of `plan1`, then of `plan2`, into the Memory view to see their bits.",
+      "explications": {
+        "7": "Plane 1 goes into the copper list (BPL1PT)…",
+        "11": "… and plane 2 (BPL2PT, `$0E4`) 8 bytes further on.",
+        "18": "In plane 1, you set the bits from x = 80 to 159 (bytes 10 to 19)…",
+        "19": "… and from x = 240 to 319 (bytes 30 to 39), because the bands of color 1 and 3 have bit 0 set to 1.",
+        "23": "In plane 2, you set the bits from x = 160 to 319, because the bands of color 2 and 3 have bit 1 set to 1.",
+        "25": "Each plane moves forward by 40 bytes to go to the next line."
+      },
+      "conclusion": "A pixel's color is its number written in binary across the planes, plane 1 giving bit 0, and the COLORxx registers say which shade goes with each number."
+    },
+    "amiga-ch05-pred-couleur": {
+      "titre": "Which color number?",
+      "introduction": "A pixel has its bit at 1 in planes 1 and 3, and at 0 in plane 2.",
+      "questions": {
+        "q1": { "enonce": "What is its color number (D0)?", "explication": "Plane 1 gives bit 0, worth 1, and plane 3 bit 2, worth 4: 1 + 4 = 5." },
+        "q2": { "enonce": "Which register gives its shade (D1)?", "explication": "The color registers are words: $DFF180 + 2 × 5 = $DFF18A." }
+      }
+    },
+    "amiga-ch05-exo-carre2": {
+      "titre": "A green square",
+      "enonce": "The screen has two planes, with color 1 red, color 2 green and color 3 blue: draw a 32 × 32 square in color 2, whose top left corner is at (64, 64).",
+      "indices": ["Color 2 only has bit 1: you only write in plane 2.", "The corner: `LEA 64*40+64/8(A1),A2`; 32 lines of `MOVE.L #$FFFFFFFF,(A2)` 40 bytes apart."]
+    },
+    "amiga-ch05-exo-bandes-inverse": {
+      "titre": "The bands in reverse",
+      "enonce": "Here is the four-band program from the example, black, red, green and blue from left to right. Change it so that the bands appear in reverse order, blue on the left then green, red and black, without touching the copper list.",
+      "indices": ["The palette does not change: it is the bands' color numbers that are reversed, the first one becoming color 3 and the last one color 0.", "Plane 1 carries colors 1 and 3, that is bytes 0 to 9 and 20 to 29; plane 2 colors 2 and 3, that is bytes 0 to 19. Change the offsets 10, 30 and 20 accordingly."]
+    },
+    "amiga-ch05-exo-carre3": {
+      "titre": "The square that is not blue",
+      "enonce": "This program must draw a 16 × 16 square in color 3 (blue) at (16, 40), but it appears red: fix it.",
+      "indices": ["Red is color 1: only the bit in plane 1 is set.", "Color 3 needs the bit in plane 1 and the one in plane 2: also draw in `plan2`."]
+    },
+    "amiga-ch05-bonus-drapeau": {
+      "titre": "The French flag",
+      "enonce": "Draw the French flag over the whole screen, in two planes: blue from x = 0 to 105 (color 1), white from 106 to 213 (color 2), red from 214 to 319 (color 3). The palette and the copper list are ready.",
+      "indices": ["Each band decides which planes to fill: plane 1 for blue, plane 2 for white, both for red.", "The 106 boundary does not fall on a whole byte: prepare a model line of 40 bytes per plane (with `DCB.B`), handling separately the two bytes that contain a boundary, then copy it 256 times."]
+    }
+  },
+  "qcm": {
+    "q1": { "enonce": "Which chip handles the Copper, the Blitter and DMA accesses?", "explication": "Agnus is the conductor, while Denise displays and Paula handles sound and interrupts." },
+    "q2": { "enonce": "What does `MOVE.W #$8100,$DFF096` do?", "choix": ["It turns on bitplane DMA, without touching the rest", "It turns off everything except the planes", "It writes $8100 to DMACONR"], "explication": "Bit 15 at 1 (SET) and bit 8 (BPLEN): only that bit becomes 1." },
+    "q3": { "enonce": "Why read DMACONR rather than DMACON?", "choix": ["DMACON is write-only", "DMACONR is faster", "DMACON does not exist"], "explication": "A write-only register cannot be read back, and it is its read twin that gives the state." },
+    "q11": { "enonce": "To reserve a bitplane with AllocMem, which type must you ask for?", "explication": "The chips only read Chip RAM, and a plane stored elsewhere would display garbage." },
+    "q4": { "enonce": "How many colors can the Amiga choose from (OCS palette)?", "explication": "Each component has 4 bits: 16 × 16 × 16 = 4096." },
+    "q5": { "enonce": "To give control back, what do you write to COP1LC?", "choix": ["gb_copinit, the address of the system's copper list (38 bytes after the base of graphics)", "0", "The address of our list"], "explication": "The Copper then starts again on the system's list." },
+    "q6": { "enonce": "You saved DMACONR in D7. To restore it, you write to DMACON…", "choix": ["D7 with bit 15 at 1 (OR.W #$8000)", "D7 as it is", "D7 with bit 15 at 0"], "explication": "Without bit 15, you would turn off the system's channels." },
+    "q7": { "enonce": "How many bytes is one line of a 320-pixel plane?", "explication": "One bit per pixel: 320 ÷ 8 = 40." },
+    "q12": { "enonce": "What does `LSR.W #3,D2` do when D2 is 100?", "choix": ["D2 = 12, the quotient of 100 by 8", "D2 = 800", "D2 = 97"], "explication": "Shifting 3 bits to the right divides by 2³ = 8, unsigned, without keeping the remainder: 100 ÷ 8 = 12." },
+    "q8": { "enonce": "What does the instruction below put in BPLCON0?", "choix": ["3 planes, that is 8 colors", "2 planes", "32 planes"], "explication": "Bits 14-12 of $3200 are 3: three planes, that is 2³ = 8 colors." },
+    "q9": { "enonce": "Why does the copper list reset BPL1PT on every frame?", "choix": ["Because Agnus moves this pointer forward during the display", "Because the system clears it", "It is not necessary"], "explication": "At the end of the image, the pointer is at the end of the plane, and it must be put back at the start." },
+    "q10": { "enonce": "A pixel has its bit at 1 in plane 2 only: its color is…", "explication": "Plane 2 gives bit 1, hence number 2." }
+  }
+}

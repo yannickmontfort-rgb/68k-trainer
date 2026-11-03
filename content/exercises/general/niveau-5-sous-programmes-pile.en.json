@@ -1,0 +1,62 @@
+{
+  "level": 5,
+  "title": "Subroutines and the stack",
+  "exercises": [
+    {
+      "id": "general-l5-e1",
+      "title": "First subroutine",
+      "statement": "D0 is 7 (already loaded). Write a subroutine DOUBLE that doubles the value of D0, then call it once with BSR.",
+      "hints": [
+        "BSR label jumps to the subroutine, saving the return address on the stack.",
+        "RTS pops that address and returns to it; without it, execution would carry on into the void after the end of the subroutine.",
+        "Doubling a value means adding it to itself."
+      ],
+      "courseRef": "pile-et-sous-programmes.md",
+      "starterCode": "    ORG $1000\nSTART:\n    MOVEQ   #7,D0\n    BSR     DOUBLE\n    BRA     FIN\nDOUBLE:\n\nFIN:\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 8,
+        "expected": {
+          "D0": "$0000000E"
+        }
+      }
+    },
+    {
+      "id": "general-l5-e2",
+      "title": "Saving a register on the stack",
+      "statement": "D1 is `$12345678` before the call. The subroutine MODIFIE needs to use D1 as a work register: write it so that it saves D1 on the stack on entry and restores it on exit, so that D1 gets its original value back once the call is over.",
+      "hints": [
+        "MOVE.L D1,-(SP) pushes D1; MOVE.L (SP)+,D1 restores it. Do this at the very start and the very end of the subroutine.",
+        "In between, D1 can be used freely for any internal calculation: it will not affect its value after it is restored."
+      ],
+      "courseRef": "pile-et-sous-programmes.md",
+      "starterCode": "    ORG $1000\nSTART:\n    MOVE.L  #$12345678,D1\n    BSR     MODIFIE\n    BRA     FIN\nMODIFIE:\n\nFIN:\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 10,
+        "expected": {
+          "D1": "$12345678"
+        }
+      }
+    },
+    {
+      "id": "general-l5-e3",
+      "title": "Passing parameters on the stack",
+      "statement": "The starting code pushes two words (10, then 20) before calling ADDITIONNE. Write this subroutine so that it reads the two values directly from the stack (without popping them) and puts their sum in D0. Cleaning up the stack after the call is already provided.",
+      "hints": [
+        "Just after the BSR, the top of the stack (A7) holds the return address (4 bytes); the parameters pushed by the caller are just above it.",
+        "MOVE.W 4(A7),D0 reads the last word pushed (20, the closest to the return address); 6(A7) reads the word pushed just before it (10).",
+        "No need to copy A7 into another register here: reading with a displacement does not change A7."
+      ],
+      "courseRef": "pile-et-sous-programmes.md",
+      "starterCode": "    ORG $1000\nSTART:\n    MOVE.W  #10,-(SP)\n    MOVE.W  #20,-(SP)\n    BSR     ADDITIONNE\n    ADDA.L  #4,SP\n    BRA     FIN\nADDITIONNE:\n\nFIN:\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 10,
+        "expected": {
+          "D0": "$0000001E"
+        }
+      }
+    }
+  ]
+}

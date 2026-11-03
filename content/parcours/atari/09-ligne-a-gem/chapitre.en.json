@@ -1,0 +1,121 @@
+{
+  "titre": "Line A and GEM",
+  "resume": "TOS offers the programmer its graphics primitives through Line A, a 68000 exception mechanism, and its graphical interface through GEM, which you call with TRAP #2. You set pixels, draw lines in the four write modes, then open your first alert box and react to the button clicked.",
+  "notions": {
+    "atari-ch09-n0": { "titre": "Review of chapters 5 and 8" },
+    "atari-ch09-n1": { "titre": "Line A" },
+    "atari-ch09-n2": { "titre": "GEM" }
+  },
+  "contenus": {
+    "atari-ch09-rappel": {
+      "titre": "What you already know",
+      "introduction": "Three questions on the previous chapters, without rereading the lessons. Getting it wrong here does not matter: searching is what makes it stick.",
+      "questions": {
+        "q1": { "enonce": "What is D1 at the end?", "explication": "The program reads the two words of the DATA section, 30 and 12, and adds them." },
+        "q2": { "enonce": "What does RESULTAT, in the BSS section, contain when the program starts?", "choix": ["0, because TOS sets the BSS section to zero", "anything, whatever was left in memory", "42, the computed value"], "explication": "The BSS section takes no room in the file: TOS reserves it and fills it with zeros at load time." },
+        "q3": { "enonce": "What is D2, the offset of the 16-pixel group that contains X = 160?", "explication": "160 ÷ 16 = 10 groups, 8 bytes each in low resolution: 80 bytes." }
+      }
+    },
+    "atari-ch09-cours-lignea": {
+      "titre": "Pixels and lines with Line A",
+      "source": "Written for 68k Trainer from the Féroce Lapin course (volume 2), Atari's Line-A documentation and the EmuTOS source code (vdi_line.c, lineavars.S)"
+    },
+    "atari-ch09-ex-lignea": {
+      "titre": "A pixel and a line",
+      "introduction": "Go step by step and watch the screen, on the right: a dot appears in the middle, then a diagonal crosses it.",
+      "explications": {
+        "2": "The 68000 handled `$A000` as an exception, and TOS returned in A0 the address of the Line A variables, `$0E80` in the simulator.",
+        "3": "A5 keeps that address, which the following calls could wipe out of A0.",
+        "5": "The first word of INTIN receives the color of the pixel, 1.",
+        "8": "PTSIN now holds the coordinates, x = 160 then y = 100.",
+        "9": "`$A001` sets the pixel (160, 100) in color 1, a red dot in the middle of the screen.",
+        "13": "Color 3 is written `%0011`, and only planes 0 and 1 receive a 1.",
+        "14": "The pattern `$FFFF` gives a solid line.",
+        "15": "Mode 0, replace, draws the color where the pattern is 1.",
+        "19": "The ends are in place, from (10, 10) to (300, 190).",
+        "20": "`$A003` draws the diagonal in color 3, which passes very close to the red dot."
+      },
+      "conclusion": "You prepare the Line A variables, then call the function: that is the pattern of every call."
+    },
+    "atari-ch09-pred-lignea": {
+      "titre": "Reading a pixel back",
+      "introduction": "The program sets a pixel in color 6, then reads back that pixel and its right-hand neighbor with `$A002`.",
+      "questions": {
+        "q1": { "enonce": "What is D3, the color of the pixel (20, 30)?", "explication": "`$A002` returns in D0 the color of the pixel, the one `$A001` has just put there." },
+        "q2": { "enonce": "And D4, the color of the pixel (21, 30)?", "explication": "Only the pixel (20, 30) was set: its neighbor keeps the background color." }
+      }
+    },
+    "atari-ch09-exo-pixel": {
+      "titre": "A pixel in color 2",
+      "enonce": "Fill in the program so that it sets the pixel (100, 50) in color 2.",
+      "indices": ["The coordinates go into the array whose address is at 12(A5).", "`MOVEA.L 12(A5),A1`, then x at (A1) and y at 2(A1)."]
+    },
+    "atari-ch09-exo-ordonner": {
+      "titre": "Copying a color",
+      "enonce": "The pixel (50, 60) is color 7. Put the lines back in order to read its color and set its right-hand neighbor, (51, 60), to the same color.",
+      "indices": ["You can only copy the color after reading it with `$A002`.", "The color goes into INTIN, and x + 1 into PTSIN, before `$A001`."],
+      "lignes": ["    MOVEA.L 12(A5),A1       ; PTSIN", "    MOVE.W  #50,(A1)", "    MOVE.W  #60,2(A1)", "    DC.W    $A002           ; D0 = color of the pixel (50, 60)", "    MOVEA.L 8(A5),A1        ; INTIN", "    MOVE.W  D0,(A1)         ; the same color", "    MOVEA.L 12(A5),A1", "    ADDQ.W  #1,(A1)         ; x + 1", "    DC.W    $A001"]
+    },
+    "atari-ch09-exo-cadre": {
+      "titre": "A frame",
+      "enonce": "Draw in color 1 the frame whose corners are (20, 20) and (299, 179).",
+      "indices": ["A frame is four lines: you only need to change X1, Y1, X2 and Y2 before each `$A003`.", "The color, the pattern and the mode stay in place from one line to the next."]
+    },
+    "atari-ch09-exo-eventail": {
+      "titre": "A fan",
+      "enonce": "Draw in color 5 the eight lines that go from the center of the screen, (160, 100), to the eight points stored in the BOUTS table.",
+      "indices": ["A loop of eight passes, with a pointer that moves through the table.", "`MOVE.L (A4)+,42(A5)` stores X2 and Y2 in one go and moves on to the next point."]
+    },
+    "atari-ch09-cours-gem": {
+      "titre": "The AES and the alert box",
+      "source": "Written for 68k Trainer from the Féroce Lapin course (volume 2, lessons 8 and 9) and Atari's GEM documentation; values checked in EmuTOS"
+    },
+    "atari-ch09-ex-gem": {
+      "titre": "An alert box",
+      "introduction": "A first GEM program: it announces itself, displays an alert box, then hands control back. The box is displayed in the text output, on the right.",
+      "explications": {
+        "6": "CONTROL describes the call to appl_init: function 10, no integer in input, one in output, no address.",
+        "7": "The AES subroutine puts the address of the parameter block in D1 and `$C8` in D0, then calls `TRAP #2`.",
+        "15": "form_alert displays the box and waits for a click; the chosen button comes back in INT_OUT.",
+        "16": "D7 keeps the number of the button clicked, 1 for OK.",
+        "21": "appl_exit hands control back to GEM before the end of the program."
+      },
+      "conclusion": "Every call to the AES follows the same path: you fill in CONTROL and the input arrays, call `TRAP #2`, then read INT_OUT."
+    },
+    "atari-ch09-pred-gem": {
+      "titre": "Yes or no",
+      "introduction": "The alert box asks \"On continue ?\" (shall we go on?). In this run, the user clicks Non (no).",
+      "questions": {
+        "q1": { "enonce": "Which number does form_alert store in INT_OUT?", "explication": "Buttons are counted from 1: Oui is button 1, Non button 2." },
+        "q2": { "enonce": "What is the last line displayed?", "choix": ["On continue.", "On arrete.", "nothing"], "explication": "INT_OUT is 2, the `BEQ` jumps to `.non`, and the program displays \"On arrete.\"." }
+      }
+    },
+    "atari-ch09-exo-alerte": {
+      "titre": "A badly written alert",
+      "enonce": "This program should display a \"Disquette pleine\" (disk full) alert with a single button, \"Compris\". Check it, read the error message, then fix the text of the alert.",
+      "indices": ["The text follows the format [icon][lines][buttons].", "The bracket that closes the list of buttons is missing."]
+    },
+    "atari-ch09-exo-annuler": {
+      "titre": "Save or cancel",
+      "enonce": "Fill in the program: if it receives button 1, Enregistrer (save), it ends with return code 0, and if it receives button 2, Annuler (cancel), with code 1. In this run, the user clicks Annuler.",
+      "indices": ["The return code is given to Pterm, GEMDOS function `$4C`, which takes it from the stack.", "Button 1 → 0 and button 2 → 1: you only need to subtract 1 from the button number."]
+    },
+    "atari-ch09-bonus-croix": {
+      "titre": "An exclusive-OR cross",
+      "enonce": "Draw in exclusive OR and in color 15 a horizontal line at y = 100 across the whole width, then a vertical line at x = 160 over the whole height, drawing their last point too. Then look at the point where they cross.",
+      "indices": ["Exclusive OR is mode 2, and a non-zero LSTLIN makes the last point drawn.", "The crossing point is inverted twice: it goes back to the background color."]
+    }
+  },
+  "qcm": {
+    "q1": { "enonce": "What does the 68000 do when it meets an instruction word `$A001`?", "choix": ["It executes it like a MOVE", "It triggers an exception and jumps to vector 10, at $28", "It stops on an address error"], "explication": "$Axxx words are not 68000 instructions: the Line A exception hands control to TOS." },
+    "q2": { "enonce": "After `$A000`, where is the address of the Line A variables?", "choix": ["In A0", "In D7", "On top of the stack"], "explication": "`$A000` returns that address in A0 (and in D0)." },
+    "q3": { "enonce": "To draw in color 6, `%0110`, what are COLBIT0, COLBIT1, COLBIT2 and COLBIT3?", "explication": "COLBIT0 is bit 0 of the color: %0110 gives 0, 1, 1, 0." },
+    "q11": { "enonce": "How many passes does a `DBRA` loop make when its counter starts at 7?", "explication": "DBRA stops when the counter goes to −1: from 7 to 0, that makes 8 passes." },
+    "q4": { "enonce": "You draw the same line twice in exclusive OR. What is left on the screen?", "choix": ["The line, twice as thick", "The original scenery, without the line", "A black screen"], "explication": "Inverting a pixel twice puts it back as it was." },
+    "q5": { "enonce": "Why keep the address of the variables in A5 rather than in A0?", "choix": ["Because Line A, like TOS, may modify D0-D2 and A0-A2", "Because A0 cannot serve as a pointer", "To go faster"], "explication": "A3-A6 and D3-D7 are preserved by the system; A0 may be modified by the next call." },
+    "q6": { "enonce": "How do you call the AES?", "choix": ["TRAP #1 with the number on the stack", "TRAP #2 with $C8 in D0 and the address of the parameter block in D1", "DC.W $A0C8"], "explication": "GEM is called with TRAP #2; D0 selects the AES ($C8) or the VDI ($73)." },
+    "q12": { "enonce": "How does a program return the return code 1 to TOS?", "choix": ["MOVE.W #1,D0 then RTS", "MOVE.W #1,-(SP), then MOVE.W #$4C,-(SP) and TRAP #1", "CLR.W -(SP) then TRAP #1"], "explication": "Pterm, GEMDOS function $4C, takes the return code from the stack; CLR.W -(SP) then TRAP #1 is Pterm0, which always returns 0." },
+    "q7": { "enonce": "Where does form_alert store the number of the button clicked?", "choix": ["In D0", "In INT_OUT[0]", "In CONTROL[0]"], "explication": "The main result of an AES function comes back in INT_OUT[0]." },
+    "q8": { "enonce": "Which icon does the alert `[2][Enregistrer ?][Oui|Non]` display?", "choix": ["The exclamation mark", "The question mark", "The stop sign"], "explication": "1: exclamation mark, 2: question mark, 3: stop, 0: none." }
+  }
+}

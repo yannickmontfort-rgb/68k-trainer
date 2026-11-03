@@ -1,0 +1,22 @@
+{
+  "tracks": [
+    {
+      "id": "general",
+      "title": "68000 assembly (general)",
+      "description": "The 68000 microprocessor itself: registers, addressing, stack, branches. It applies to any 68000-based machine.",
+      "status": "active"
+    },
+    {
+      "id": "atari-st",
+      "title": "Atari ST",
+      "description": "Atari ST specifics: TOS/GEMDOS, TRAP, Line A, GEM (AES/VDI), hardware addresses ($FF8xxx).",
+      "status": "active"
+    },
+    {
+      "id": "amiga",
+      "title": "Amiga",
+      "description": "Amiga specifics: AmigaOS/Exec, custom chips (Denise/Copper/Blitter/CIA), system libraries.",
+      "status": "active"
+    }
+  ]
+}

@@ -1,0 +1,117 @@
+{
+  "level": 1,
+  "title": "Transfer and addressing",
+  "exercises": [
+    {
+      "id": "general-l1-e1",
+      "title": "First transfer",
+      "statement": "Put the value `$2A` in the low byte of register D0, using immediate addressing.",
+      "hints": [
+        "The transfer mnemonic is MOVE, followed by a dot and a size (.B, .W or .L).",
+        "A # in front of a value means immediate addressing: the data is inside the instruction itself."
+      ],
+      "courseRef": "reference-meyne-hoppenot.md",
+      "starterCode": "    ORG $1000\nSTART:\n\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 5,
+        "expected": {
+          "D0": "$0000002A"
+        }
+      }
+    },
+    {
+      "id": "general-l1-e2",
+      "title": "Copying between registers",
+      "statement": "Put `$1234` in D1 (word, .W), then copy that word into D2 with a direct register-to-register transfer.",
+      "hints": [
+        "A MOVE.W only changes the 16 low-order bits of the destination register.",
+        "The high word of D2 must stay at 0, since it was never initialized."
+      ],
+      "courseRef": "registres-et-memoire.md",
+      "starterCode": "    ORG $1000\nSTART:\n\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 5,
+        "expected": {
+          "D1": "$00001234",
+          "D2": "$00001234"
+        }
+      }
+    },
+    {
+      "id": "general-l1-e3",
+      "title": "MOVEQ and sign extension",
+      "statement": "Use MOVEQ to put the decimal value **-5** in D3. Look at the 32-bit result: the negative number must be sign-extended across the whole register.",
+      "hints": [
+        "MOVEQ #<value>,Dn loads an immediate byte into Dn, sign-extended to 32 bits.",
+        "-5 in two's complement on a byte is $FB."
+      ],
+      "courseRef": "registres-et-memoire.md",
+      "starterCode": "    ORG $1000\nSTART:\n\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 5,
+        "expected": {
+          "D3": "$FFFFFFFB"
+        }
+      }
+    },
+    {
+      "id": "general-l1-e4",
+      "title": "Writing to and reading from memory (absolute addressing)",
+      "statement": "Write the value `$1234` (word) at address `$2000`, then read that value back from memory into D4.",
+      "hints": [
+        "MOVE.W #value,$address writes to memory (absolute addressing as the destination).",
+        "MOVE.W $address,Dn then reads that same memory location back."
+      ],
+      "courseRef": "reference-meyne-hoppenot.md",
+      "starterCode": "    ORG $1000\nSTART:\n\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 6,
+        "expected": {
+          "D4": "$00001234"
+        }
+      }
+    },
+    {
+      "id": "general-l1-e5",
+      "title": "Indirect addressing through an address register",
+      "statement": "Load the address `$3000` into A0 (with LEA), write the value `$ABCD` (word) there through indirect addressing `(A0)`, then read that value back into D5 the same way.",
+      "hints": [
+        "LEA computes an effective address and puts it in an address register, without touching memory.",
+        "(A0) means the contents of memory at the address A0 points to, not A0 itself."
+      ],
+      "courseRef": "reference-meyne-hoppenot.md",
+      "starterCode": "    ORG $1000\nSTART:\n\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 8,
+        "expected": {
+          "A0": "$00003000",
+          "D5": "$0000ABCD"
+        }
+      }
+    },
+    {
+      "id": "general-l1-e6",
+      "title": "Walking through memory with postincrement",
+      "statement": "Starting at address `$4000`, write the words `$000A` and then `$0014` one after the other, using indirect addressing with postincrement `(A0)+`. Then, starting again from the beginning of that area, read these two words back (still with `(A0)+`) and put their sum in D6.",
+      "hints": [
+        "MOVE.W value,(A0)+ writes at the address A0 points to, THEN moves A0 forward by 2 (the size of a word).",
+        "You need to reload A0 with $4000 using LEA before reading back, since it moved forward during the writes.",
+        "Expected result: $000A + $0014 = $001E."
+      ],
+      "courseRef": "reference-meyne-hoppenot.md",
+      "starterCode": "    ORG $1000\nSTART:\n\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 12,
+        "expected": {
+          "D6": "$0000001E"
+        }
+      }
+    }
+  ]
+}

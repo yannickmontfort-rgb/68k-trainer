@@ -1,0 +1,209 @@
+{
+  "titre": "The Amiga system: Exec and the libraries",
+  "resume": "The Amiga's system is stored in ROM, in the Kickstart, and divided into libraries that you call with a `JSR` starting from the machine's only fixed address, `$4`. That is how you open dos.library to write in the CLI window, and how you ask exec for the Chip RAM the chips need, giving everything back before you quit. Matches chapter 4 of the Amiga manual (corrected: see the errata).",
+  "notions": {
+    "amiga-ch04-n0": { "titre": "Review of chapters 2 and 3" },
+    "amiga-ch04-n1": { "titre": "The Kickstart and ExecBase" },
+    "amiga-ch04-n2": { "titre": "Opening a library and writing in the CLI" },
+    "amiga-ch04-n3": { "titre": "Memory: AllocMem and FreeMem" },
+    "amiga-ch04-n4": { "titre": "Waiting and displaying numbers" }
+  },
+  "contenus": {
+    "amiga-ch04-rappel": {
+      "titre": "What you already know",
+      "introduction": "Three questions on the previous chapters, without rereading the lessons. Getting it wrong here does not matter: searching is what makes it stick.",
+      "questions": {
+        "q1": { "enonce": "What is D1 at the end?", "explication": "The loop runs 5 times, with D2 = 4, 3, 2, 1 then 0: D1 = 10, and the 2-bit shift to the left multiplies it by 4." },
+        "q2": { "enonce": "What is D2 at the end?", "explication": "DBRA only decrements the low word and stops when it reaches −1, that is $FFFF; the high word stays at 0, as MOVEQ set it." },
+        "q3": { "enonce": "Between the two `MOVE.L` instructions, while D1 is on the stack, SP is…", "choix": ["4 less than at the start", "4 more than at the start", "its starting value"], "explication": "The stack grows downward: `-(SP)` moves SP back by 4 before writing the long word, and `(SP)+` moves it up again after reading it back." }
+      }
+    },
+    "amiga-ch04-cours-kickstart": {
+      "titre": "Libraries, ExecBase and the jump table",
+      "source": "Written for 68k Trainer from Amiga Intern (Abacus), La Bible de l'Amiga and the libraries' .fd files"
+    },
+    "amiga-ch04-ex-forbid": {
+      "titre": "Following a call to Forbid",
+      "introduction": "Step through the program while watching the PC and the Disassembly view: after the `JSR`, the processor lands in the jump table, just below ExecBase.",
+      "explications": {
+        "2": "A6 receives the long word stored at `$4`, ExecBase, which is `$00000800` in 68k Trainer and something else on a real Amiga.",
+        "3": "The 68000 pushes the return address and jumps to A6 − 132 = `$077C`, where the disassembly shows the Forbid entry, a `JMP` to the ROM (`$FCxxxx`); the next step runs the routine in one go.",
+        "4": "Forbid has taken TDNestCnt, 295 bytes above the base, from −1 ($FF) to 0, and as long as it stays zero or positive, exec no longer hands control to the other tasks.",
+        "5": "Permit does the opposite.",
+        "6": "D1 = $FF: the counter is back at −1 and multitasking resumes.",
+        "7": "`RTS` hands control back to the CLI, and the final report shows nothing since everything was given back."
+      },
+      "conclusion": "A system call is a `JSR` into the library's jump table, with its base in A6, which you can follow in the debugger all the way to the ROM."
+    },
+    "amiga-ch04-pred-table": {
+      "titre": "What does the jump table hold?",
+      "introduction": "The program reads the memory just below ExecBase, then above it.",
+      "questions": {
+        "q1": { "enonce": "What is D0 at the end?", "choix": ["$00004EF9: the code for JMP address.L", "$00004E75: the code for RTS", "$00000000: the table is empty"], "explication": "Each entry in the table is a 6-byte `JMP $xxxxxxxx` instruction: the word `$4EF9`, followed by the address of the routine." },
+        "q2": { "enonce": "What is D1 (the word at 20(A6))?", "explication": "It is LIB_VERSION, which is 34 ($22) for the exec of Kickstart 1.3." }
+      }
+    },
+    "amiga-ch04-exo-forbid": {
+      "titre": "Forbid and Permit",
+      "enonce": "The program must call `Forbid()`, read the TDNestCnt counter into D7, then call `Permit()`, but both its offsets are wrong: replace them with the right ones.",
+      "indices": ["Forbid is at −132, Permit at −138.", "After Forbid, TDNestCnt is 0."]
+    },
+    "amiga-ch04-exo-permit": {
+      "titre": "Multitasking left locked",
+      "enonce": "This program computes 9 + 8 + … + 0 in D0 while multitasking is suspended. The result is right, but the final report says the system stays locked: find the extra instruction.",
+      "indices": ["Count the calls to Forbid and to Permit: you need as many of each.", "The `JSR -132(A6)` placed inside the loop runs 10 times: remove it."]
+    },
+    "amiga-ch04-exo-disable": {
+      "titre": "Disable and Enable nest",
+      "enonce": "Call `Disable()` (−120) twice, then `Enable()` (−126) twice, and after each call store the IDNestCnt byte, at `294(A6)`, in D4, then D5, D6 and D7. The \"Vectors and hardware\" panel shows when INTENA loses its INTEN bit.",
+      "indices": ["`MOVE.B 294(A6),D4` right after the first `JSR -120(A6)`.", "The counter starts at −1 and goes through 0, 1, then 0 and −1 ($FF): interrupts only come back at the last Enable."]
+    },
+    "amiga-ch04-cours-bibliotheques": {
+      "titre": "OpenLibrary, versions, Output and Write",
+      "source": "Written for 68k Trainer from Amiga Intern (Abacus) and Amiga Machine Language (Abacus, ch. 6)"
+    },
+    "amiga-ch04-ex-bonjour": {
+      "titre": "Hello Amiga",
+      "introduction": "The program opens dos.library, writes a line, then closes the library again; the Text output plays the part of the CLI window.",
+      "explications": {
+        "2": "A6 = ExecBase, because OpenLibrary is an exec function.",
+        "3": "A1 receives the address of the name, given relative to the PC so that the program works wherever it is loaded.",
+        "4": "D0 = 0: any version of dos.library will do.",
+        "5": "OpenLibrary (−552) returns the base of dos.library in D0.",
+        "6": "You test the result, because 0 would mean dos.library could not be opened.",
+        "8": "A6 now holds DOSBase, and the following calls go to dos.library.",
+        "9": "Output() returns in D0 the handle of the CLI window.",
+        "10": "Write expects the handle in D1, the address of the text in D2 and its length in D3.",
+        "13": "The assembler computes `fin-texte`, the length of the text: 16 bytes, the final 10 included.",
+        "14": "Write makes the text appear in the output.",
+        "15": "CloseLibrary expects the base in A1, and exec in A6.",
+        "19": "D0 is the program's return code, and the CLI reads 0 as \"all is well\"."
+      },
+      "conclusion": "Open, check, use, close: every Amiga system program follows this pattern."
+    },
+    "amiga-ch04-pred-version": {
+      "titre": "The right version",
+      "introduction": "The program asks a Kickstart 1.3 for graphics.library twice, with two different minimum versions.",
+      "questions": {
+        "q1": { "enonce": "What is D6 (the request for version 36)?", "choix": ["0: refused", "The base of graphics.library", "36"], "explication": "Kickstart 1.3 provides version 34: the request for version 36 (Kickstart 2.0) is refused, and OpenLibrary returns 0." },
+        "q2": { "enonce": "And D7 (version 33)?", "choix": ["0: refused", "A non-zero address: the base of graphics.library", "33"], "explication": "34 is at least 33, so the request is accepted, which is why programs for the A500 ask for 0, 33 or 34." }
+      }
+    },
+    "amiga-ch04-exo-longueur": {
+      "titre": "The length of the text",
+      "enonce": "The program only displays \"Bonj\": give D3 the right length, without counting the characters by hand.",
+      "indices": ["The label `fin` follows the text: `fin-texte` is its length.", "`MOVEQ #fin-texte,D3`"]
+    },
+    "amiga-ch04-exo-poignee": {
+      "titre": "The forgotten handle",
+      "enonce": "This program must write \"Amiga 500\", but nothing appears and the simulator shows a message: read it, then add one instruction.",
+      "indices": ["Write takes the handle in D1. Where is it after Output()?", "`MOVE.L D0,D1` right after `JSR -60(A6)`."]
+    },
+    "amiga-ch04-exo-ordre": {
+      "titre": "Opening dos.library",
+      "enonce": "Put back in order the five lines that open dos.library and store its base in A6, so that the program displays \"OK\".",
+      "indices": ["You first need exec in A6, then the two parameters of OpenLibrary (A1 and D0), then the call.", "The base returned in D0 goes into A6 last."]
+    },
+    "amiga-ch04-exo-lignes": {
+      "titre": "Two lines",
+      "enonce": "Write a complete program that displays \"Ligne 1\" then \"Ligne 2\" in the CLI, and that closes dos.library before quitting.",
+      "indices": ["A single Write is enough: `DC.B 'Ligne 1',10,'Ligne 2',10`.", "Follow the pattern of the example: OpenLibrary, Output, Write, CloseLibrary."]
+    },
+    "amiga-ch04-cours-memoire": {
+      "titre": "Chip RAM, Fast RAM, AllocMem and FreeMem",
+      "source": "Written for 68k Trainer from Amiga Intern (Abacus) and the Amiga manual (exercise 3, checked)"
+    },
+    "amiga-ch04-ex-memoire": {
+      "titre": "Reserve, use, give back",
+      "introduction": "The program asks exec for a thousand bytes of Chip RAM, then gives them back: put the address received in D0 into the Memory view.",
+      "explications": {
+        "3": "D0 receives the size wanted.",
+        "4": "D1 = MEMF_CHIP ($2) + MEMF_CLEAR ($10000): Chip RAM, filled with zeros.",
+        "5": "AllocMem returns the address of the block in D0, `$00040000` in 68k Trainer.",
+        "6": "You test D0, because 0 would mean there is no memory left.",
+        "8": "You keep the address in A2, which exec does not change, unlike D0, D1, A0 and A1.",
+        "9": "The block is yours, and you can write whatever you want in it within its 1000 bytes.",
+        "11": "FreeMem expects the address in A1…",
+        "12": "… and the same size in D0.",
+        "13": "FreeMem (−210) gives the block back to exec, and the final report shows no leak."
+      },
+      "conclusion": "All memory you ask for must be given back with its exact size, because exec does no cleaning up after you."
+    },
+    "amiga-ch04-pred-availmem": {
+      "titre": "Where did the bytes go?",
+      "introduction": "The program measures the free Chip RAM with AvailMem, before and after reserving 4000 bytes.",
+      "questions": {
+        "q1": { "enonce": "What is D7 (the difference)?", "explication": "The 4000 bytes of the block have left the free Chip RAM; exec rounds sizes up to a multiple of 8, and 4000 already is one." },
+        "q2": { "enonce": "Why does the program keep the address of the block in A2 rather than in A0?", "choix": ["Because AvailMem may change A0", "Because A0 cannot hold an address", "To go faster"], "explication": "Exec functions may change D0, D1, A0 and A1, so a value you want to keep goes in D2-D7 or A2-A5." }
+      }
+    },
+    "amiga-ch04-exo-drapeaux": {
+      "titre": "The right kind of memory",
+      "enonce": "The program reserves 512 bytes, writes `$CAFE` there, then gives them back, but it asks for any memory (0) and, on an A500 with an expansion, receives Slow RAM that the chips cannot see. Give D1 the type for Chip RAM filled with zeros.",
+      "indices": ["MEMF_CHIP = $2 and MEMF_CLEAR = $10000: add them up.", "`MOVE.L #$10002,D1`"]
+    },
+    "amiga-ch04-exo-freemem": {
+      "titre": "The FreeMem Guru",
+      "enonce": "This program stops dead on `FreeMem`, where a real Amiga would show a Guru Meditation #81000009. Read the message and fix it.",
+      "indices": ["Compare the size passed to AllocMem with the one passed to FreeMem.", "You must give back exactly 320 bytes."]
+    },
+    "amiga-ch04-exo-table": {
+      "titre": "A table in Chip RAM",
+      "enonce": "Reserve 256 bytes of Chip RAM, fill them with the values 0, 1, 2… 255, then compute their sum in D7 by reading the block back, before giving it back.",
+      "indices": ["Keep the address of the block in A2; a `MOVE.B D1,(A0)+` / `ADDQ.B #1,D1` / `DBF` loop fills the 256 bytes.", "For the sum, read each byte into a register cleared beforehand (`MOVEQ #0,D1`), then `ADD.L D1,D7`. Result: 32,640."]
+    },
+    "amiga-ch04-cours-delay": {
+      "titre": "Delay and RawDoFmt",
+      "source": "Written for 68k Trainer from Amiga Intern (Abacus) and the exec and dos autodocs"
+    },
+    "amiga-ch04-ex-decompte": {
+      "titre": "Countdown",
+      "introduction": "The program counts 3, 2, 1 with one second between each number: click Run to the end and watch the frame counter go up by 50 at each `Delay(50)`.",
+      "explications": {
+        "6": "DOSBase stays in A5, because A6 will serve sometimes for exec, sometimes for dos.",
+        "9": "The data for `%d` is a word, so you store D7 in `.W`.",
+        "10": "A0 receives the format, A1 the data, A2 the routine that stores each character, and A3 the buffer.",
+        "15": "RawDoFmt (exec, −522) fills the buffer with \"3...\", a line feed and a 0.",
+        "16": "The subroutine counts the characters up to the 0, then calls Write.",
+        "19": "Delay(50) puts the program to sleep for one second, while the other tasks work.",
+        "21": "You start again as long as D7 has not reached 0.",
+        "43": "RawDoFmt calls this routine for each character, which it stores before moving A3 forward."
+      },
+      "conclusion": "RawDoFmt builds the text, Write displays it and Delay sets the pace."
+    },
+    "amiga-ch04-exo-score": {
+      "titre": "Displaying a score",
+      "enonce": "The format `'Score : %ld',10,0` and the value `score`, a long word equal to 1500, are ready: fill the buffer with RawDoFmt, then display it with Write to get \"Score : 1500\".",
+      "indices": ["A0 = format, A1 = score, A2 = ranger, A3 = tampon, then `JSR -522(A6)` with exec in A6.", "For the length, count the bytes of the buffer up to the 0 (RawDoFmt does not change A3), then Write with dos.library."]
+    },
+    "amiga-ch04-exo-decompte5": {
+      "titre": "Starting from 5",
+      "enonce": "Here is the countdown from the example, which starts from 3 and displays \"3...\". Change it so that it starts from 5 and writes each number in the form \"T-5\", down to \"T-1\", before \"Décollage !\".",
+      "indices": ["Two places change: the starting value of D7 and the format that RawDoFmt reads.", "`MOVEQ #5,D7`, and `format: DC.B 'T-%d',10,0`."]
+    },
+    "amiga-ch04-exo-motlong": {
+      "titre": "Word or long word?",
+      "enonce": "This program should display \"Octets libres : 250000\", but it displays a completely different number: find out why and fix a single character.",
+      "indices": ["`%d` reads a 16-bit word, whereas `valeur` is a long word: which word does RawDoFmt read?", "Add the `l`: `%ld`."]
+    },
+    "amiga-ch04-bonus-prenom": {
+      "titre": "Hello, you",
+      "enonce": "Ask \"Ton prénom ?\", read the answer with `Read(Input())`, then reply \"Bonjour <first name> !\". The check types \"Yannick\"; in a free run, click on the screen and type your own.",
+      "indices": ["Keep DOSBase in A6 and the two handles (Output and Input) in D5 and D6, which dos does not touch.", "Read returns the length in D0, the final 10 included: write \"Bonjour \", then the first name without its 10, then \"!\" and a 10."]
+    }
+  },
+  "qcm": {
+    "q1": { "enonce": "What is the only fixed address of the Amiga's system?", "choix": ["$4, which holds the address of ExecBase", "$DFF000", "$FC0000"], "explication": "The whole system can be found starting from ExecBase; $DFF000 is fixed too, but it is the address of the chips." },
+    "q2": { "enonce": "In which register do you put the base of the library being called?", "explication": "Every library expects its base in A6." },
+    "q3": { "enonce": "What is found at `-132(A6)` when A6 = ExecBase?", "choix": ["A JMP instruction to the Forbid routine", "The value of TDNestCnt", "The name of the library"], "explication": "The negative offsets form the jump table, with one 6-byte JMP per function." },
+    "q4": { "enonce": "Which registers may an exec function change?", "choix": ["D0, D1, A0 and A1", "All of them", "None"], "explication": "D0, D1, A0 and A1 are scratch registers, the result comes back in D0, and the others are preserved." },
+    "q11": { "enonce": "What does `JSR -132(A6)` do before jumping?", "choix": ["It pushes the return address, a long word", "It saves A6 on the stack", "Nothing, like JMP"], "explication": "Like BSR, JSR pushes the address of the next instruction, which the routine's RTS will pop." },
+    "q5": { "enonce": "On Kickstart 1.3, `OpenLibrary` with version 37…", "choix": ["returns 0", "opens the library anyway", "crashes the machine"], "explication": "Kickstart 1.3 provides version 34, and a minimum version of 37 (Kickstart 2.04) is refused." },
+    "q6": { "enonce": "In the Amiga CLI, a line ending is written…", "explication": "A single character is enough, the *line feed* (10); the 13, 10 pair is the one used by the ST and PCs." },
+    "q7": { "enonce": "Why must an image be in Chip RAM?", "choix": ["Because the custom chips can only read Chip RAM", "Because Chip RAM is faster", "Because the 68000 cannot see Fast RAM"], "explication": "Fast RAM is visible only to the 68000, and the chips (display, sound, Blitter) only read Chip RAM." },
+    "q12": { "enonce": "After `MOVE.B 295(A6),D0`, which part of D0 has changed?", "choix": ["Only the low byte", "The whole register", "The low word"], "explication": "A `.B` instruction only writes the 8 low-order bits of the register; the other 24 do not move." },
+    "q8": { "enonce": "What must you give FreeMem?", "choix": ["The address of the block and exactly the size asked of AllocMem", "Only the address", "The size rounded to 1 KB"], "explication": "FreeMem(address, size)(A1, D0) wants the exact size, because any other size damages the free memory lists (Guru #81000009)." },
+    "q9": { "enonce": "How long does `Delay(25)` last?", "choix": ["Half a second", "25 seconds", "25 milliseconds"], "explication": "Delay counts in fiftieths of a second: 25/50 = 0.5 s." },
+    "q10": { "enonce": "With RawDoFmt, which code displays a signed long word?", "explication": "Without the `l`, RawDoFmt only reads a 16-bit word." }
+  }
+}
