@@ -25,8 +25,6 @@ import { langueCourante, traducteur, traduireCoeur } from '../../langue'
 
 const t = traducteur({
   fr: {
-    relire: 'à relire',
-    relireTitre: 'Contenu rédigé par Claude, à relire par Yannick',
     nonTeste: 'non testé',
     nonTesteTitre: 'Code non vérifié par le simulateur',
     source: 'Source : {source}',
@@ -118,8 +116,6 @@ const t = traducteur({
     relisCorrections: 'Relis les corrections ci-dessus, revois les notions concernées, puis recommence.'
   },
   en: {
-    relire: 'to proofread',
-    relireTitre: 'Content written by Claude, to be proofread by Yannick',
     nonTeste: 'untested',
     nonTesteTitre: 'Code not checked by the simulator',
     source: 'Source: {source}',
@@ -223,9 +219,8 @@ export interface ContexteEcran {
 
 type Nettoyage = () => void
 
-function badges(c: { aRelire?: boolean; nonTeste?: boolean; source?: string }): string {
+function badges(c: { nonTeste?: boolean; source?: string }): string {
   return (
-    (c.aRelire ? `<span class="badge badge-relire" title="${t('relireTitre')}">${t('relire')}</span>` : '') +
     (c.nonTeste ? `<span class="badge badge-non-teste" title="${t('nonTesteTitre')}">${t('nonTeste')}</span>` : '')
   )
 }

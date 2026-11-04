@@ -383,11 +383,6 @@
   color: #ddd;
 }
 
-.badge-relire {
-  background: #4d3410;
-  color: var(--orange);
-}
-
 .badge-non-teste {
   background: #4d1a1a;
   color: var(--rouge);

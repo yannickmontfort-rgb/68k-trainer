@@ -53,8 +53,6 @@ interface ContenuBase {
   /** Identifiant globalement unique (préfixé par le parcours) : sert de clé de progression. */
   id: string
   titre: string
-  /** Contenu rédigé par Claude, à relire par Yannick. */
-  aRelire?: boolean
   /** Code qui n'a pas pu être assemblé et exécuté par le simulateur. */
   nonTeste?: boolean
   /** Source d'origine (manuel, cours...), affichée discrètement. */

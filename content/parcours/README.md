@@ -21,7 +21,7 @@ Types TypeScript de référence : [src/shared/parcours.ts](../../src/shared/parc
 | `exercice` | `variante` : `completer`, `modifier`, `ecrire`, `corriger`, `ordonner` ; `niveau` 1 à 3 | « Vérifier » réussit |
 
 Champs communs : `id` (**globalement unique**, préfixé par le parcours : c'est la clé de
-progression), `titre`, `aRelire` (contenu rédigé par Claude, à relire), `nonTeste`, `source`.
+progression), `titre`, `nonTeste`, `source`.
 
 ## Exercices
 
