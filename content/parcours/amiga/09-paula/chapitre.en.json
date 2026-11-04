@@ -1,0 +1,131 @@
+{
+  "titre": "Paula and sound",
+  "resume": "The Amiga does not generate its sounds, it plays them: Paula reads samples in Chip RAM on 4 stereo channels. You set the period of a note and its volume, start and stop a channel, then rely on Paula's interrupt requests to chain sounds or play a sound effect only once. Tick 🔊 under the screen and start \"🎬 Real time\" to listen.",
+  "notions": {
+    "amiga-ch09-n0": { "titre": "Review of chapters 5 and 8" },
+    "amiga-ch09-n1": { "titre": "Playing a note" },
+    "amiga-ch09-n2": { "titre": "Chaining sounds, and playing only once" }
+  },
+  "contenus": {
+    "amiga-ch09-rappel": {
+      "titre": "What you already know",
+      "introduction": "Three questions on the previous chapters, without rereading the lessons. Getting it wrong here does not matter: searching is what makes it stick.",
+      "questions": {
+        "q1": {
+          "enonce": "D1 receives the first control word of a sprite placed at x = 40, y = 16. What is it?",
+          "explication": "VSTART = $2C + 16 = $3C goes in the high byte, and HSTART = $81 + 40 = $A9, divided by 2, gives $54."
+        },
+        "q2": {
+          "enonce": "After `BTST #7,$BFE001`, the Z flag is 1. What happened?",
+          "choix": ["The joystick button is pressed", "The joystick button is released", "The left mouse button is pressed"],
+          "explication": "The buttons are active low: Z = 1 means that bit 7, the joystick one, is 0."
+        },
+        "q3": {
+          "enonce": "What does `MOVE.W #$0020,$96(A5)` do?",
+          "choix": ["It turns on the sprite DMA", "It turns off the sprite DMA, without touching the other channels", "It turns off all channels except the sprites"],
+          "explication": "Bit 15 of DMACON is 0: the bits at 1 in the word, here SPREN, go to 0, and the others do not move."
+        }
+      }
+    },
+    "amiga-ch09-cours-paula": {
+      "titre": "Samples, period, volume, DMA",
+      "source": "Written for 68k Trainer from the Hardware Reference Manual (ch. 5) and Amiga Intern (Abacus, ch. 11)"
+    },
+    "amiga-ch09-ex-la": {
+      "titre": "An A for one second",
+      "introduction": "A 32-byte square wave is played at 440 Hz for 50 frames. Tick 🔊, start \"🎬 Real time\" and listen; \"Vectors and hardware\" shows AUD0EN in DMACON.",
+      "explications": {
+        "3": "AUD0LC receives the address of the wave, stored in Chip RAM by `SECTION son,DATA_C`, because Paula only reads Chip RAM.",
+        "4": "AUD0LEN is counted in words: 32 bytes make 16 words.",
+        "5": "With this period, Paula sends a byte every 252 ticks of its 3.55 MHz clock.",
+        "7": "DMACON receives SET + DMAEN + AUD0EN, and channel 0 plays the wave in a loop.",
+        "11": "With bit 15 at 0, AUD0EN goes back to 0: silence."
+      },
+      "conclusion": "A held note is a short wave that the DMA replays in a loop, without the 68000 having anything to do while it sounds."
+    },
+    "amiga-ch09-pred-periode": {
+      "titre": "Computing a period",
+      "introduction": "The 68000 computes the period of an A at 440 Hz for a 32-byte wave.",
+      "questions": {
+        "q1": {
+          "enonce": "What is D0?",
+          "explication": "3,546,895 ÷ 14,080 = 251.9…, and DIVU keeps only the integer part, 251. To round, you add half the divisor before dividing, which gives 252."
+        },
+        "q2": {
+          "enonce": "For the same wave, what is the period of an A one octave higher (880 Hz)?",
+          "choix": ["Half as large: about 126", "Twice as large: about 504", "The same"],
+          "explication": "To double the frequency, Paula must send the bytes twice as fast: the period is divided by two, and stays above the minimum of 124."
+        }
+      }
+    },
+    "amiga-ch09-exo-volume": {
+      "titre": "The volume",
+      "enonce": "The program starts an A that you cannot hear, because the volume is at 0: set it to the maximum.",
+      "indices": ["AUD0VOL ranges from 0 to 64.", "`MOVE.W #64,$A8(A5)`"]
+    },
+    "amiga-ch09-exo-ordonner": {
+      "titre": "The rounded period",
+      "enonce": "Put the lines back in order to compute the period of an A (440 Hz, 32-byte wave), rounded to the nearest integer, and store it in AUD0PER: it must be 252.",
+      "indices": ["To round, you add half the divisor to the clock before dividing.", "The divisor, f × N, must be known before you take half of it; the quotient of `DIVU` is in the low word of D0, which `MOVE.W` stores in AUD0PER."],
+      "lignes": ["    MOVE.L  #3546895,D0     ; Paula's clock", "    MOVE.L  #440*32,D1      ; f x N", "    MOVE.L  D1,D2", "    LSR.L   #1,D2           ; half the divisor", "    ADD.L   D2,D0           ; to round", "    DIVU    D1,D0", "    MOVE.W  D0,$A6(A5)      ; AUD0PER"]
+    },
+    "amiga-ch09-exo-octave": {
+      "titre": "One octave higher",
+      "enonce": "This is the program from the example, which plays an A at 440 Hz at maximum volume. Change it to play the A one octave higher, at 880 Hz, at half the maximum volume.",
+      "indices": ["Doubling the frequency means dividing the period by two. The volume ranges from 0 to 64.", "`MOVE.W #126,$A6(A5)` and `MOVE.W #32,$A8(A5)`."]
+    },
+    "amiga-ch09-exo-muet": {
+      "titre": "The channel that does not start",
+      "enonce": "The program starts channel 0 and waits until Paula has started it, but it waits forever, and the screen goes black. Find the error in the write to DMACON.",
+      "indices": ["What is bit 15 of `$0201`? What does DMACON do with the bits at 1 when it is 0?", "`$8201`: SET + DMAEN + AUD0EN. (`$0201` turned off DMAEN, and therefore the screen too.)"]
+    },
+    "amiga-ch09-exo-notes": {
+      "titre": "C, E, G",
+      "enonce": "Play C (period 423), E (336) then G (283) on channel 0, half a second each (25 frames), then stop the channel.",
+      "indices": ["Start the channel once (LC, LEN, VOL, the period of C, DMACON); to change the note, write only a new period.", "A table `DC.W 423,336,283` and `MOVE.W (A0)+,$A6(A5)`; 25 `attendre_vbl` per note; `MOVE.W #$0001,$96(A5)` at the end."]
+    },
+    "amiga-ch09-cours-enchainer": {
+      "titre": "Paula's requests, the one-shot sound, the filter",
+      "source": "Written for 68k Trainer from the Hardware Reference Manual (ch. 5) and the music players (RamJam)"
+    },
+    "amiga-ch09-ex-unefois": {
+      "titre": "A beep, only once",
+      "introduction": "A 1600-byte beep played once: as soon as Paula has noted the block, you give it a one-word block of silence for what follows.",
+      "explications": {
+        "7": "You clear any old AUD0 request (bit 7 of INTREQ, bit 15 at 0).",
+        "8": "The channel starts: Paula copies LC and LEN into its counters and immediately requests the AUD0 interrupt.",
+        "10": "Bit 7 of INTREQR (low byte at `$DFF01F`) signals the request: Paula is playing the beep.",
+        "12": "The next block is only one word of zeros, which Paula will replay in a loop at the end of the beep: silence.",
+        "17": "You stop the channel whenever you like, since nothing has been heard for a long time."
+      },
+      "conclusion": "Paula always takes the next block from AUDxLC and AUDxLEN: by changing them as soon as it makes its request, you chain sounds without a gap, or silence it after a single pass."
+    },
+    "amiga-ch09-exo-silence": {
+      "titre": "The beep that repeats",
+      "enonce": "The beep must be played only once, but the length of the \"silence block\" is wrong: after the beep, Paula plays 800 words of whatever follows the silence in memory. Fix it.",
+      "indices": ["The silence block is only one word long.", "`MOVE.W #1,$A4(A5)`"]
+    },
+    "amiga-ch09-exo-demande": {
+      "titre": "The request never seen",
+      "enonce": "This program must play the beep only once, but it never ends. Step through it while watching INTREQ in \"Vectors and hardware\": the AUD0 request arrives, and yet the loop goes on. Fix the error.",
+      "indices": ["`BTST` on memory tests only one byte. In which byte of the INTREQR word is bit 7?", "The 68000 stores the high byte of a word at the even address: bit 7 of INTREQR is bit 7 of the low byte, at `$DFF01F`. `BTST #7,$1F(A5)`."]
+    },
+    "amiga-ch09-bonus-stereo": {
+      "titre": "A stereo chord",
+      "enonce": "Challenge: an A (period 252) on channel 0, on the left, and an E (period 336) on channel 1, on the right, started together. Wait until Paula has started both channels (bits 7 and 8 of INTREQR), put 3 in D7, then stop both channels.",
+      "indices": ["The registers of channel 1 are 16 bytes after those of channel 0: `$B0`, `$B4`, `$B6`, `$B8`.", "DMACON = `$8203`; then read INTREQR (`$1E(A5)`), keep `$0180` and compare."]
+    }
+  },
+  "qcm": {
+    "q1": { "enonce": "How many channels does Paula have?", "choix": ["4, in stereo", "3", "8"], "explication": "Channels 0 and 3 on the left, 1 and 2 on the right." },
+    "q2": { "enonce": "A sample is a sequence of bytes that are…", "choix": ["signed, in Chip RAM", "unsigned, anywhere", "16 bits wide"], "explication": "−128 to +127, and Paula only reads Chip RAM." },
+    "q3": { "enonce": "AUD0LEN is counted in…", "choix": ["words", "bytes", "samples per second"], "explication": "Paula reads one word (two bytes) at a time." },
+    "q9": { "enonce": "What does `MOVE.W #$7FFF,$96(A5)` do?", "choix": ["It turns on all the DMA channels", "It turns off all the DMA channels", "It changes nothing"], "explication": "Bit 15 is 0: all the bits at 1 in the word go to 0 in DMACON." },
+    "q4": { "enonce": "The larger the period, the note is…", "choix": ["lower", "higher", "louder"], "explication": "Paula reads the bytes more slowly, and the frequency drops." },
+    "q5": { "enonce": "What is the maximum volume?", "explication": "AUDxVOL ranges from 0 to 64." },
+    "q6": { "enonce": "What does this instruction do?", "choix": ["It makes channels 0 and 1 play", "It stops all sound", "It plays channel 3"], "explication": "SET + DMAEN + AUD0EN + AUD1EN." },
+    "q10": { "enonce": "After a `DIVU`, where is the quotient?", "choix": ["In the high word of the destination", "In the low word of the destination", "In D1"], "explication": "The quotient goes in the low word, and the remainder in the high word." },
+    "q7": { "enonce": "When does Paula request a channel's interrupt?", "choix": ["When it has copied LC and LEN, at the start of each block", "At the end of the program", "Never"], "explication": "It is the signal to prepare the next block." },
+    "q8": { "enonce": "How do you play a sound effect only once?", "choix": ["As soon as Paula makes its request, give it a one-word next block of silence", "Set AUDxLEN to 0", "Turn off the DMA right away"], "explication": "The channel will replay the silence in a loop, without a sound." }
+  }
+}

@@ -290,3 +290,16 @@ LIGNE:
     DBRA    D3,LIGNE
     CLR.W   -(SP)
     TRAP    #1
+
+;=== rappel
+START:
+    MOVE.W  #'A',D3
+    MOVE.W  #2,D4
+BOUCLE:
+    MOVE.W  D3,-(SP)
+    MOVE.W  #2,-(SP)        ; Cconout
+    TRAP    #1
+    ADDQ.L  #4,SP
+    ADDQ.W  #1,D3
+    DBRA    D4,BOUCLE
+    RTS

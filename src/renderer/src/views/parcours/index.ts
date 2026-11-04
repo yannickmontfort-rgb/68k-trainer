@@ -15,6 +15,7 @@ import { chargerProgression, machineActive, memoriserPosition } from '../../prog
 import { echapper } from './markdown'
 import { htmlCertificat } from '../../../../shared/certificat'
 import { profilActif } from '../../profilActif'
+import { langueCourante, traducteur } from '../../langue'
 import {
   ecranChapitre,
   ecranCours,
@@ -24,6 +25,69 @@ import {
   ecranQcm,
   type ContexteEcran
 } from './ecrans'
+
+const t = traducteur({
+  fr: {
+    chargement: 'Chargement du parcours…',
+    aucunParcours: 'Aucun parcours trouvé dans content/parcours/.',
+    qcmReprise: 'QCM — {titre}',
+    duParcours: 'du parcours',
+    chapitresTermines: '{faits}/{total} chapitres terminés',
+    bonusTitre: 'Les défis bonus ne comptent pas dans le pourcentage',
+    defisBonus: '★ Défis bonus : {faits}/{total}',
+    certificatTitre: 'Un PDF à imprimer : nom, date, chapitres validés',
+    monCertificat: 'Mon certificat',
+    attestation: 'Attestation de progression',
+    commencer: 'Commencer',
+    reprendre: 'Reprendre',
+    continuer: 'Continuer',
+    repriseBouton: '{action} : {titre}',
+    parcoursTermine: 'Parcours terminé, bravo ! 🎉',
+    finAmiga: 'Tu sais maintenant programmer l’Amiga en assembleur : système, Copper, Blitter, sprites, Paula, et de vrais exécutables.',
+    finAtari: 'Tu sais maintenant programmer le ST en assembleur : écran, animation, clavier, joystick, son, et de vrais .PRG.',
+    resteBonus1: 'Il reste {n} défi bonus à relever, et le bac à sable t\'attend pour tes propres démos.',
+    resteBonusN: 'Il reste {n} défis bonus à relever, et le bac à sable t\'attend pour tes propres démos.',
+    apprenant: 'Apprenant',
+    nomPdf: 'Certificat 68k Trainer - {nom}',
+    bientot: '(bientôt)',
+    qcmFin: 'QCM de fin de chapitre',
+    cours: 'Cours',
+    exemples: 'Exemples',
+    predictions: 'Prédictions',
+    exercices: 'Exercices',
+    qcm: 'QCM'
+  },
+  en: {
+    chargement: 'Loading the course…',
+    aucunParcours: 'No course found in content/parcours/.',
+    qcmReprise: 'Quiz — {titre}',
+    duParcours: 'of the course',
+    chapitresTermines: '{faits}/{total} chapters completed',
+    bonusTitre: 'Bonus challenges do not count towards the percentage',
+    defisBonus: '★ Bonus challenges: {faits}/{total}',
+    certificatTitre: 'A PDF to print: name, date, completed chapters',
+    monCertificat: 'My certificate',
+    attestation: 'Progress report',
+    commencer: 'Start',
+    reprendre: 'Resume',
+    continuer: 'Continue',
+    repriseBouton: '{action}: {titre}',
+    parcoursTermine: 'Course completed, well done 🎉',
+    finAmiga: 'You can now program the Amiga in assembly: the system, Copper, Blitter, sprites, Paula, and real executables.',
+    finAtari: 'You can now program the ST in assembly: screen, animation, keyboard, joystick, sound, and real .PRG files.',
+    resteBonus1: '{n} bonus challenge is still waiting for you, and the sandbox is there for your own demos.',
+    resteBonusN: '{n} bonus challenges are still waiting for you, and the sandbox is there for your own demos.',
+    apprenant: 'Learner',
+    nomPdf: '68k Trainer certificate - {nom}',
+    bientot: '(coming soon)',
+    qcmFin: 'End-of-chapter quiz',
+    cours: 'Lessons',
+    exemples: 'Examples',
+    predictions: 'Predictions',
+    exercices: 'Exercises',
+    qcm: 'Quiz'
+  }
+})
 
 const ICONES: Record<string, string> = {
   cours: '📖',
@@ -40,7 +104,7 @@ function barre(pourcentage: number, classe = ''): string {
 
 /** Vue « Parcours » : barre de progression, sommaire latéral et écrans pédagogiques. */
 export function renderParcours(container: HTMLElement): () => void {
-  container.innerHTML = '<div class="parcours-view"><p class="loading">Chargement du parcours…</p></div>'
+  container.innerHTML = `<div class="parcours-view"><p class="loading">${t('chargement')}</p></div>`
   const root = container.querySelector<HTMLDivElement>('.parcours-view')!
   let disposed = false
   let nettoyerEcran: (() => void) | null = null
@@ -51,7 +115,7 @@ export function renderParcours(container: HTMLElement): () => void {
     const actifs = content.parcours.filter((x) => x.statut === 'actif')
     const parcours: Parcours | undefined = actifs.find((x) => x.plateforme === machineActive()) ?? actifs[0] ?? content.parcours[0]
     if (!parcours) {
-      root.innerHTML = '<p class="loading">Aucun parcours trouvé dans content/parcours/.</p>'
+      root.innerHTML = `<p class="loading">${t('aucunParcours')}</p>`
       return
     }
     const p: ProgressState = progression
@@ -116,34 +180,35 @@ export function renderParcours(container: HTMLElement): () => void {
       const position = p.positions?.[parcours!.id]
       const repriseInfo = reprise ? trouver(reprise) : undefined
       const titreReprise =
-        repriseInfo?.contenu?.titre ?? (repriseInfo?.genre === 'qcm' ? `QCM — ${repriseInfo.chapitre.titre}` : '')
+        repriseInfo?.contenu?.titre ?? (repriseInfo?.genre === 'qcm' ? t('qcmReprise', { titre: repriseInfo.chapitre.titre }) : '')
       enteteEl.innerHTML = `
         <div class="entete-titre">
           <h1>${echapper(parcours!.titre)}</h1>
           <p>${echapper(parcours!.description)}</p>
         </div>
         <div class="entete-progression">
-          <div class="entete-chiffres"><strong>${d.pourcentage} %</strong> du parcours · ${d.chapitresTermines}/${d.chapitresTotal} chapitres terminés</div>
+          <div class="entete-chiffres"><strong>${d.pourcentage} %</strong> ${t('duParcours')} · ${t('chapitresTermines', { faits: d.chapitresTermines, total: d.chapitresTotal })}</div>
           ${barre(d.pourcentage, 'barre-globale')}
-          <div class="entete-bonus" title="Les défis bonus ne comptent pas dans le pourcentage">★ Défis bonus : ${d.bonusFaits}/${d.bonusTotal}</div>
-          ${d.chapitresTermines > 0 ? `<button class="btn-certificat" id="btn-certificat" title="Un PDF à imprimer : nom, date, chapitres validés">📜 ${d.chapitresTermines === d.chapitresTotal ? 'Mon certificat' : 'Attestation de progression'}</button>` : ''}
+          <div class="entete-bonus" title="${t('bonusTitre')}">${t('defisBonus', { faits: d.bonusFaits, total: d.bonusTotal })}</div>
+          ${d.chapitresTermines > 0 ? `<button class="btn-certificat" id="btn-certificat" title="${t('certificatTitre')}">📜 ${d.chapitresTermines === d.chapitresTotal ? t('monCertificat') : t('attestation')}</button>` : ''}
         </div>
         ${
           reprise
-            ? `<button class="btn-principal btn-reprendre" id="btn-reprendre" title="${echapper(titreReprise)}">${!position ? 'Commencer' : reprise === position.etapeId ? 'Reprendre' : 'Continuer'} : ${echapper(titreReprise)}</button>`
-            : `<div class="parcours-fini"><strong>Parcours terminé, bravo ! 🎉</strong><br>${
-              parcours!.plateforme === 'amiga'
-                ? 'Tu sais maintenant programmer l’Amiga en assembleur : système, Copper, Blitter, sprites, Paula, et de vrais exécutables.'
-                : 'Tu sais maintenant programmer le ST en assembleur : écran, animation, clavier, joystick, son, et de vrais .PRG.'
-            } Il reste ${d.bonusTotal - d.bonusFaits} défi${d.bonusTotal - d.bonusFaits > 1 ? 's' : ''} bonus à relever, et le bac à sable t'attend pour tes propres démos.</div>`
+            ? `<button class="btn-principal btn-reprendre" id="btn-reprendre" title="${echapper(titreReprise)}">${t('repriseBouton', {
+                action: !position ? t('commencer') : reprise === position.etapeId ? t('reprendre') : t('continuer'),
+                titre: echapper(titreReprise)
+              })}</button>`
+            : `<div class="parcours-fini"><strong>${t('parcoursTermine')}</strong><br>${
+              parcours!.plateforme === 'amiga' ? t('finAmiga') : t('finAtari')
+            } ${t(d.bonusTotal - d.bonusFaits > 1 ? 'resteBonusN' : 'resteBonus1', { n: d.bonusTotal - d.bonusFaits })}</div>`
         }
       `
       enteteEl.querySelector('#btn-reprendre')?.addEventListener('click', () => reprise && ouvrir(reprise))
       enteteEl.querySelector('#btn-certificat')?.addEventListener('click', () => {
         void window.api.getBuildInfo().then((info) => {
-          const nom = profilActif()?.nom ?? 'Apprenant'
-          const html = htmlCertificat(parcours!, p, { nom, version: info.version })
-          return window.api.exporterPdf(html, `Certificat 68k Trainer - ${nom}`)
+          const nom = profilActif()?.nom ?? t('apprenant')
+          const html = htmlCertificat(parcours!, p, { nom, version: info.version, langue: langueCourante() })
+          return window.api.exporterPdf(html, t('nomPdf', { nom }))
         })
       })
     }
@@ -165,7 +230,7 @@ export function renderParcours(container: HTMLElement): () => void {
           <div class="sommaire-chapitre${ch.id === chapitreOuvert ? ' ouvert' : ''}${d.termine ? ' termine' : ''}">
             <button class="sommaire-chapitre-titre${ch.id === chapitreOuvert && etapeCourante === null ? ' actif' : ''}" data-chapitre="${ch.id}">
               <span class="num">${i + 1}</span>
-              <span class="titre">${echapper(ch.titre)}${ch.esquisse ? ' <small>(bientôt)</small>' : ''}</span>
+              <span class="titre">${echapper(ch.titre)}${ch.esquisse ? ` <small>${t('bientot')}</small>` : ''}</span>
               <span class="pct">${d.total ? d.pourcentage + ' %' : ''}</span>
             </button>
             ${d.total ? barre(d.pourcentage, 'barre-mini') : ''}
@@ -180,7 +245,7 @@ export function renderParcours(container: HTMLElement): () => void {
                   .join('')}
                 ${
                   ch.qcm
-                    ? `<button class="sommaire-etape${ch.qcm.id === etapeCourante ? ' actif' : ''}${qcmReussi(ch, p) ? ' fait' : ''}" data-etape="${ch.qcm.id}"><span class="icone">❓</span><span class="titre">QCM de fin de chapitre</span><span class="coche">${qcmReussi(ch, p) ? '✓' : ''}</span></button>`
+                    ? `<button class="sommaire-etape${ch.qcm.id === etapeCourante ? ' actif' : ''}${qcmReussi(ch, p) ? ' fait' : ''}" data-etape="${ch.qcm.id}"><span class="icone">❓</span><span class="titre">${t('qcmFin')}</span><span class="coche">${qcmReussi(ch, p) ? '✓' : ''}</span></button>`
                     : ''
                 }
                 ${(ch.bonus ?? []).map((b) => ligneContenu(b, 'bonus')).join('')}
@@ -216,11 +281,11 @@ export function renderParcours(container: HTMLElement): () => void {
       bandeauEl.innerHTML = `
         <div class="bandeau-titre">${echapper(ch.titre)}</div>
         <div class="bandeau-detail">
-          ${morceau('Cours', d.cours)}
-          ${morceau('Exemples', d.exemples)}
-          ${morceau('Prédictions', d.predictions)}
-          ${morceau('Exercices', d.exercices)}
-          ${d.qcm.present ? `<span class="${d.qcm.reussi ? 'ok' : ''}">QCM ${d.qcm.reussi ? '✓' : d.qcm.meilleurScore !== undefined ? `${d.qcm.meilleurScore}/${ch.qcm!.questions.length}` : '—'}</span>` : ''}
+          ${morceau(t('cours'), d.cours)}
+          ${morceau(t('exemples'), d.exemples)}
+          ${morceau(t('predictions'), d.predictions)}
+          ${morceau(t('exercices'), d.exercices)}
+          ${d.qcm.present ? `<span class="${d.qcm.reussi ? 'ok' : ''}">${t('qcm')} ${d.qcm.reussi ? '✓' : d.qcm.meilleurScore !== undefined ? `${d.qcm.meilleurScore}/${ch.qcm!.questions.length}` : '—'}</span>` : ''}
           ${d.bonus.total ? `<span class="bonus">★ ${d.bonus.faits}/${d.bonus.total}</span>` : ''}
         </div>
         ${d.total ? barre(d.pourcentage, 'barre-chapitre') : ''}`
@@ -237,8 +302,9 @@ export function renderParcours(container: HTMLElement): () => void {
       const prev = index > 0 ? etapes[index - 1] : undefined
       const next = etapeCourante === null ? etapes.find((e) => e.chapitreId === chapitreOuvert) : etapes[index + 1]
       const libelle = (e: Etape): string => {
-        const t = trouver(e.id)
-        return t?.contenu?.titre ?? (t?.genre === 'qcm' ? 'QCM' : '')
+        const info = trouver(e.id)
+        return info?.contenu?.titre ?? (info?.genre === 'qcm' ? t('qcm') : '')
+
       }
       navEl.innerHTML = `
         ${prev ? `<button id="nav-prev">← ${echapper(libelle(prev))}</button>` : '<span></span>'}

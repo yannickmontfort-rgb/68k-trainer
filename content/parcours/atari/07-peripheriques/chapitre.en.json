@@ -1,0 +1,161 @@
+{
+  "titre": "Keyboard, joystick and sound",
+  "resume": "TOS returns each key with its ASCII code and its scancode, and it passes the joystick packets to the routine the program installs in the Kbdvbase table, which lets you fix routine 7.4 of the manual. The YM2149 chip plays notes, chords and melodies that a VBL routine moves forward. The chapter matches module 5 of the manual; in the sandbox, a click on the ST screen gives you the keyboard, and the \"Arrows + Space = joystick\" box the joystick.",
+  "notions": {
+    "atari-ch07-n0": { "titre": "Review of chapters 4 to 6" },
+    "atari-ch07-n1": { "titre": "Reading the keyboard" },
+    "atari-ch07-n2": { "titre": "The keyboard processor and the joystick" },
+    "atari-ch07-n3": { "titre": "The sound of the YM2149" }
+  },
+  "contenus": {
+    "atari-ch07-rappel": {
+      "titre": "What you already know",
+      "introduction": "Three questions on the previous chapters, without rereading the lessons. Getting it wrong here does not matter: searching is what makes it stick.",
+      "questions": {
+        "q1": { "enonce": "The program walks through 3 lines of a block 48 pixels wide. What is A1 at the end?", "explication": "Each pass moves forward 24 bytes, the width of the block, then 136 with the line skip, that is 160 bytes: three lines make 480 = $1E0." },
+        "q2": { "enonce": "To place a sprite on a colored background without mixing the colors, what do you do before the `OR` of the drawing?", "choix": ["An `AND` with the inverted mask", "A second `OR` with the mask", "A `NOT` on the background"], "explication": "The AND with the inverted mask clears the background bits under the sprite, and the OR then places the drawing in that hole." },
+        "q3": { "enonce": "A program in user mode executes `MOVE.B #8,$FFFF8800.W`. What happens?", "choix": ["A bus error: 2 bombs", "Nothing special, the register is written", "A privilege violation: 8 bombs"], "explication": "The hardware registers, from `$FF8000` on, are protected in user mode: you have to go through a routine called with Supexec." }
+      }
+    },
+    "atari-ch07-cours-clavier": {
+      "titre": "Cnecin, ASCII code and scancode",
+      "source": "Rephrased from the Atari ST manual v2 (§ 5.1 and exercise 7.1-3), and the Atari Compendium for the table of scancodes"
+    },
+    "atari-ch07-ex-touches": {
+      "titre": "Esc or down arrow",
+      "introduction": "In this exercise 3 of module 7 of the manual, Esc quits, the down arrow displays \"bas\" and the other keys are ignored; the example types a, down arrow and Esc, and you watch D0 after each Cnecin.",
+      "explications": {
+        "4": "Cnecin returns with a key in D0, the first time `$001E0061`: the a key, scancode $1E and ASCII code $61.",
+        "6": "The low byte, the ASCII code, is compared with that of Esc, $1B.",
+        "8": "SWAP exchanges the two halves of D0, and the scancode ends up in the low byte.",
+        "9": "For an arrow, whose ASCII code is 0, only the scancode counts: $50 for the down arrow.",
+        "11": "For any other key, the program waits for the next one.",
+        "15": "\"bas\" appears in the text output.",
+        "7": "With Esc, the program jumps to QUITTER."
+      },
+      "conclusion": "The ASCII code is in the low byte, the scancode in the high word, and a SWAP takes you from one to the other."
+    },
+    "atari-ch07-pred-cnecin": {
+      "titre": "An arrow in D0",
+      "introduction": "The key typed is the up arrow, scancode `$48`, which produces no character.",
+      "questions": {
+        "q1": { "enonce": "What does D0 contain after Cnecin?", "explication": "The scancode is in bits 23-16, and the ASCII code, zero for an arrow, in the low byte." },
+        "q2": { "enonce": "And D1, after `SWAP D1`?", "explication": "SWAP exchanges the two words, and `$0048` moves into the low word." }
+      }
+    },
+    "atari-ch07-exo-echap": {
+      "titre": "Esc to finish",
+      "enonce": "The program counts in D7 the keys typed before Esc. Add the test that jumps to FIN when the key is Esc; the exercise types a, b, c then Esc, and D7 must be 3.",
+      "indices": ["The ASCII code of Esc, `$1B`, is in the low byte of D0.", "`CMP.B #$1B,D0` then `BEQ.S FIN`."]
+    },
+    "atari-ch07-exo-hautbas": {
+      "titre": "Up, down, Esc",
+      "enonce": "Write a program that displays H for each up arrow and B for each down arrow, ignores the other keys and stops on Esc. The exercise types down, x, up, down, Esc, and the output must be `BHB`.",
+      "indices": ["Esc is tested on the ASCII code, before the SWAP, and the arrows on the scancode, after it.", "Up arrow = $48, down arrow = $50; to display a character, Cconout (GEMDOS 2) with the character pushed as a word."]
+    },
+    "atari-ch07-exo-swap": {
+      "titre": "The invisible arrow",
+      "enonce": "This program should display B at each down arrow and stop on Esc, but it never displays anything. Fix it; the exercise types down, a, down, Esc.",
+      "indices": ["Where is the scancode in D0 just before `CMP.B #$50,D0`?", "A `SWAP D0` is missing before the comparison with $50."]
+    },
+    "atari-ch07-cours-ikbd": {
+      "titre": "IKBD, Kbdvbase and a joystick routine",
+      "source": "Rephrased from the Atari ST manual v2 (§ 5.2 and routine 7.4, corrected), the Intelligent Keyboard Protocol (Atari), and EmuTOS (bios/aciavecs.S) for the layout of the joystick packet"
+    },
+    "atari-ch07-ex-joy": {
+      "titre": "Waiting for the fire button",
+      "introduction": "The program installs a `JOY` routine in the Kbdvbase table, then waits for the fire button, which the simulator pushes right at frame 3 and right with fire at frame 6: stepping through, you enter `JOY` in the middle of the main program's wait.",
+      "explications": {
+        "5": "A0 receives the address of the table of keyboard vectors.",
+        "6": "The old joystick vector is kept so it can be put back when leaving.",
+        "7": "From now on, each joystick packet calls the JOY routine.",
+        "10": "Vsync waits for the next frame, and meanwhile the IKBD can send a packet.",
+        "24": "TOS calls JOY with A0 = the packet, and the routine stores the state of joystick 1, `$08` (right) then `$88` (right and fire); the stack shows you are in the middle of an interrupt.",
+        "25": "RTS returns to TOS, which ends the interrupt with RTE and goes back to the main program.",
+        "12": "Bit 7 of ETAT is the fire button.",
+        "18": "Before quitting, the program gives its vector back to TOS."
+      },
+      "conclusion": "The main program never reads the joystick itself: it looks at a variable that the interrupt routine keeps up to date."
+    },
+    "atari-ch07-pred-joyetat": {
+      "titre": "Decoding a joystick state",
+      "introduction": "The program decodes a joystick state equal to `$89`.",
+      "questions": {
+        "q1": { "enonce": "What is D1 at the end (1 = fire button pressed)?", "explication": "$89 = %10001001, and bit 7 is 1." },
+        "q2": { "enonce": "Which directions does D0 show at the end?", "choix": ["Up and right", "Down and left", "Right only"], "explication": "D0 = $09 = %1001: bits 0 (up) and 3 (right) give a diagonal." }
+      }
+    },
+    "atari-ch07-exo-brancher": {
+      "titre": "Plugging in your routine",
+      "enonce": "The program should wait for the fire button, then display \"Feu !\". The JOY routine is written, the old vector is saved and put back, but the program waits forever: add the missing line. The simulator presses fire at frame 6.",
+      "indices": ["Nobody calls JOY as long as its address is not in the table.", "`MOVE.L #JOY,24(A0)`, since the joystick vector is at offset 24."]
+    },
+    "atari-ch07-exo-routine74": {
+      "titre": "Repairing routine 7.4",
+      "enonce": "Routine 7.4 of the manual waits for the fire button of joystick 1, on the \"joystick\" port, but never stops, and when leaving it would let TOS call a routine that no longer exists. Fix both flaws: read the right byte of the packet and put the old vector back before quitting.",
+      "indices": ["In the packet, `1(A0)` is joystick 0, on the mouse port, and `2(A0)` is joystick 1.", "Before Pterm0, call Kbdvbase then `MOVE.L OLD_JOY,24(A0)`."],
+      "source": "Routine 7.4 of the Atari ST manual v2, reproduced with its errors (see the errata)"
+    },
+    "atari-ch07-cours-son": {
+      "titre": "Registers, notes, mixer and melody",
+      "source": "Rephrased from the Atari ST manual v2 (§ 5.3), the YM2149 data sheet (Yamaha), and ST Internals (Abacus) for Dosound and _vblqueue"
+    },
+    "atari-ch07-ex-la": {
+      "titre": "An A for one second",
+      "introduction": "The program plays the tuning-fork A, 440 Hz, on channel A for 50 frames: listen to it in \"Real time\", then follow the JOUER routine step by step with the \"Vectors and hardware\" panel, which shows the YM2149 registers.",
+      "explications": {
+        "4": "Supexec runs JOUER in supervisor mode, since the YM2149 is hardware.",
+        "20": "A0 = $FFFF8800: `(A0)` selects the register and `2(A0)`, at $FF8802, receives its value.",
+        "22": "Register 0 receives $1C, the low byte of the period of channel A.",
+        "24": "Register 1 receives $01: the period is $11C = 284, and 2,000,000 / (16 × 284) ≈ 440 Hz.",
+        "26": "In the mixer, only bit 0 is 0, so only the square wave of channel A is on.",
+        "28": "At volume 15 the note sounds, and it goes on by itself.",
+        "11": "50 frames of waiting make one second of A.",
+        "14": "SILENCE sets the volume back to 0, otherwise the A would go on after the end of the program."
+      },
+      "conclusion": "A period, a mixer and a volume are enough for a note, which the chip then plays by itself."
+    },
+    "atari-ch07-pred-frequence": {
+      "titre": "Which note?",
+      "introduction": "The program computes, as the chip does, the frequency of a channel with period 568.",
+      "questions": {
+        "q1": { "enonce": "Which frequency (low word of D0)?", "explication": "2,000,000 / (16 × 568) = 220: twice the period of the 440 A gives one octave lower. DIVU stores the quotient in the low word and the remainder, 640, in the high word." },
+        "q2": { "enonce": "Which mixer value enables the square wave of channels A and B, without noise?", "explication": "In the mixer, 0 enables: bits 0 and 1 at 0 for the waves of A and B, bits 3 to 5 at 1 to cut the noise, and bits 6 and 7 at 1." }
+      }
+    },
+    "atari-ch07-exo-mixeur": {
+      "titre": "The silent mixer",
+      "enonce": "Channel B should play an A, period 284, at maximum volume, as a square wave without noise, but nothing can be heard. Fix the value written to the mixer.",
+      "indices": ["In the mixer, a bit at 1 cuts the source, and you need 0 to enable it.", "The square wave of channel B is bit 1: `%11111101`."]
+    },
+    "atari-ch07-exo-accord": {
+      "titre": "An A major chord",
+      "enonce": "Fill in the ACCORD routine: channel A plays an A (period 284), channel B a C# (225) and channel C an E (190), all three at volume 12, as square waves without noise.",
+      "indices": ["You need six period registers (0 to 5, low byte then high), the mixer (7) and three volumes (8 to 10).", "The mixer is `%11111000`, and `MOVE.L #$0400BE00,$FFFF8800.W` writes $BE to register 4 in one instruction."]
+    },
+    "atari-ch07-exo-melodie": {
+      "titre": "A melody under the VBL",
+      "enonce": "Play the 4 notes of the NOTES table on channel A, 10 frames each, from a routine placed in the queue of VBL routines (`_vblqueue`, at `$456`). After the 4th note, the routine cuts the sound and sets FINI to −1; the main program waits for FINI, removes the routine from the queue and quits.",
+      "indices": ["`$456` is protected, so the routine is installed and removed in subroutines called through Supexec; `MOVEA.L $456.W,A0` then `MOVE.L #MELODIE,(A0)` takes the 1st slot of the queue.", "MELODIE counts ATTENTE down; when it reaches 0, it plays note number RANG (`MOVE.W 0(A0,D0.W),D1` with D0 = RANG × 2), reloads ATTENTE with 10 and moves RANG forward, and when RANG is 4, it cuts the sound and does `ST FINI`."]
+    },
+    "atari-ch07-bonus-bip": {
+      "titre": "The joystick-driven square",
+      "enonce": "Move with the joystick the 16 × 16 square in color 1, on lines 92 to 107, starting at X = 0: 2 pixels per frame to the left or right, without leaving the screen (X between 0 and 304), with a Dosound beep when it hits an edge. The fire button quits, giving its vector back to TOS. For the check, the simulator pushes the joystick right from frame 3 to frame 200, then presses fire; in the sandbox, the \"Arrows + Space = joystick\" box lets you play.",
+      "indices": ["The JOY routine of the example and the DESSINER routine of the chapter 6 challenge do most of the work.", "At each frame, read ETAT: bit 3 adds 2 to X, bit 2 subtracts 2; if X < 0 or X > 304, bring it back to the edge and call Dosound with a short list (`DC.B 0,$80,1,0,7,$FE,8,15,$FF,4,8,0,$FF,0`)."]
+    }
+  },
+  "qcm": {
+    "q1": { "enonce": "After Cnecin, where is the scancode of the key?", "choix": ["In the low byte of D0", "In bits 23 to 16 of D0", "In A0"], "explication": "The ASCII code is at the bottom and the scancode in the high word, which SWAP D0 brings down." },
+    "q2": { "enonce": "How do you recognize the down arrow?", "choix": ["By its ASCII code", "By its scancode $50", "By its ASCII code $50"], "explication": "The ASCII code of an arrow is 0, and only its scancode tells it apart." },
+    "q11": { "enonce": "The joystick state is in D0. Which instruction tests the fire button?", "explication": "BTST puts the inverse of bit 7 into Z: a following BNE jumps when fire is pressed." },
+    "q3": { "enonce": "What does XBIOS 34, Kbdvbase, return?", "choix": ["The state of the keyboard", "The address of the table of keyboard vectors", "The last scancode"], "explication": "It returns a table of 9 vectors, where the joystick is at offset 24." },
+    "q4": { "enonce": "In the packet passed to the joystick routine, where is the state of joystick 1 (the games port)?", "explication": "1(A0) is joystick 0, on the mouse port, and 2(A0) is joystick 1; the manual swaps them." },
+    "q5": { "enonce": "Why must you put the old joystick vector back before quitting?", "choix": ["To free the memory", "Otherwise TOS will call a routine that no longer exists", "To make the joystick faster"], "explication": "At the next movement, TOS would jump into the memory of a finished program, and you would get bombs." },
+    "q6": { "enonce": "Which bit of the joystick state is the fire button?", "explication": "Bits 0 to 3 give up, down, left and right, and bit 7 fire." },
+    "q12": { "enonce": "For a game loop to do one step per frame, at each pass you call…", "explication": "Vsync waits for the next VBL, which locks the loop to 50 frames per second." },
+    "q7": { "enonce": "To select register 8 of the YM2149, you write 8…", "choix": ["at $FF8800", "at $FF8802", "at $FF8240"], "explication": "$FF8800 receives the register number, $FF8802 its value." },
+    "q8": { "enonce": "In the mixer (register 7), a bit at 0…", "choix": ["cuts the source", "enables the source", "sets the volume"], "explication": "In the mixer, 0 enables the source and 1 cuts it." },
+    "q9": { "enonce": "If you double the period of a channel, the note…", "choix": ["goes up an octave", "goes down an octave", "does not change"], "explication": "Frequency = 2 MHz / (16 × period), so doubling the period halves the frequency." },
+    "q10": { "enonce": "What is the `_vblqueue` queue ($456) for?", "choix": ["Storing the keys typed", "Having routines called at each VBL", "Playing sounds by itself"], "explication": "TOS calls each of its routines 50 times a second, which suits a music player." }
+  }
+}

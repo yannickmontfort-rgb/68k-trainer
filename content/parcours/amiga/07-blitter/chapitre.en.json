@@ -1,0 +1,217 @@
+{
+  "titre": "The Blitter",
+  "resume": "The Blitter copies, clears and combines blocks of memory much faster than the 68000. You set its channels, its logic function and its size, then wait for it to finish before starting it again; it can also put a drawing on a background down to the pixel, draw lines and fill areas. Chapter 3 of the Amiga manual only gave its principle.",
+  "notions": {
+    "amiga-ch07-n0": { "titre": "Review of chapters 5 and 6" },
+    "amiga-ch07-n1": { "titre": "Copying and clearing" },
+    "amiga-ch07-n2": { "titre": "Minterms" },
+    "amiga-ch07-n3": { "titre": "Down to the pixel" },
+    "amiga-ch07-n4": { "titre": "Drawing and filling" }
+  },
+  "contenus": {
+    "amiga-ch07-rappel": {
+      "titre": "What you already know",
+      "introduction": "Three questions on the previous chapters, without rereading the lessons. Getting it wrong here does not matter: searching is what makes it stick.",
+      "questions": {
+        "q1": { "enonce": "What is D1, the first word of a Copper WAIT?", "explication": "Line $90 goes into the high byte, and $07 gives position $06 with bit 0 at 1, which tells a WAIT apart from a MOVE." },
+        "q2": { "enonce": "A VBL routine has finished its work. What must it do before its `RTE`?", "choix": ["Clear its request in INTREQ", "Write to COPJMP1", "Nothing more"], "explication": "Otherwise Paula keeps the request up, and the 68000 goes back into the routine as soon as the RTE runs." },
+        "q3": { "enonce": "D2 gives the byte of pixel (100, 10) in a plane with 40 bytes per line. What is it?", "explication": "10 lines of 40 bytes, plus 100 ÷ 8 = 12: 412." }
+      }
+    },
+    "amiga-ch07-cours-blitter": {
+      "titre": "Channels, BLTSIZE, modulos and waiting",
+      "source": "Written for 68k Trainer from the Hardware Reference Manual (ch. 6) and Amiga Intern (Abacus, ch. 11)"
+    },
+    "amiga-ch07-ex-copie": {
+      "titre": "Clearing the screen, then putting a block",
+      "introduction": "Two blits: the first clears the whole plane, the second copies a 32 × 16 block to (64, 100). In \"Vectors and hardware\", the Blitter goes to \"busy\" right after each write to BLTSIZE.",
+      "explications": {
+        "4": "You check that the Blitter is free before touching its registers.",
+        "5": "One long word writes BLTCON0, `$0100` (channel D only, minterm 0, hence zeros), and BLTCON1, 0, in one go.",
+        "6": "BLTDPT receives the address to write to, the start of the plane, stored in Chip RAM by `SECTION ecran,BSS_C`.",
+        "8": "BLTSIZE = 256 × 64 + 20, that is 256 lines of 20 words, the whole plane: writing it starts the job, and the 68000 carries on at once.",
+        "9": "You wait for the clearing to end before preparing the next blit.",
+        "10": "`$09F0` turns on channels A (`$0800`) and D (`$0100`) with minterm `$F0`, D = A: it is a copy.",
+        "11": "Both masks go to `$FFFF` in one long word: no bit of A is masked.",
+        "13": "The destination is line 100, byte 8, that is x = 64.",
+        "15": "D's modulo, 40 − 4 = 36, skips at each end of a line of the block to the next line of the screen.",
+        "16": "16 lines of 2 words: the Blitter puts the block."
+      },
+      "conclusion": "Every blit follows this pattern: channels, function, pointers and modulos first, BLTSIZE last, then waiting for the end before the next blit."
+    },
+    "amiga-ch07-pred-taille": {
+      "titre": "Size and modulo",
+      "introduction": "The program computes BLTSIZE and the screen's modulo for a block 64 pixels wide and 20 lines tall, copied into a 320-pixel screen.",
+      "questions": {
+        "q1": { "enonce": "What is D0 (BLTSIZE)?", "explication": "The 20 lines go into bits 15-6, 20 × 64 = 1280 = $500, and the 4 words are added to that: $504." },
+        "q2": { "enonce": "And D1 (the screen's modulo)?", "explication": "64 pixels are 8 bytes, and 40 − 8 = 32." }
+      }
+    },
+    "amiga-ch07-exo-modulo": {
+      "titre": "The right modulo",
+      "enonce": "The program copies a solid 32 × 16 block to (64, 100), but the block spreads out into a long strip: fill in the destination modulo.",
+      "indices": ["The block is 32 pixels wide, that is 4 bytes per line.", "`MOVE.W #40-4,$66(A5)`"]
+    },
+    "amiga-ch07-exo-ordonner": {
+      "titre": "Clear, then copy",
+      "enonce": "The plane still holds an old striped image. Put the lines back in order to clear it entirely with the Blitter, then put the 32 × 16 block at (64, 100). The masks and A's modulo are already set.",
+      "indices": ["Each blit sets its registers first and writes BLTSIZE last; the second only starts once the first is finished.", "The clear only has channel D (`$0100`), a modulo of 0 and 256 lines of 20 words; the copy has channels A and D (`$09F0`), a modulo of 36 and 16 lines of 2 words. In between: `BSR attendre_blitter`."],
+      "lignes": ["    MOVE.L  #$01000000,$40(A5)  ; BLTCON0 and BLTCON1", "    MOVE.L  #plan,$54(A5)       ; BLTDPT", "    MOVE.W  #0,$66(A5)          ; BLTDMOD", "    MOVE.W  #(256<<6)|20,$58(A5) ; BLTSIZE", "    BSR     attendre_blitter", "    MOVE.L  #$09F00000,$40(A5)  ; BLTCON0 and BLTCON1", "    MOVE.L  #bloc,$50(A5)       ; BLTAPT", "    MOVE.L  #plan+100*40+64/8,$54(A5) ; BLTDPT", "    MOVE.W  #40-4,$66(A5)       ; BLTDMOD", "    MOVE.W  #(16<<6)|2,$58(A5)  ; BLTSIZE"]
+    },
+    "amiga-ch07-exo-presse": {
+      "titre": "The Blitter in a hurry",
+      "enonce": "This program clears the plane then copies a block. The image looks right in the simulator, but on a real Amiga the second blit would overwrite the first one in the middle of its work: read the debugger's remark and fix it.",
+      "indices": ["Between two blits, the Blitter must have finished.", "Add `BSR attendre_blitter` right after the first `BLTSIZE`."]
+    },
+    "amiga-ch07-exo-effacer": {
+      "titre": "Clearing a rectangle",
+      "enonce": "The 68000 has filled the whole plane with white. With the Blitter, clear the rectangle x = 32 to 95, y = 50 to 99, without touching the rest.",
+      "indices": ["Channel D only, minterm 0: `$01000000` in BLTCON0/BLTCON1. The corner: `plan+50*40+32/8`.", "64 pixels = 4 words = 8 bytes: modulo 32, BLTSIZE = `(50<<6)|4`."]
+    },
+    "amiga-ch07-cours-minterms": {
+      "titre": "The logic function and the cookie-cut",
+      "source": "Written for 68k Trainer from the Hardware Reference Manual (ch. 6) and demo tutorials (RamJam)"
+    },
+    "amiga-ch07-ex-ou": {
+      "titre": "Putting a frame on stripes",
+      "introduction": "On a background of vertical stripes, the program puts a 32 × 16 frame with D = A OR C: the frame is added to the background, and the stripes stay visible inside it.",
+      "explications": {
+        "7": "The 68000 fills the plane with `$0F`: 4 black pixels, 4 white.",
+        "10": "`$0BFA` turns on channels A, C and D (`$0800 + $0200 + $0100`) with minterm `$F0 OR $AA = $FA`, D = A OR C.",
+        "14": "C reads the background where the frame goes,",
+        "15": "and D writes at the same place, with the same address and the same modulo, 36.",
+        "19": "The frame appears, and inside it, where A is 0, D receives C: the stripes remain."
+      },
+      "conclusion": "By reading the destination through C, the Blitter combines a drawing with what is already on screen."
+    },
+    "amiga-ch07-pred-minterm": {
+      "titre": "Computing minterms",
+      "introduction": "The 68000 applies the lesson's method with A = `$F0`, B = `$CC` and C = `$AA`.",
+      "questions": {
+        "q1": { "enonce": "The minterm for D = A EOR C (D0)?", "explication": "$F0 EOR $AA = $5A: the background is inverted where drawing A is 1, as under a cursor." },
+        "q2": { "enonce": "The cookie-cut minterm (D1)?", "explication": "(A AND B) OR (NOT A AND C) = $C0 OR $0A = $CA." }
+      }
+    },
+    "amiga-ch07-exo-inverser": {
+      "titre": "Inverting an area",
+      "enonce": "The program must invert, white for black, the area x = 64 to 127, y = 64 to 95 of the striped background. Channels C and D are correctly chosen, but the minterm is 0 and the area is cleared: complete BLTCON0.",
+      "indices": ["D = NOT C, with C = $AA.", "NOT $AA = $55: `$0355` in BLTCON0."]
+    },
+    "amiga-ch07-exo-ou-exclusif": {
+      "titre": "The frame in exclusive OR",
+      "enonce": "This is the example's program: the frame is added to the stripes with D = A OR C. Change it so that the frame inverts the stripes where it passes, with D = A EOR C, without touching the inside or the rest of the background.",
+      "indices": ["Only the minterm changes: channels A, C and D stay the same.", "A EOR C = `$F0` EOR `$AA` = `$5A`: `MOVE.L #$0B5A0000,$40(A5)`."]
+    },
+    "amiga-ch07-exo-cookie": {
+      "titre": "The cookie-cut",
+      "enonce": "Put the drawing `dessin` (16 × 16, left half white, right half black) at (64, 80) on the striped background, with its mask `masque`: inside the square you must see exactly the drawing, and around it the stripes intact.",
+      "indices": ["The 4 channels and minterm `$CA`: `$0FCA` in BLTCON0. A = mask, B = drawing (`BLTBPT` = `$4C`), C and D = the screen.", "Modulos: 0 for A and B, 40 − 2 = 38 for C and D; BLTSIZE = `(16<<6)|1`."]
+    },
+    "amiga-ch07-cours-decalage": {
+      "titre": "Shift, extra word and masks",
+      "source": "Written for 68k Trainer from the Hardware Reference Manual (ch. 6)"
+    },
+    "amiga-ch07-ex-decalage": {
+      "titre": "A square at x = 37",
+      "introduction": "To put a 16 × 16 square at x = 37, the program shifts the source by 5 bits, blits one extra word per line and masks the last one.",
+      "explications": {
+        "7": "The shift is 37 mod 16 = 5.",
+        "8": "`ROR.W #4` puts these 4 bits at the very top of the word: `$5000`.",
+        "9": "The channels and the minterm are added to it: BLTCON0 = `$59F0`.",
+        "13": "BLTALWM = 0 empties the second word read from the source, which belongs to the next line of the square.",
+        "15": "37 ÷ 16 = 2: the first destination word is no. 2, at byte 4 of the line.",
+        "20": "BLTAMOD = −2 brings the source back one word, since 2 are read per line while the square only has one.",
+        "22": "16 lines of 2 words: the 5 bits that spill over from the first word land in the second."
+      },
+      "conclusion": "The Blitter shifts on the fly: where the ST needed 16 shifted versions of the drawing, one extra word and a mask are enough."
+    },
+    "amiga-ch07-pred-decalage": {
+      "titre": "For x = 100",
+      "introduction": "The program computes the shift, the first destination byte and BLTCON0 for a drawing at x = 100.",
+      "questions": {
+        "q1": { "enonce": "What is D1 (the shift)?", "explication": "100 = 6 × 16 + 4." },
+        "q2": { "enonce": "And D2 (the byte of the first word in the line)?", "explication": "It is word no. 6, which starts at byte 12." },
+        "q3": { "enonce": "And D3 (BLTCON0)?", "explication": "Shift 4 goes into bits 15-12, followed by channels A and D and the minterm D = A." }
+      }
+    },
+    "amiga-ch07-exo-ash": {
+      "titre": "The right shift",
+      "enonce": "The square should be at x = 70, but it appears at x = 64. The destination word, the extra word and the masks are ready: add the shift to BLTCON0.",
+      "indices": ["70 = 4 × 16 + 6: the shift is 6.", "`$69F0`: the 6 in bits 15-12."]
+    },
+    "amiga-ch07-exo-masque": {
+      "titre": "The square that spills over",
+      "enonce": "The 16 × 16 square must be put at x = 150, y = 100, but white pixels extend it on its right. The shift, the destination address and the modulos are right: find the mistake.",
+      "indices": ["The Blitter reads two words per line of the source, while the square only has one. What does the second one hold, and what should neutralize it?", "The extra word must be emptied by the last word mask: `MOVE.W #$0000,$46(A5)`."]
+    },
+    "amiga-ch07-exo-nimporte": {
+      "titre": "Anywhere",
+      "enonce": "With the Blitter, put the 16 × 16 square (label `carre`) at x = 123, y = 40.",
+      "indices": ["Shift = 123 mod 16 = 11; first word = 123 ÷ 16 = 7, that is byte 14 of line 40.", "As in the example: 2 words per line, BLTALWM = 0, BLTAMOD = −2, BLTDMOD = 36."]
+    },
+    "amiga-ch07-cours-lignes": {
+      "titre": "Line mode and filling",
+      "source": "Written for 68k Trainer from the Hardware Reference Manual (ch. 6); routine checked against Bresenham in all 8 octants"
+    },
+    "amiga-ch07-ex-lignes": {
+      "titre": "A star of lines",
+      "introduction": "The Blitter draws eight lines from the center of the screen, in every direction; step through the routine `ligne` to follow the calculation of the octant and of the Bresenham registers.",
+      "explications": {
+        "8": "Each line: (D0, D1) → (D2, D3), then `BSR ligne`.",
+        "65": "dx = x2 − x1; if it is negative, you note that the line goes to the left.",
+        "81": "Depending on whether the line is wider than tall or the reverse, you know which step is \"always\" and which is \"sometimes\".",
+        "83": "SUD: the \"sometimes\" step is vertical.",
+        "101": "Line taller than wide: swap so that D2 = dmax and D3 = dmin.",
+        "103": "The address of the word that contains the starting point: y × 40 + (x ÷ 16) × 2.",
+        "110": "The position of the starting point in this word goes into bits 15-12 of BLTCON0.",
+        "111": "Channels A, C, D and minterm `$CA`: the point (A) is put on the screen (C).",
+        "117": "SIGN: the sign of the starting accumulator, 4 dmin − 2 dmax.",
+        "122": "The LINE bit enables line mode.",
+        "126": "BLTSIZE = (dmax + 1) × 64 + 2: one point per step.",
+        "135": "Bresenham's accumulator goes into BLTAPTL.",
+        "140": "BLTSIZE starts the drawing: the Blitter draws the line while the 68000 prepares the next one."
+      },
+      "conclusion": "The routine only prepares the registers, and the Blitter draws the line: this is the basis of \"wireframe\" 3D demos."
+    },
+    "amiga-ch07-exo-carre-lignes": {
+      "titre": "A square in four lines",
+      "enonce": "With the routine `ligne`, already in the program, draw the outline of the square with corners (50, 50) and (150, 150).",
+      "indices": ["Four calls: D0, D1 = the start; D2, D3 = the end; then `BSR ligne`.", "The routine changes D0 to D6: reload the four registers before each call."]
+    },
+    "amiga-ch07-ex-remplir": {
+      "titre": "Filling between two edges",
+      "introduction": "The 68000 draws two vertical edges, then the Blitter fills the space between them in descending mode.",
+      "explications": {
+        "4": "The edges: one pixel at x = 40 and one at x = 200, over 100 lines.",
+        "7": "The assembler computes the bit and the byte of the pixel: `7-(40&7)` and `40/8`.",
+        "12": "BLTCON1 = `$000A`: IFE (bit 3), inclusive fill, and DESC (bit 1), descending mode, required for filling.",
+        "14": "In descending mode, the Blitter starts from the last word of the area (line 159, byte 38) and works its way back up.",
+        "19": "On each line, from right to left, the Blitter enters the area at the first edge and leaves it at the second."
+      },
+      "conclusion": "Filling means copying an area onto itself in descending mode, with IFE or EFE: the Blitter colors in between the edges."
+    },
+    "amiga-ch07-exo-remplir": {
+      "titre": "The forgotten fill",
+      "enonce": "The Blitter copies the area back in descending mode, but nothing is filled: complete BLTCON1 for an inclusive fill.",
+      "indices": ["IFE is bit 3 of BLTCON1 ($0008), DESC bit 1 ($0002).", "`$000A`"]
+    },
+    "amiga-ch07-bonus-triangle": {
+      "titre": "A solid triangle",
+      "enonce": "Challenge: draw the solid triangle with vertices (160, 40), (60, 200) and (260, 200). Draw its two slanted edges with the routine `bord`, which only puts one point per line in exclusive OR (the shared vertex cancels out), then fill lines 40 to 200 with the Blitter.",
+      "indices": ["`bord` is used like `ligne`: (160, 40) → (60, 200), then (160, 40) → (260, 200).", "Inclusive descending fill (`$09F0000A`) starting from the last word of line 200, over 161 lines of 20 words."]
+    }
+  },
+  "qcm": {
+    "q1": { "enonce": "How many sources and destinations does the Blitter have?", "choix": ["3 sources (A, B, C) and one destination (D)", "1 source and 1 destination", "4 sources"], "explication": "It combines A, B and C bit by bit and writes D." },
+    "q2": { "enonce": "Which register starts the Blitter's job?", "explication": "You write it last, once everything is set." },
+    "q3": { "enonce": "How do you know the Blitter has finished?", "choix": ["Bit 14 of DMACONR (BBUSY) goes back to 0", "BLTSIZE goes back to 0", "There is no way to know"], "explication": "`BTST #6,$DFF002` tests this bit (bit 6 of the high byte)." },
+    "q4": { "enonce": "A block 48 pixels wide in a screen with 40 bytes per line: which destination modulo?", "explication": "48 pixels are 6 bytes, and 40 − 6 = 34." },
+    "q10": { "enonce": "To place a height in bits 15-6 of BLTSIZE, you multiply it by 64. Which instruction does that?", "explication": "Shifting 6 bits to the left multiplies by 2⁶ = 64." },
+    "q5": { "enonce": "With A = $F0, B = $CC, C = $AA, which minterm gives D = A OR C?", "explication": "$F0 OR $AA = $FA." },
+    "q6": { "enonce": "What does this instruction do?", "choix": ["It turns on the 4 channels with the cookie-cut minterm", "It clears the screen", "It starts the Blitter"], "explication": "$0F00 = A, B, C, D; $CA = (A AND B) OR (NOT A AND C)." },
+    "q7": { "enonce": "To put a 16-pixel drawing at x = 21, how many words per line must you blit?", "choix": ["2, with the last word masked", "1", "21"], "explication": "Shifted by 5 bits, it spills over onto the next word." },
+    "q11": { "enonce": "How many bytes does a 320 × 256 pixel plane take up?", "choix": ["81,920", "40,960", "10,240"], "explication": "One bit per pixel: 40 bytes per line, over 256 lines." },
+    "q8": { "enonce": "To fill an area, the Blitter must be in…", "choix": ["descending mode, with IFE or EFE", "line mode", "ascending mode"], "explication": "The Blitter fills from right to left, starting from the last word of the area." },
+    "q9": { "enonce": "Where can the Blitter read and write?", "choix": ["Only in Chip RAM", "Anywhere", "Only in the screen"], "explication": "Like all the chips, it only sees Chip RAM." }
+  }
+}

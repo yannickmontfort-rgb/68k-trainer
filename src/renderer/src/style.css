@@ -219,6 +219,7 @@ html, body, #app {
   font-size: 12.5px;
   max-height: 120px;
   overflow-y: auto;
+  white-space: pre-wrap;
   border-top: 1px solid #5a2a2a;
 }
 
@@ -578,8 +579,20 @@ html, body, #app {
   width: 100%;
 }
 
-.emulateur-inactif {
-  opacity: 0.6;
+/* Ma propre ROM : une ligne par machine */
+.rom-ligne {
+  border-top: 1px solid #333;
+  padding-top: 8px;
+  margin-top: 8px;
+}
+
+.rom-ligne h4 {
+  margin: 0 0 4px;
+}
+
+.rom-choix {
+  display: block;
+  margin: 2px 0;
 }
 
 /* --- Boîtes de dialogue (à la place de confirm/alert) ------------------------- */

@@ -17,6 +17,42 @@ import { createReadStream, existsSync, mkdirSync, readdirSync, readFileSync, ren
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { EMULATEURS, type Emulateur, type IdEmulateur, type Paquet } from './catalogue'
+import { sortieAtari } from './lanceurAtari'
+import { STARTUP_KICKSTART, analyserRom, nomRom, configUaeKickstart, dossierRoms, type MachineRom, type RomReconnue } from './roms'
+export { sourceLanceurAtari } from './lanceurAtari'
+import { langueMain, traducteurMain } from '../langue'
+
+const t = traducteurMain({
+  fr: {
+    telechargementImpossible: 'Téléchargement impossible ({statut}) : {url}',
+    telechargement: 'Téléchargement de {fichier}',
+    verification: 'Vérification de {fichier}',
+    sommeDifferente: "{fichier} n'est pas le fichier attendu (somme SHA-256 différente) : installation annulée.",
+    extractionImpossible: 'Extraction impossible de {zip} : {erreur}',
+    windowsSeulement: "L'installation automatique de {nom} n'existe que sous Windows pour l'instant.",
+    dejaEnCours: "{nom} est déjà en cours d'installation.",
+    installation: 'Installation de {fichier}',
+    termine: 'Terminé',
+    pasInstalle: "{nom} n'est pas installé.",
+    tailleAdf: "Une disquette Amiga (.adf) fait 880 Ko ; ce fichier n'en est pas une.",
+    kickstartDabord: "Choisis d'abord ton Kickstart."
+  },
+  en: {
+    telechargementImpossible: 'Download failed ({statut}): {url}',
+    telechargement: 'Downloading {fichier}',
+    verification: 'Checking {fichier}',
+    sommeDifferente: '{fichier} is not the expected file (different SHA-256 checksum): installation cancelled.',
+    extractionImpossible: 'Could not extract {zip}: {erreur}',
+    windowsSeulement: 'Automatic installation of {nom} is only available on Windows for now.',
+    dejaEnCours: '{nom} is already being installed.',
+    installation: 'Installing {fichier}',
+    termine: 'Done',
+    pasInstalle: '{nom} is not installed.',
+    tailleAdf: 'An Amiga disk (.adf) is 880 KB; this file is not one.',
+    kickstartDabord: 'Choose your Kickstart first.'
+  }
+})
+
 
 export interface EtatEmulateur {
   id: IdEmulateur
@@ -82,8 +118,8 @@ export function etatEmulateurs(): EtatEmulateur[] {
     nom: e.nom,
     machine: e.machine,
     version: e.version,
-    licence: e.licence,
-    description: e.description,
+    licence: e.licence[langueMain()],
+    description: e.description[langueMain()],
     installe: !!etat[e.id] && existsSync(join(dossierEmulateur(e.id), e.executable)),
     versionInstallee: etat[e.id],
     embarque: e.paquets.every((p) => existsSync(join(dossierPaquetsEmbarques(), p.fichier))),
@@ -121,7 +157,7 @@ async function sha256(chemin: string): Promise<string> {
 
 async function telecharger(p: Paquet, cible: string, progression: Progression, deja: number, total: number): Promise<void> {
   const reponse = await net.fetch(p.url)
-  if (!reponse.ok || !reponse.body) throw new Error(`Téléchargement impossible (${reponse.status}) : ${p.url}`)
+  if (!reponse.ok || !reponse.body) throw new Error(t('telechargementImpossible', { statut: reponse.status, url: p.url }))
   const morceaux: Uint8Array[] = []
   let recu = 0
   const lecteur = reponse.body.getReader()
@@ -130,7 +166,7 @@ async function telecharger(p: Paquet, cible: string, progression: Progression, d
     if (done) break
     morceaux.push(value)
     recu += value.length
-    progression(deja + recu, total, `Téléchargement de ${p.fichier}`)
+    progression(deja + recu, total, t('telechargement', { fichier: p.fichier }))
   }
   writeFileSync(cible, Buffer.concat(morceaux))
 }
@@ -140,9 +176,9 @@ async function obtenir(p: Paquet, temp: string, progression: Progression, deja: 
   const embarque = join(dossierPaquetsEmbarques(), p.fichier)
   const chemin = existsSync(embarque) ? embarque : join(temp, p.fichier)
   if (chemin !== embarque) await telecharger(p, chemin, progression, deja, total)
-  progression(deja + p.taille, total, `Vérification de ${p.fichier}`)
+  progression(deja + p.taille, total, t('verification', { fichier: p.fichier }))
   const somme = await sha256(chemin)
-  if (somme !== p.sha256) throw new Error(`${p.fichier} n'est pas le fichier attendu (somme SHA-256 différente) : installation annulée.`)
+  if (somme !== p.sha256) throw new Error(t('sommeDifferente', { fichier: p.fichier }))
   return chemin
 }
 
@@ -151,7 +187,7 @@ function extraire(zip: string, vers: string): void {
   mkdirSync(vers, { recursive: true })
   const tar = windows ? join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'tar.exe') : 'unzip'
   const r = windows ? spawnSync(tar, ['-xf', zip, '-C', vers]) : spawnSync(tar, ['-q', '-o', zip, '-d', vers])
-  if (r.status !== 0) throw new Error(`Extraction impossible de ${zip} : ${r.stderr?.toString() ?? ''}`)
+  if (r.status !== 0) throw new Error(t('extractionImpossible', { zip, erreur: r.stderr?.toString() ?? '' }))
 }
 
 /** Déplace le contenu de `source` dans `cible` (sans les fichiers exclus). */
@@ -170,8 +206,8 @@ function deplacer(source: string, cible: string, exclure: string[]): void {
 
 export async function installer(id: IdEmulateur, progression: Progression = () => {}): Promise<void> {
   const e = EMULATEURS[id]
-  if (!windows) throw new Error(`L'installation automatique de ${e.nom} n'existe que sous Windows pour l'instant.`)
-  if (enCours.has(id)) throw new Error(`${e.nom} est déjà en cours d'installation.`)
+  if (!windows) throw new Error(t('windowsSeulement', { nom: e.nom }))
+  if (enCours.has(id)) throw new Error(t('dejaEnCours', { nom: e.nom }))
   const dest = dossierEmulateur(id)
   const temp = join(tmpdir(), `68k-trainer-${id}-${Date.now()}`)
   const total = e.paquets.reduce((s, p) => s + p.taille, 0)
@@ -182,7 +218,7 @@ export async function installer(id: IdEmulateur, progression: Progression = () =
     let deja = 0
     for (const p of e.paquets) {
       const zip = await obtenir(p, temp, progression, deja, total)
-      progression(deja + p.taille, total, `Installation de ${p.fichier}`)
+      progression(deja + p.taille, total, t('installation', { fichier: p.fichier }))
       const extrait = join(temp, 'x-' + p.fichier)
       extraire(zip, extrait)
       deplacer(p.racine ? join(extrait, p.racine) : extrait, dest, p.exclure)
@@ -192,7 +228,7 @@ export async function installer(id: IdEmulateur, progression: Progression = () =
     const etat = lireEtat()
     etat[id] = e.version
     ecrireEtat(etat)
-    progression(total, total, 'Terminé')
+    progression(total, total, t('termine'))
   } finally {
     enCours.delete(id)
     rmSync(temp, { recursive: true, force: true })
@@ -283,9 +319,9 @@ export function configUae(aros: string, partage: string): string {
 const processus = new Map<IdEmulateur, ChildProcess>()
 
 /** Arrête l'émulateur lancé par 68k Trainer (s'il tourne), puis le (re)lance : c'est son « reset ». */
-async function lancerProcessus(e: Emulateur, args: string[]): Promise<void> {
+async function lancerProcessus(e: Emulateur, args: string[], surSortie?: (texte: string) => void): Promise<ChildProcess> {
   const exe = join(dossierEmulateur(e.id), e.executable)
-  if (!existsSync(exe)) throw new Error(`${e.nom} n'est pas installé.`)
+  if (!existsSync(exe)) throw new Error(t('pasInstalle', { nom: e.nom }))
   const ancien = processus.get(e.id)
   if (ancien && ancien.exitCode === null && ancien.signalCode === null) {
     await new Promise<void>((fini) => {
@@ -294,87 +330,194 @@ async function lancerProcessus(e: Emulateur, args: string[]): Promise<void> {
       setTimeout(fini, 3000)
     })
   }
-  const p = spawn(exe, args, { cwd: dossierEmulateur(e.id), detached: true, stdio: 'ignore' })
+  const p = spawn(exe, args, { cwd: dossierEmulateur(e.id), detached: true, stdio: ['ignore', surSortie ? 'pipe' : 'ignore', 'ignore'] })
+  p.stdout?.setEncoding('latin1')
+  p.stdout?.on('data', (texte: string) => surSortie?.(texte))
+  p.stdout?.on('error', () => {})
   p.unref()
   processus.set(e.id, p)
   p.once('exit', () => {
     if (processus.get(e.id) === p) processus.delete(e.id)
   })
+  return p
+}
+
+// --- Ma propre ROM -------------------------------------------------------------------
+
+export interface RomUtilisateur {
+  /** Copie de la ROM dans le dossier des émulateurs. */
+  fichier: string
+  nom: string
+  taille: number
+  modele: RomReconnue['modele']
+  shellEnRom?: boolean
+  /** Vrai : la ROM remplace le système libre. */
+  actif: boolean
+  /** Amiga avec Kickstart 1.3 : disquette Workbench de l'utilisateur (copie), pour démarrer. */
+  adf?: string
+}
+
+const fichierRoms = (): string => join(dossierRoms(dossierEmulateurs()), 'roms.json')
+
+export function romsUtilisateur(): Partial<Record<MachineRom, RomUtilisateur>> {
+  try {
+    return JSON.parse(readFileSync(fichierRoms(), 'utf-8')) as Partial<Record<MachineRom, RomUtilisateur>>
+  } catch {
+    return {}
+  }
+}
+
+function ecrireRoms(roms: Partial<Record<MachineRom, RomUtilisateur>>): void {
+  mkdirSync(dossierRoms(dossierEmulateurs()), { recursive: true })
+  writeFileSync(fichierRoms(), JSON.stringify(roms, null, 2))
+}
+
+/** Vérifie la ROM choisie et la copie dans le dossier des émulateurs ; elle devient active. */
+export function importerRom(machine: MachineRom, chemin: string): { ok: boolean; erreur?: string; nom?: string } {
+  const octets = readFileSync(chemin)
+  const rom = analyserRom(octets, machine)
+  if (!rom.ok) return { ok: false, erreur: rom.raison }
+  const fichier = join(dossierRoms(dossierEmulateurs()), machine === 'atari' ? 'tos.img' : 'kickstart.rom')
+  mkdirSync(dossierRoms(dossierEmulateurs()), { recursive: true })
+  writeFileSync(fichier, rom.contenu)
+  const roms = romsUtilisateur()
+  roms[machine] = { fichier, nom: rom.nom, taille: rom.taille, modele: rom.modele, shellEnRom: rom.shellEnRom, actif: true, adf: roms[machine]?.adf }
+  ecrireRoms(roms)
+  return { ok: true, nom: nomRom(rom.nom) }
+}
+
+/** Disquette Workbench (fichier .adf) pour démarrer un Amiga sous Kickstart 1.3. */
+export function importerAdf(chemin: string): { ok: boolean; erreur?: string } {
+  const octets = readFileSync(chemin)
+  // Une disquette double densité : 80 pistes × 2 faces × 11 secteurs de 512 octets
+  if (octets.length !== 901120) return { ok: false, erreur: t('tailleAdf') }
+  const roms = romsUtilisateur()
+  if (!roms.amiga) return { ok: false, erreur: t('kickstartDabord') }
+  const fichier = join(dossierRoms(dossierEmulateurs()), 'workbench.adf')
+  writeFileSync(fichier, octets)
+  roms.amiga.adf = fichier
+  ecrireRoms(roms)
+  return { ok: true }
+}
+
+export function utiliserRom(machine: MachineRom, actif: boolean): void {
+  const roms = romsUtilisateur()
+  const rom = roms[machine]
+  if (!rom) return
+  rom.actif = actif
+  ecrireRoms(roms)
+}
+
+export function retirerRom(machine: MachineRom): void {
+  const roms = romsUtilisateur()
+  const rom = roms[machine]
+  if (!rom) return
+  rmSync(rom.fichier, { force: true })
+  if (rom.adf) rmSync(rom.adf, { force: true })
+  delete roms[machine]
+  ecrireRoms(roms)
+}
+
+/** La ROM de l'utilisateur, si elle est choisie et toujours là. */
+function romActive(machine: MachineRom): RomUtilisateur | undefined {
+  const rom = romsUtilisateur()[machine]
+  return rom?.actif && existsSync(rom.fichier) ? rom : undefined
+}
+
+/**
+ * Le bouton « Essayer » peut-il lancer le programme tout seul ? Pas avec un Kickstart 1.3 : ses
+ * commandes de Shell (Execute, Echo…) sont sur la disquette Workbench, qu'on ne modifie pas.
+ */
+export function essaiAutomatique(id: IdEmulateur): boolean {
+  const rom = id === 'winuae' ? romActive('amiga') : undefined
+  return !rom || !!rom.shellEnRom
+}
+
+/** Fichier de réglages de WinUAE : système libre (AROS) ou Kickstart de l'utilisateur. */
+function configWinuae(): string {
+  const rom = romActive('amiga')
+  if (!rom) return join(dossierEmulateur('winuae'), '68k-trainer.uae')
+  const demarrage = join(dossierRoms(dossierEmulateurs()), 'demarrage')
+  mkdirSync(join(demarrage, 'S'), { recursive: true })
+  writeFileSync(join(demarrage, 'S', 'Startup-sequence'), STARTUP_KICKSTART)
+  const fichier = join(dossierEmulateur('winuae'), '68k-trainer-rom.uae')
+  const reconnue: RomReconnue = { ok: true, machine: 'amiga', nom: rom.nom, taille: rom.taille, modele: rom.modele, shellEnRom: rom.shellEnRom, contenu: new Uint8Array() }
+  writeFileSync(fichier, configUaeKickstart(reconnue, rom.fichier, preparerPartage('amiga'), demarrage, rom.adf), 'utf-8')
+  return fichier
 }
 
 function argumentsHatari(): string[] {
   const d = dossierEmulateur('hatari')
+  const rom = romActive('atari')
   // Hatari démarre sur le dernier disque donné : ici C:, le dossier de partage. Basse résolution,
   // celle des programmes du parcours
   return [
-    '--configfile', join(d, '68k-trainer.cfg'), '--tos', join(d, 'tos.img'), '--tos-res', 'low',
-    '--machine', 'st', '--memsize', '1024', '--harddrive', preparerPartage('atari')
+    '--configfile', join(d, '68k-trainer.cfg'), '--tos', rom?.fichier ?? join(d, 'tos.img'), '--tos-res', 'low',
+    '--machine', rom?.modele === 'ste' ? 'ste' : 'st', '--memsize', '1024', '--harddrive', preparerPartage('atari')
   ]
 }
 
-/** Lance l'émulateur tel quel (bureau d'EmuTOS ou d'AROS). */
+/** Lance l'émulateur tel quel (bureau du TOS ou d'AROS, Shell d'un Kickstart). */
 export async function lancer(id: IdEmulateur): Promise<void> {
   const e = EMULATEURS[id]
   if (id === 'hatari') {
     await lancerProcessus(e, argumentsHatari())
   } else {
     rmSync(join(dossierPartage('amiga'), 'essai', 'lancer'), { force: true })
-    await lancerProcessus(e, ['-f', join(dossierEmulateur(id), '68k-trainer.uae')])
+    await lancerProcessus(e, ['-f', configWinuae()])
   }
 }
 
-/**
- * Lanceur Atari (C:\ESSAI68K.PRG) : exécute le programme par Pexec, puis attend une touche avant
- * de rendre la main au bureau d'EmuTOS (sinon son affichage disparaît aussitôt). Le processus
- * principal l'assemble en .PRG.
- */
-export function sourceLanceurAtari(fichier: string): string {
-  return [
-    '    MOVEA.L 4(SP),A5            ; page de base du lanceur',
-    '    LEA     pile,SP',
-    '    MOVE.L  $C(A5),D0           ; rendre au TOS la mémoire inutile (Mshrink)',
-    '    ADD.L   $14(A5),D0',
-    '    ADD.L   $1C(A5),D0',
-    '    ADD.L   #$100,D0',
-    '    MOVE.L  D0,-(SP)',
-    '    MOVE.L  A5,-(SP)',
-    '    CLR.W   -(SP)',
-    '    MOVE.W  #$4A,-(SP)',
-    '    TRAP    #1',
-    '    LEA     12(SP),SP',
-    '    CLR.L   -(SP)               ; Pexec(0, programme, ligne de commande vide, environnement)',
-    '    PEA     vide(PC)',
-    '    PEA     nom(PC)',
-    '    CLR.W   -(SP)',
-    '    MOVE.W  #$4B,-(SP)',
-    '    TRAP    #1',
-    '    LEA     16(SP),SP',
-    '    PEA     message(PC)',
-    '    MOVE.W  #9,-(SP)            ; Cconws',
-    '    TRAP    #1',
-    '    ADDQ.L  #6,SP',
-    '    MOVE.W  #7,-(SP)            ; Crawcin : attendre une touche',
-    '    TRAP    #1',
-    '    ADDQ.L  #2,SP',
-    '    CLR.W   -(SP)               ; Pterm0',
-    '    TRAP    #1',
-    `nom:     DC.B    'C:\\${fichier}',0`,
-    'vide:    DC.B    0,0',
-    "message: DC.B    13,10,'(Appuie sur une touche pour revenir au bureau)',0",
-    '    EVEN',
-    '    SECTION BSS',
-    '    DS.L    256',
-    'pile:',
-    ''
-  ].join('\n')
+/** Ce que le programme essayé a laissé : son code de retour et, sur l'Atari, son texte affiché. */
+export interface FinEssai {
+  id: IdEmulateur
+  nom: string
+  code: number
+  sortie?: string
+}
+
+/** Code de retour écrit par le lanceur : C:\ESSAI68K.RET (long) ou PARTAGE:essai/retour (texte). */
+function fichierRetour(id: IdEmulateur): string {
+  return id === 'hatari' ? join(dossierPartage('atari'), 'ESSAI68K.RET') : join(dossierPartage('amiga'), 'essai', 'retour')
+}
+
+function lireRetour(id: IdEmulateur): number | null {
+  try {
+    const octets = readFileSync(fichierRetour(id))
+    if (id === 'hatari') return octets.length >= 4 ? octets.readInt32BE(0) : null
+    const code = parseInt(octets.toString('latin1').trim(), 10)
+    return Number.isNaN(code) ? null : code
+  } catch {
+    return null
+  }
+}
+
+/** Guette le fichier de retour tant que l'émulateur tourne (au plus 30 minutes). */
+function guetterFin(id: IdEmulateur, nom: string, p: ChildProcess, sortie: () => string, fin: (f: FinEssai) => void): void {
+  const debut = Date.now()
+  const minuterie = setInterval(() => {
+    const code = lireRetour(id)
+    const arrete = p.exitCode !== null || p.signalCode !== null || processus.get(id) !== p
+    if (code === null && !arrete && Date.now() - debut < 30 * 60 * 1000) return
+    clearInterval(minuterie)
+    if (code !== null) fin({ id, nom, code, sortie: id === 'hatari' ? sortieAtari(sortie()) : undefined })
+  }, 500)
 }
 
 /**
  * Essaie un programme : il est rangé dans le dossier de partage (sous son nom) et lancé
  * automatiquement au démarrage de la machine émulée.
  */
-export async function essayer(id: IdEmulateur, octets: Uint8Array, nom: string, lanceurAtari?: Uint8Array): Promise<string> {
+export async function essayer(
+  id: IdEmulateur,
+  octets: Uint8Array,
+  nom: string,
+  lanceurAtari?: Uint8Array,
+  fin?: (f: FinEssai) => void
+): Promise<string> {
   const e = EMULATEURS[id]
+  rmSync(fichierRetour(id), { force: true })
+  let brut = ''
   if (id === 'hatari') {
     const d = preparerPartage('atari')
     const fichier = `${nom}.PRG`
@@ -386,7 +529,11 @@ export async function essayer(id: IdEmulateur, octets: Uint8Array, nom: string, 
       writeFileSync(join(d, 'ESSAI68K.PRG'), lanceurAtari)
       auto = 'ESSAI68K.PRG'
     }
-    await lancerProcessus(e, [...argumentsHatari(), '--auto', 'C:\\' + auto])
+    // --conout 2 : le texte affiché sur la console du ST arrive aussi sur la sortie de Hatari
+    const p = await lancerProcessus(e, [...argumentsHatari(), '--conout', '2', '--auto', 'C:\\' + auto], (t) => {
+      if (brut.length < 200000) brut += t
+    })
+    if (fin && lanceurAtari) guetterFin(id, nom, p, () => brut, fin)
     return join(d, fichier)
   }
   const d = preparerPartage('amiga')
@@ -394,9 +541,23 @@ export async function essayer(id: IdEmulateur, octets: Uint8Array, nom: string, 
   // Le programme s'ouvre dans une fenêtre console qui reste affichée à la fin ; le script s'efface
   writeFileSync(
     join(d, 'essai', 'lancer'),
-    `Delete >NIL: PARTAGE:essai/lancer\nRun >"CON:20/20/600/220/68k Trainer : ${nom}/WAIT/CLOSE" PARTAGE:${nom}\n`
+    // FailAt 21 : avec un Kickstart sans Workbench, Delete n'existe pas et ne doit pas tout arrêter
+    `FailAt 21\nDelete >NIL: PARTAGE:essai/lancer\nRun >"CON:20/20/600/220/68k Trainer : ${nom}/WAIT/CLOSE" Execute PARTAGE:essai/programme\n`
   )
-  await lancerProcessus(e, ['-f', join(dossierEmulateur(id), '68k-trainer.uae')])
+  // Le programme, puis son code de retour (variable RC du Shell), écrit pour 68k Trainer
+  writeFileSync(
+    join(d, 'essai', 'programme'),
+    `FailAt 1000000\nPARTAGE:${nom}\nEcho >PARTAGE:essai/retour "$RC"\nEcho "*N(Code de retour : $RC)"\n`
+  )
+  if (!essaiAutomatique(id)) rmSync(join(d, 'essai', 'lancer'), { force: true })
+  const p = await lancerProcessus(e, ['-f', configWinuae()])
+  if (fin && essaiAutomatique(id)) {
+    guetterFin(id, nom, p, () => '', (f) => {
+      // Sans Workbench, la commande Delete du script n'existe pas : on l'efface d'ici
+      rmSync(join(d, 'essai', 'lancer'), { force: true })
+      fin(f)
+    })
+  }
   return join(d, nom)
 }
 

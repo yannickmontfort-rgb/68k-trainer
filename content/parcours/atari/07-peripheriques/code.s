@@ -633,3 +633,14 @@ JOY:
 ANCIEN: DC.L    0
 SONBIP: DC.B    0,$80,1,0,7,$FE,8,15,$FF,4,8,0,$FF,0
 ETAT:   DC.B    0
+
+;=== rappel
+START:
+    LEA     $10000,A1       ; une destination quelconque
+    MOVEQ   #2,D7           ; 3 lignes d'un bloc de 48 pixels
+.ligne:
+    ADDA.W  #24,A1          ; la largeur du bloc : 3 groupes de 8 octets
+    LEA     160-24(A1),A1   ; saut de ligne
+    DBF     D7,.ligne
+    CLR.W   -(SP)           ; Pterm0
+    TRAP    #1

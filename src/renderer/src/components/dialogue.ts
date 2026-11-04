@@ -3,6 +3,12 @@
  * (Windows), après une boîte native, les zones de saisie (dont l'éditeur Monaco) peuvent ne plus
  * recevoir le clavier tant que la fenêtre n'a pas perdu puis repris le focus.
  */
+import { traducteur } from '../langue'
+
+const t = traducteur({
+  fr: { oui: 'Oui', annuler: 'Annuler', ok: 'OK' },
+  en: { oui: 'Yes', annuler: 'Cancel', ok: 'OK' }
+})
 
 function boite(message: string, boutons: { texte: string; valeur: boolean; principal?: boolean }[]): Promise<boolean> {
   const avant = document.activeElement as HTMLElement | null
@@ -38,7 +44,7 @@ function boite(message: string, boutons: { texte: string; valeur: boolean; princ
 }
 
 /** Question oui/non ; Échap = non. */
-export function confirmer(message: string, oui = 'Oui', non = 'Annuler'): Promise<boolean> {
+export function confirmer(message: string, oui = t('oui'), non = t('annuler')): Promise<boolean> {
   return boite(message, [
     { texte: non, valeur: false },
     { texte: oui, valeur: true, principal: true }
@@ -47,5 +53,6 @@ export function confirmer(message: string, oui = 'Oui', non = 'Annuler'): Promis
 
 /** Simple message, avec un bouton OK. */
 export function informer(message: string): Promise<void> {
-  return boite(message, [{ texte: 'OK', valeur: true, principal: true }]).then(() => undefined)
+  return boite(message, [{ texte: t('ok'), valeur: true, principal: true }]).then(() => undefined)
+
 }

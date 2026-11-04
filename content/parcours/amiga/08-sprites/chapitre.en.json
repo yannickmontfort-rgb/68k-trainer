@@ -1,0 +1,160 @@
+{
+  "titre": "Sprites and input",
+  "resume": "The Amiga's 8 hardware sprites sit on top of the picture without damaging it. You draw a sprite, place it to the pixel with its two control words and move it every frame, with the joystick for instance; the buttons, the mouse and the keyboard are read directly from the chips and from CIA-A, as in the games that shut off the system.",
+  "notions": {
+    "amiga-ch08-n0": { "titre": "Review of chapters 5 and 7" },
+    "amiga-ch08-n1": { "titre": "The hardware sprites" },
+    "amiga-ch08-n2": { "titre": "Joystick, mouse and keyboard" }
+  },
+  "contenus": {
+    "amiga-ch08-rappel": {
+      "titre": "What you already know",
+      "introduction": "Three questions on the previous chapters, without rereading the lessons. Getting it wrong here does not matter: searching is what makes it stick.",
+      "questions": {
+        "q1": {
+          "enonce": "D1 receives the BLTSIZE value for a block 3 words wide and 10 lines high. What is it?",
+          "explication": "The 10 lines go in bits 15-6, 10 × 64 = 640 = $280, and the 3 words are added to that: $283."
+        },
+        "q2": {
+          "enonce": "A program has just written BLTSIZE. What must it do before setting up the next blit?",
+          "choix": ["Nothing, the Blitter has already finished", "Wait until the BBUSY bit of DMACONR is back at 0", "Reset BLTSIZE to 0"],
+          "explication": "The 68000 carries on as soon as BLTSIZE is written, while the Blitter works: changing its registers too early spoils the blit in progress."
+        },
+        "q3": {
+          "enonce": "Why does the copper list reset the bitplane pointers every frame?",
+          "choix": ["Because Agnus moves them forward during the display", "Because the system clears them", "To change bitplanes every frame"],
+          "explication": "At the end of the frame, BPL1PT points past the bitplane, and it has to be brought back to the start before the next frame."
+        }
+      }
+    },
+    "amiga-ch08-cours-sprites": {
+      "titre": "Format, position, colors and priority",
+      "source": "Written for 68k Trainer from the Hardware Reference Manual (ch. 4) and Amiga Intern (Abacus, ch. 11)"
+    },
+    "amiga-ch08-ex-sprite": {
+      "titre": "A ball on a background",
+      "introduction": "Sprite 0, a 16 × 16 ball, sits on a striped background without touching the bitplane, which stays intact underneath. Start \"🎬 Real time\", then click to finish.",
+      "explications": {
+        "25": "The address of sprite 0 goes into the MOVEs to SPR0PTH and SPR0PTL in the copper list.",
+        "29": "The seven other sprites, 1 to 7, point to an empty list, otherwise they would display garbage.",
+        "45": "DMACON also turns on SPREN (`$0020`), the sprite DMA.",
+        "54": "Colors 17, 18 and 19 are those of sprites 0 and 1.",
+        "58": "The copper list resets the 8 sprite pointers every frame, like the bitplane pointers.",
+        "66": "The two control words give VSTART = `$7C`, HSTART ÷ 2 = `$72` and VSTOP = `$8C`, that is x = 100, y = 80 in the display.",
+        "67": "Each line gives DATA then DATB: the edge has both bits at 1 (color 3, white), the inside DATB alone (color 2) or DATA alone (color 1), which you can see by looking at the ball closely.",
+        "83": "Two words at 0: the end of the sprite."
+      },
+      "conclusion": "A sprite fits in two control words, two words per line and a pointer reset by the Copper, and the background underneath is never touched."
+    },
+    "amiga-ch08-pred-pos": {
+      "titre": "The control words",
+      "introduction": "The program computes the two control words of a 16-line sprite at x = 100, y = 80.",
+      "questions": {
+        "q1": {
+          "enonce": "What is D0 (the first word)?",
+          "explication": "VSTART = $2C + 80 = $7C goes in the high byte, and HSTART = $81 + 100 = $E5, divided by 2, gives $72."
+        },
+        "q2": {
+          "enonce": "And D1 (the second word)?",
+          "explication": "VSTOP = $7C + 16 = $8C, and bit 0 of HSTART, which is 1 since $E5 is odd, goes in bit 0."
+        }
+      }
+    },
+    "amiga-ch08-exo-placer": {
+      "titre": "Placing the sprite",
+      "enonce": "The red square (sprite 0) must appear at x = 100, y = 80. Its second control word, `$8C01`, is right: fill in the first one.",
+      "indices": ["VSTART = $2C + 80 = $7C in the high byte; (HSTART = $81 + 100) ÷ 2 in the low byte.", "`$7C72`"]
+    },
+    "amiga-ch08-exo-ordonner": {
+      "titre": "Computing the control words",
+      "enonce": "HSTART is in D2 and VSTART in D3. Put the lines back in order so that D0 and D1 receive the two control words of the square, which must appear at x = 100, y = 80.",
+      "indices": ["The first word combines VSTART, shifted into the high byte, and HSTART ÷ 2 in the low byte; the second combines VSTOP, shifted the same way, and bit 0 of HSTART.", "You copy HSTART into D4 before `AND.W #1,D2` keeps only its bit 0, and you shift VSTART before putting the low byte into it."],
+      "lignes": ["    MOVE.W  D3,D0", "    LSL.W   #8,D0           ; VSTART in the high byte", "    MOVE.W  D2,D4", "    LSR.W   #1,D4           ; HSTART / 2", "    MOVE.B  D4,D0           ; in the low byte: the first word", "    MOVE.W  D3,D1", "    ADD.W   #16,D1          ; VSTOP", "    LSL.W   #8,D1", "    AND.W   #1,D2           ; bit 0 of HSTART", "    OR.W    D2,D1           ; the second word"]
+    },
+    "amiga-ch08-exo-position": {
+      "titre": "Elsewhere on the screen",
+      "enonce": "This program puts the red square at x = 100, y = 80. Move it to x = 200, y = 50, without touching the drawing.",
+      "indices": ["Only the two control words change: compute VSTART, HSTART and VSTOP again with the formulas from the lesson.", "HSTART = $81 + 200 = $149 does not fit in a byte: $A4 in the first word, and its bit 0, which is 1, in the second. `DC.W $5EA4,$6E01`."]
+    },
+    "amiga-ch08-exo-vstop": {
+      "titre": "One line short",
+      "enonce": "The square should be 16 lines high, at x = 60, y = 100, but its last line is missing. Step through the calculation of the control words and fix the error.",
+      "indices": ["Compare the value of D1 with the rule from the lesson about VSTOP.", "VSTOP is the line after the last one: `ADD.W #16,D1`, and the second word is `$A001`."]
+    },
+    "amiga-ch08-exo-deplacer": {
+      "titre": "The moving square",
+      "enonce": "Using the `placer_sprite` routine (A0 = the sprite, D0 = x, D1 = y), move the square forward by 2 pixels per frame, 75 times, starting from x = 0 and y = 80: it must end up at x = 150.",
+      "indices": ["`LEA sprite,A0`, D0 = 0, D1 = 80, then a loop of 75 iterations (`MOVEQ #74,D7` and `DBF`).", "In the loop: `BSR attendre_vbl`, `ADDQ.W #2,D0`, `BSR placer_sprite`."]
+    },
+    "amiga-ch08-exo-couleurs": {
+      "titre": "Two colors",
+      "enonce": "Draw the sprite: its first 8 lines in color 1 (red), the next 8 in color 3 (white).",
+      "indices": ["One line = DATA then DATB: color 1 = DATA alone at 1; color 3 = both at 1.", "`DCB.L 8,$FFFF0000` then `DCB.L 8,$FFFFFFFF`."]
+    },
+    "amiga-ch08-cours-entrees": {
+      "titre": "Buttons, JOY1DAT, mouse counters, keyboard",
+      "source": "Written for 68k Trainer from the Hardware Reference Manual (ch. 8 and appendix H) and Amiga Intern (Abacus)"
+    },
+    "amiga-ch08-ex-joystick": {
+      "titre": "The ball on the joystick",
+      "introduction": "The ball obeys the port 2 joystick. Start \"🎬 Real time\", tick \"Arrows + Space = joystick\" under the screen, click on the screen, then steer it with the arrow keys or a gamepad; a left click ends the program.",
+      "explications": {
+        "9": "JOY1DAT gives the state of the port 2 joystick, read once per frame.",
+        "10": "Bit 1 means right.",
+        "20": "Up and down are encoded as an exclusive OR with the neighboring bits: D1 = D0 EOR (D0 shifted by one bit) gives down in bit 0 and up in bit 8.",
+        "31": "The new control words are written: the ball moves, and the drawing stays the same.",
+        "32": "The left mouse button stops the program.",
+        "86": "In `placer_sprite`, `LSR` pushes bit 0 of HSTART out into the X flag, and `ADDX` picks it up."
+      },
+      "conclusion": "Reading the joystick comes down to testing a few bits of a word; all the rest of the work is moving the sprite."
+    },
+    "amiga-ch08-pred-joy": {
+      "titre": "Decoding JOY1DAT",
+      "introduction": "The program decodes JOY1DAT, which is `$0103`.",
+      "questions": {
+        "q1": {
+          "enonce": "What is D1?",
+          "explication": "$0103 EOR $0081 = $0182."
+        },
+        "q2": {
+          "enonce": "Which way is the joystick pushed?",
+          "choix": ["Up and to the right", "Down and to the right", "To the left"],
+          "explication": "Bit 1 of $0103 means right; in D1, bit 0 at 0 rules out down and bit 8 at 1 means up."
+        }
+      }
+    },
+    "amiga-ch08-exo-feu": {
+      "titre": "The fire button",
+      "enonce": "The program must wait for the joystick button, then put 1 in D7, but it tests the wrong bit: fix it.",
+      "indices": ["In `$BFE001`, bit 6 is the mouse button and bit 7 the joystick button.", "`BTST #7,$BFE001`"]
+    },
+    "amiga-ch08-exo-souris": {
+      "titre": "The mouse movement",
+      "enonce": "Read the horizontal counter of the mouse, the low byte of JOY0DAT at `$DFF00B`, wait 5 frames with `attendre_vbl`, read it again, and store the difference in D7, as a signed 32-bit number. During the exercise, the mouse moves 10 to the right, then 3 to the left.",
+      "indices": ["`MOVE.B $DFF00B,D6` at the start, `MOVE.B $DFF00B,D7` at the end, then `SUB.B D6,D7`.", "The difference is on 8 bits: `EXT.W D7` then `EXT.L D7` make it signed on 32 bits."]
+    },
+    "amiga-ch08-exo-clavier": {
+      "titre": "The keyboard by hand",
+      "enonce": "The system is shut off by `prendre`. Wait for a byte from the keyboard at CIA-A, put it back the right way, store the key code (bits 6-0) in D7, do the handshake, then hand control back. During the exercise, Esc is pressed (code `$45`).",
+      "indices": ["Waiting: bit 3 of the ICR (`BTST #3,$BFED01`). Reading: `MOVE.B $BFEC01,D0`, then `NOT.B D0` and `ROR.B #1,D0`.", "Handshake: `BSET #6,$BFEE01`, a short pause (a `DBF` loop), then `BCLR #6,$BFEE01`."]
+    },
+    "amiga-ch08-bonus-attache": {
+      "titre": "The attached sprite",
+      "enonce": "Challenge: sprites 0 and 1 sit at the same place. Attached, they form a single 15-color sprite, whose 4 bits per pixel give colors 16 to 31. Attach sprite 1 to sprite 0 so that the square takes color 21 (purple).",
+      "indices": ["Bit 7 of the second control word of the odd sprite attaches it to the even sprite.", "Sprite 0 gives bits 0-1 (%01), sprite 1 bits 2-3 (%01): %0101 = 5, color 16 + 5 = 21. Second word: `$8C81`."]
+    }
+  },
+  "qcm": {
+    "q1": { "enonce": "How many hardware sprites does the Amiga have?", "explication": "Numbered 0 to 7, in pairs." },
+    "q2": { "enonce": "How wide is a sprite?", "choix": ["16 pixels", "32 pixels", "As wide as you like"], "explication": "One word per line for each of the sprite's two planes, which makes 16 pixels in low resolution; the height, on the other hand, is free." },
+    "q3": { "enonce": "How many colors (not counting transparent) can a single sprite display?", "explication": "2 bits per pixel: 0 is transparent, 1 to 3 are colors. Two attached sprites give 15." },
+    "q4": { "enonce": "Which color registers do sprites 0 and 1 use?", "choix": ["COLOR17 to COLOR19", "COLOR01 to COLOR03", "COLOR29 to COLOR31"], "explication": "Pair 0-1: 17-19; 2-3: 21-23; 4-5: 25-27; 6-7: 29-31." },
+    "q10": { "enonce": "On the Amiga, the address of the VBL routine is in the vector…", "explication": "The VBL is a level 3 interrupt, like those of the Copper and the Blitter: its vector is $6C." },
+    "q5": { "enonce": "How do you move a sprite?", "choix": ["By rewriting its two control words", "By copying it elsewhere in memory", "By erasing the picture underneath"], "explication": "The drawing does not move in memory; only its position changes." },
+    "q6": { "enonce": "What does this instruction test?", "choix": ["The joystick button: it jumps to tir if the button is pressed", "The left mouse button", "A key on the keyboard"], "explication": "Bit 7 of $BFE001, active low: BEQ jumps when the button is pressed." },
+    "q7": { "enonce": "What does JOY0DAT give?", "choix": ["Two movement counters for the mouse", "The position of the mouse on the screen", "The state of the buttons"], "explication": "You compute the difference with the previous frame to know how far it has moved." },
+    "q11": { "enonce": "D1.B is $FD, that is −3. What does the low word of D1 hold after `EXT.W D1`?", "explication": "EXT.W copies bit 7 into bits 8 to 15: −3 stays −3 on 16 bits." },
+    "q8": { "enonce": "How do you put a byte received from the keyboard back the right way?", "choix": ["NOT.B then ROR.B #1", "SWAP", "NEG.B"], "explication": "The keyboard sends its bits inverted and shifted: bits 6-0 = the code, bit 7 = key released." },
+    "q9": { "enonce": "Unused sprites must point to…", "choix": ["an empty list (two words at 0)", "nothing, they switch off by themselves", "the screen"], "explication": "Otherwise, the sprite DMA reads whatever it finds at their old address." }
+  }
+}

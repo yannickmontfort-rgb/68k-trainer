@@ -292,3 +292,122 @@ START:
     SECTION son,DATA_C
 onde:   DCB.B   16,100
         DCB.B   16,-100
+
+;=== rappel
+START:
+    MOVEQ   #0,D1
+    MOVE.W  #$2C+16,D1      ; VSTART : y = 16
+    LSL.W   #8,D1           ; dans l'octet fort
+    MOVE.W  #$81+40,D2      ; HSTART : x = 40
+    LSR.W   #1,D2           ; HSTART / 2
+    OR.W    D2,D1           ; D1 = le premier mot de contrôle
+    MOVEQ   #0,D0
+    RTS
+
+;=== ordonner-entete
+; Calcule la période d'un la (440 Hz, onde de 32 octets), arrondie à l'entier le plus proche,
+; et range-la dans AUD0PER avant de jouer la note.
+START:
+    LEA     $DFF000,A5
+    MOVE.L  #onde,$A0(A5)   ; AUD0LC
+    MOVE.W  #16,$A4(A5)     ; AUD0LEN
+    MOVE.W  #64,$A8(A5)     ; AUD0VOL
+
+;=== ordonner-pied
+    MOVE.W  #$8201,$96(A5)  ; la voie 0 joue
+    MOVEQ   #24,D7
+.attente:
+    BSR     attendre_vbl
+    DBF     D7,.attente
+    MOVE.W  #$0001,$96(A5)  ; silence
+    MOVEQ   #0,D0
+    RTS
+    INCLUDE "amiga-systeme.s"
+
+    SECTION son,DATA_C
+onde:   DCB.B   16,100
+        DCB.B   16,-100
+
+;=== octave-solution
+START:
+    LEA     $DFF000,A5
+    MOVE.L  #onde,$A0(A5)   ; AUD0LC : l'échantillon
+    MOVE.W  #16,$A4(A5)     ; AUD0LEN : 32 octets = 16 mots
+    MOVE.W  #126,$A6(A5)    ; AUD0PER : deux fois plus petite, la note monte d'une octave
+    MOVE.W  #32,$A8(A5)     ; AUD0VOL : la moitié du maximum
+    MOVE.W  #$8201,$96(A5)  ; DMACON : SET + DMAEN + AUD0EN
+    MOVEQ   #49,D7          ; une seconde : 50 images
+.attente:
+    BSR     attendre_vbl
+    DBF     D7,.attente
+    MOVE.W  #$0001,$96(A5)  ; AUD0EN à 0 : silence
+    MOVEQ   #0,D0
+    RTS
+    INCLUDE "amiga-systeme.s"
+
+    SECTION son,DATA_C
+onde:   DCB.B   16,100      ; une onde carrée : 16 octets en haut...
+        DCB.B   16,-100     ; ... 16 en bas
+
+;=== demande-depart
+; Joue le bip une seule fois.
+START:
+    LEA     $DFF000,A5
+    MOVE.L  #bip,$A0(A5)    ; un « bip » de 1600 octets
+    MOVE.W  #800,$A4(A5)
+    MOVE.W  #200,$A6(A5)
+    MOVE.W  #64,$A8(A5)
+    MOVE.W  #$0080,$9C(A5)  ; une vieille demande AUD0 effacée
+    MOVE.W  #$8201,$96(A5)  ; c'est parti
+.note:
+    BTST    #7,$1E(A5)      ; INTREQR, bit 7 : Paula a noté l'adresse et la longueur ?
+    BEQ.S   .note
+    MOVE.L  #silence,$A0(A5) ; le bloc suivant : un mot de silence...
+    MOVE.W  #1,$A4(A5)      ; ... qu'elle rejouera en boucle
+    MOVEQ   #24,D7
+.attente:
+    BSR     attendre_vbl
+    DBF     D7,.attente
+    MOVE.W  #$0001,$96(A5)
+    MOVEQ   #0,D0
+    RTS
+    INCLUDE "amiga-systeme.s"
+
+    SECTION son,DATA_C
+bip:
+        REPT    50
+        DCB.B   16,90
+        DCB.B   16,-90
+        ENDR
+silence: DC.W   0
+
+;=== demande-solution
+START:
+    LEA     $DFF000,A5
+    MOVE.L  #bip,$A0(A5)    ; un « bip » de 1600 octets
+    MOVE.W  #800,$A4(A5)
+    MOVE.W  #200,$A6(A5)
+    MOVE.W  #64,$A8(A5)
+    MOVE.W  #$0080,$9C(A5)  ; une vieille demande AUD0 effacée
+    MOVE.W  #$8201,$96(A5)  ; c'est parti
+.note:
+    BTST    #7,$1F(A5)      ; INTREQR : son bit 7 est dans l'octet bas, en $DFF01F
+    BEQ.S   .note
+    MOVE.L  #silence,$A0(A5) ; le bloc suivant : un mot de silence...
+    MOVE.W  #1,$A4(A5)      ; ... qu'elle rejouera en boucle
+    MOVEQ   #24,D7
+.attente:
+    BSR     attendre_vbl
+    DBF     D7,.attente
+    MOVE.W  #$0001,$96(A5)
+    MOVEQ   #0,D0
+    RTS
+    INCLUDE "amiga-systeme.s"
+
+    SECTION son,DATA_C
+bip:
+        REPT    50
+        DCB.B   16,90
+        DCB.B   16,-90
+        ENDR
+silence: DC.W   0

@@ -6,10 +6,10 @@ themes: ["interruptions", "materiel"]
 
 # Interruptions matérielles : le contrôleur MFP68901
 
-> Prérequis : le mécanisme des exceptions et le masque d'interruption I2-I0 du SR sont dans le
-> tronc commun ([registres-et-memoire.md](../general/registres-et-memoire.md),
-> [pile-et-sous-programmes.md](../general/pile-et-sous-programmes.md)). Ce qui suit est propre à
-> l'Atari ST.
+> Le mécanisme des exceptions et le masque d'interruption I2-I0 du SR sont dans le tronc commun
+> ([registres-et-memoire.md](../general/registres-et-memoire.md),
+> [pile-et-sous-programmes.md](../general/pile-et-sous-programmes.md)). Cette fiche porte sur ce
+> qui est propre à l'Atari ST.
 
 ## Les trois niveaux d'interruption du ST
 
@@ -19,14 +19,15 @@ themes: ["interruptions", "materiel"]
 | 4 | **VBL** — retour du faisceau en haut de l'écran (50 ou 60 Hz) | `$70` | synchronisation, animation |
 | 6 | **MFP 68901** — 16 sources à lui seul | `$100`-`$13C` | timers, clavier, disque, imprimante |
 
-Le TOS travaille avec le masque à **3** (`MOVE.W #$2300,SR`) : VBL et MFP passent, HBL non.
+Le TOS travaille avec le masque à 3 (`MOVE.W #$2300,SR`), ce qui laisse passer la VBL et le MFP
+mais pas la HBL.
 
 ## Le MFP et ses 16 sources
 
-Le **MFP 68901** (*Multi Function Peripheral*) est vu par le 68000 comme **une** source
-d'interruption de niveau 6, mais il gère en interne **16 canaux** classés par priorité, chacun avec
-son vecteur. Sur le ST, le TOS règle le registre `VR` à `$48` : les vecteurs commencent au n° 64
-(`$100`), et le mode **fin d'interruption logicielle** est actif (bit S = 1).
+Le 68000 voit le **MFP 68901** (*Multi Function Peripheral*) comme une seule source
+d'interruption, de niveau 6, mais le MFP gère en interne 16 canaux classés par priorité, chacun
+avec son vecteur. Sur le ST, le TOS règle son registre `VR` à `$48` : les vecteurs commencent au
+n° 64 (`$100`), et le mode de **fin d'interruption logicielle** est actif (bit S à 1).
 
 | Canal | Source | Vecteur | Groupe / bit |
 |---|---|---|---|
@@ -49,9 +50,9 @@ son vecteur. Sur le ST, le TOS règle le registre `VR` à `$48` : les vecteurs c
 
 ## Les registres du MFP
 
-Ils sont aux **adresses impaires** de `$FFFFFA01` à `$FFFFFA2F` (accès par octet, en superviseur).
-Les registres d'interruption existent par paires : groupe **A** (canaux 8-15) et groupe **B**
-(canaux 0-7) — sans rapport avec les Timers A et B.
+Ils occupent les adresses impaires de `$FFFFFA01` à `$FFFFFA2F`, et on y accède par octet, en
+superviseur. Les registres d'interruption vont par paires, le groupe A pour les canaux 8 à 15 et le
+groupe B pour les canaux 0 à 7, sans rapport avec les Timers A et B.
 
 | Adresse | Registre | Rôle |
 |---|---|---|
@@ -68,18 +69,18 @@ Les registres d'interruption existent par paires : groupe **A** (canaux 8-15) et
 | `$FFFFFA21` | `TBDR` | donnée du Timer B |
 | `$FFFFFA23` / `$FFFFFA25` | `TCDR` / `TDDR` | données des Timers C et D |
 
-**Fin d'interruption logicielle** (mode du TOS) : le bit `ISR` du canal passe à 1 au début du
-traitement et **reste** à 1 tant que la routine ne l'a pas effacé elle-même. Pendant ce temps,
-aucun canal de priorité inférieure ou égale ne peut l'interrompre. Une routine MFP doit donc
-**effacer son bit ISR** juste avant `RTE` — sinon plus aucune interruption de même priorité ou
-inférieure n'arrive (le clavier et l'horloge se figent). En mode automatique (bit 3 de `VR` à 0),
-le bit `ISR` retombe tout seul, et une interruption peut s'interrompre elle-même.
+En fin d'interruption logicielle, le mode du TOS, le bit `ISR` du canal passe à 1 au début du
+traitement et y reste tant que la routine ne l'a pas effacé elle-même. Pendant ce temps, aucun
+canal de priorité inférieure ou égale ne peut l'interrompre. Une routine MFP doit donc **effacer
+son bit ISR** juste avant `RTE`, sinon plus aucune interruption de même priorité ou inférieure
+n'arrive, et le clavier comme l'horloge se figent. En mode automatique (bit 3 de `VR` à 0), le bit
+`ISR` retombe tout seul, et une interruption peut s'interrompre elle-même.
 
 ## Les timers
 
-Chaque timer décompte à partir de la valeur de son registre de données (1 à 256, 0 valant 256) ; à
-zéro, il déclenche son interruption et repart. L'horloge des timers est de **2,4576 MHz**, divisée
-par un **prédiviseur** choisi dans le registre de contrôle :
+Chaque timer décompte à partir de la valeur de son registre de données (1 à 256, 0 valant 256) ;
+arrivé à zéro, il déclenche son interruption et repart. Les timers reçoivent une horloge de
+2,4576 MHz, divisée par un **prédiviseur** choisi dans le registre de contrôle :
 
 | Valeur (bits 2-0) | Mode |
 |---|---|
@@ -88,21 +89,23 @@ par un **prédiviseur** choisi dans le registre de contrôle :
 | 5 / 6 / 7 | délai, ÷ 64 / ÷ 100 / ÷ 200 |
 | 8 (Timers A et B) | **comptage d'événements** sur une entrée externe |
 
-**Fréquence** = 2 457 600 / prédiviseur / donnée. Exemple : ÷ 200 et donnée 246 → environ 50 Hz.
+La fréquence vaut 2 457 600 / prédiviseur / donnée : ÷ 200 et une donnée de 246 donnent environ
+50 Hz.
 
-Le **Timer B** en mode comptage d'événements compte les **fins de ligne** affichées : avec la
-donnée *n*, il interrompt toutes les *n* lignes. C'est la base des **rasters** (changement de
-couleur au milieu de l'écran) des démos du ST.
+En comptage d'événements, le Timer B compte les fins de ligne affichées, et avec la donnée *n* il
+interrompt toutes les *n* lignes. C'est la base des **rasters** des démos du ST, qui changent les
+couleurs au milieu de l'écran.
 
 ## Installer sa propre routine sur un timer
 
-Schéma général, illustré avec le Timer A (canal 13, vecteur `$134`, bit 5 du groupe A) :
+Avec le Timer A (canal 13, vecteur `$134`, bit 5 du groupe A), l'installation suit cet ordre :
 
 1. Passer en mode superviseur (`Super` ou `Supexec`).
 2. Bloquer les interruptions (`MOVE.W #$2700,SR`) le temps de la manipulation.
-3. **Sauvegarder** l'ancien vecteur et les registres qu'on va modifier (`IERA`, `IMRA`, `TACR`,
-   `TADR`) — indispensable pour tout restaurer en quittant.
-4. Installer sa routine dans le vecteur, régler le timer, puis autoriser **et** démasquer son canal.
+3. Sauvegarder l'ancien vecteur et les registres d'autorisation et de masque (`IERA`, `IMRA`),
+   pour les restaurer en quittant ; comme le TOS ne se sert pas du Timer A, il suffit de l'arrêter
+   en partant.
+4. Installer sa routine dans le vecteur, régler le timer, puis autoriser et démasquer son canal.
 5. Revenir au niveau normal du TOS (`MOVE.W #$2300,SR`).
 
 ```asm
@@ -144,19 +147,19 @@ ANC_IMRA  DC.B  0
 COMPTEUR  DC.W  0
 ```
 
-> **En quittant le programme, tout restaurer** (registres du MFP et vecteur d'origine) — sinon la
-> routine reste branchée après la fin du programme, et la machine plante au déclenchement suivant,
-> en sautant dans de la mémoire qui ne contient plus notre code.
+En quittant le programme, on **restaure tout**, registres du MFP et vecteur d'origine. Sinon la
+routine reste branchée après la fin du programme, et au déclenchement suivant la machine saute dans
+une mémoire qui ne contient plus notre code et plante.
 
 > Le TOS fournit aussi `Xbtimer(timer, contrôle, donnée, routine)` (XBIOS 31) et
 > `Jenabint`/`Jdisint` (XBIOS 27/26), qui font ce réglage à notre place.
 
 ## La VBL : la routine la plus simple
 
-Pour exécuter du code 50 fois par seconde sans toucher au MFP, le TOS appelle à chaque VBL les
-routines dont l'adresse est dans sa **liste VBL** (`_vblqueue`, `$456`, avec `nvbls` entrées). Une
-routine VBL est un simple sous-programme qui se termine par **`RTS`** (le TOS s'occupe du `RTE`), et
-peut modifier D0-D7/A0-A6.
+Pour exécuter du code 50 fois par seconde sans toucher au MFP, il suffit de s'inscrire dans la
+**liste VBL** du TOS (`_vblqueue`, `$456`, avec `nvbls` entrées), dont le TOS appelle chaque
+routine à chaque VBL. Une routine VBL est un simple sous-programme qui se termine par `RTS`, le TOS
+s'occupant du `RTE`, et elle peut modifier D0-D7/A0-A6.
 
 ```asm
 AJOUTE_VBL:                     ; en superviseur
@@ -173,12 +176,12 @@ MA_VBL: ADDQ.W  #1,COMPTEUR
         RTS
 ```
 
-(Penser à remettre la case à 0 avant de quitter.)
+Pense à remettre la case à 0 avant de quitter.
 
-> Dans le simulateur de 68k Trainer, le MFP est simulé (registres d'interruption, Timers A à D en
-> mode délai, Timer B en comptage de lignes), ainsi que la VBL et sa liste. Le parcours Atari a un
-> chapitre complet sur les interruptions.
+> Le simulateur de 68k Trainer simule le MFP (registres d'interruption, Timers A à D en mode délai,
+> Timer B en comptage de lignes), ainsi que la VBL et sa liste. Le parcours Atari consacre un
+> chapitre entier aux interruptions.
 
 > Fiche complétée et corrigée le 21/10/2026 (Claude) : le TOS utilise la fin d'interruption
-> **logicielle** (`VR` = `$48`), pas automatique ; `BCLR #5,ISRA` avec la vraie adresse ; table des
-> 16 canaux, registres, timers, VBL — à relire.
+> logicielle (`VR` = `$48`), pas automatique ; `BCLR #5,ISRA` avec la vraie adresse ; table des
+> 16 canaux, registres, timers, VBL.

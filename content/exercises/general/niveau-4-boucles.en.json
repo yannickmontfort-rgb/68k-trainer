@@ -1,0 +1,43 @@
+{
+  "level": 4,
+  "title": "Loops",
+  "exercises": [
+    {
+      "id": "general-l4-e1",
+      "title": "Summing with DBRA",
+      "statement": "The starting code sets D0 to 0 (accumulator), D2 to 1 (first value) and D1 to 4 (loop counter). Write a loop that adds D2 to D0 then increments D2, ending with DBRA D1, to compute the sum of the integers from 1 to 5.",
+      "hints": [
+        "DBRA decrements its register then loops as long as the result is not -1: with a counter set to n, the loop body runs n+1 times, which is why D1 starts at 4 for 5 iterations, not 5.",
+        "ADDQ.W #1,D2 increments D2 without needing a full ADD instruction."
+      ],
+      "courseRef": "reference-meyne-hoppenot.md",
+      "starterCode": "    ORG $1000\nSTART:\n    MOVEQ   #0,D0        ; accumulator\n    MOVEQ   #1,D2        ; first value\n    MOVE.W  #4,D1        ; DBRA counter (loops 4+1 = 5 times)\nBOUCLE:\n\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 20,
+        "expected": {
+          "D0": "$0000000F"
+        }
+      }
+    },
+    {
+      "id": "general-l4-e2",
+      "title": "Counting the positive values",
+      "statement": "The starting code writes 4 signed values (word) to memory starting at `$5000`: 5, -3, 0, 7. Walk through them with postincrement addressing `(A0)+` and count in D0 the number of **strictly positive** values.",
+      "hints": [
+        "TST.W Dn sets the N and Z flags without changing Dn, which is handy for testing each value read.",
+        "BLE (Branch if Less or Equal) jumps if the value is ≤ 0, which is useful for *skipping* the counter increment.",
+        "0 is not strictly positive: it must not be counted."
+      ],
+      "courseRef": "reference-meyne-hoppenot.md",
+      "starterCode": "    ORG $1000\nSTART:\n    MOVE.W  #5,$5000\n    MOVE.W  #-3,$5002\n    MOVE.W  #0,$5004\n    MOVE.W  #7,$5006\n    LEA     $5000,A0\n    MOVEQ   #0,D0        ; count of positive values\n    MOVE.W  #3,D1        ; DBRA counter (loops 3+1 = 4 times)\nBOUCLE:\n\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 30,
+        "expected": {
+          "D0": "$00000002"
+        }
+      }
+    }
+  ]
+}

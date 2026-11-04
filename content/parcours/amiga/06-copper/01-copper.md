@@ -1,15 +1,15 @@
 ## Un processeur pour l'écran
 
-Le **Copper** (*co-processor*) est un tout petit processeur caché dans Agnus. Il ne sait faire que
-trois choses, mais il les fait **en même temps que le faisceau balaie l'écran**, sans occuper le
+Le **Copper** (*co-processor*) est un tout petit processeur logé dans Agnus. Il ne connaît que
+trois instructions, mais il les exécute en suivant le faisceau qui balaie l'écran, sans occuper le
 68000 :
 
-- **MOVE** : écrire une valeur dans un registre des puces ;
-- **WAIT** : attendre que le faisceau atteigne une position ;
-- **SKIP** : sauter l'instruction suivante si le faisceau a dépassé une position.
+- MOVE écrit une valeur dans un registre des puces ;
+- WAIT attend que le faisceau atteigne une position ;
+- SKIP saute l'instruction suivante si le faisceau a dépassé une position.
 
-Son programme, la **liste Copper**, est en Chip RAM. Chaque instruction fait **deux mots**. Agnus
-relance la liste depuis le début (l'adresse de `COP1LC`) **à chaque image**.
+Son programme, la liste Copper, est rangé en Chip RAM, et chaque instruction y fait deux mots.
+Agnus relance la liste depuis le début, à l'adresse contenue dans `COP1LC`, à chaque image.
 
 ## MOVE
 
@@ -17,9 +17,9 @@ relance la liste depuis le début (l'adresse de `COP1LC`) **à chaque image**.
     DC.W    $0180,$0F00     ; MOVE : $0F00 dans le registre $DFF180 (COLOR00)
 ```
 
-Le premier mot est le **décalage** du registre (`$180` pour COLOR00), toujours **pair** : son bit 0
-à 0 signale un MOVE. Le second mot est la valeur. Le Copper ne peut pas écrire dans les registres
-en dessous de `$80` (DMACON, le Blitter…) sauf autorisation ; une tentative l'arrête net.
+Le premier mot est le décalage du registre, `$180` pour COLOR00. Il est toujours pair, et c'est son
+bit 0 à 0 qui signale un MOVE ; le second mot est la valeur. Le Copper ne peut pas écrire dans les
+registres situés sous `$80` (DMACON, le Blitter…) sauf autorisation, et une tentative l'arrête net.
 
 ## WAIT
 
@@ -27,12 +27,12 @@ en dessous de `$80` (DMACON, le Blitter…) sauf autorisation ; une tentative l'
     DC.W    $8007,$FFFE     ; WAIT : attendre la ligne $80, position horizontale $06
 ```
 
-Le premier mot donne la position : la **ligne** dans l'octet fort (`$80`), la **position
-horizontale** dans l'octet faible, avec le **bit 0 à 1** (c'est ce qui distingue un WAIT d'un
-MOVE) : `$07` veut dire « position `$06` », tout au début de la ligne, avant la partie visible.
-Le second mot, `$FFFE`, dit de comparer tous les bits (on verra plus loin qu'on peut en ignorer).
+Le premier mot donne la position, avec la ligne dans l'octet fort (`$80`) et la position
+horizontale dans l'octet faible. Son **bit 0 à 1** distingue un WAIT d'un MOVE : `$07` veut donc
+dire « position `$06` », tout au début de la ligne, avant la partie visible. Le second mot, `$FFFE`,
+demande de comparer tous les bits ; la notion suivante montre qu'on peut en ignorer certains.
 
-Le Copper attend que le faisceau soit **arrivé ou ait dépassé** cette position, puis passe à
+Le Copper attend que le faisceau soit arrivé à cette position, ou l'ait dépassée, puis passe à
 l'instruction suivante.
 
 ## La fin de la liste
@@ -41,7 +41,7 @@ l'instruction suivante.
     DC.W    $FFFF,$FFFE     ; attendre la ligne 255, position $FE... qui n'existe pas
 ```
 
-Une ligne ne va pas jusqu'à la position `$FE` : le Copper attend donc jusqu'à la fin de l'image,
+Comme une ligne ne va pas jusqu'à la position `$FE`, le Copper attend jusqu'à la fin de l'image,
 où Agnus le relance au début. C'est la fin conventionnelle de toute liste Copper.
 
 ## Un dégradé
@@ -58,9 +58,9 @@ copper:
     DC.W    $FFFF,$FFFE
 ```
 
-Le Copper change une couleur en 4 cycles « couleur », le temps de 8 pixels : sur une même ligne,
-on peut donc faire des dizaines de changements. Les « barres de couleur » des démos, les ciels
-dégradés des jeux, les écrans de plus de 32 couleurs : tout cela, c'est le Copper.
+Le Copper change une couleur en 4 cycles « couleur », le temps de 8 pixels, et peut donc faire des
+dizaines de changements sur une même ligne. Les barres de couleur des démos, les ciels dégradés des
+jeux et les écrans de plus de 32 couleurs viennent de là.
 
 ## Le lancer
 
@@ -70,4 +70,4 @@ dégradés des jeux, les écrans de plus de 32 couleurs : tout cela, c'est le Co
     MOVE.W  #$8280,$96(A5)      ; DMACON : SET + DMAEN + COPEN
 ```
 
-Sans `COPJMP1`, le Copper ne prendrait la nouvelle liste qu'à l'image suivante.
+Sans l'écriture dans `COPJMP1`, le Copper ne prendrait la nouvelle liste qu'à l'image suivante.

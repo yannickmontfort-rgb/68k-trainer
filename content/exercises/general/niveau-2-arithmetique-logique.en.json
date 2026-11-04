@@ -1,0 +1,97 @@
+{
+  "level": 2,
+  "title": "Arithmetic and logic",
+  "exercises": [
+    {
+      "id": "general-l2-e1",
+      "title": "Adding in memory",
+      "statement": "The starting code writes two unsigned words to memory, at `$2000` (`$1234`) and `$2002` (`$0111`). Add them and put the result in D0 (and at address `$2004`).",
+      "hints": [
+        "First read the two values back from memory with MOVE.W before adding them.",
+        "ADD.W <ea>,D0 adds the source to the destination register."
+      ],
+      "courseRef": "bonnes-pratiques.md",
+      "starterCode": "    ORG $1000\nSTART:\n    MOVE.W  #$1234,$2000\n    MOVE.W  #$0111,$2002\n\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 8,
+        "expected": {
+          "D0": "$00001345"
+        }
+      }
+    },
+    {
+      "id": "general-l2-e2",
+      "title": "Unsigned multiplication",
+      "statement": "Compute the unsigned product of 9 and 6 using MULU, with the result in D2.",
+      "hints": [
+        "MULU.W <ea>,Dn puts the full product in the 32 bits of Dn, so there is no separate overflow to handle.",
+        "First put one of the two values in D2, then multiply by the other (immediate)."
+      ],
+      "courseRef": "reference-meyne-hoppenot.md",
+      "starterCode": "    ORG $1000\nSTART:\n\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 4,
+        "expected": {
+          "D2": "$00000036"
+        }
+      }
+    },
+    {
+      "id": "general-l2-e3",
+      "title": "A chain of logical operations",
+      "statement": "Put `$F0F0` in D0, then apply in order: a logical AND with `$0FF0`, a logical OR with `$000F`, then an EXCLUSIVE OR with `$FFFF`, each operation changing D0.",
+      "hints": [
+        "AND.W, OR.W and EOR.W work like MOVE.W: <source>,<destination>.",
+        "Work it out bit by bit on paper to check each step: $F0F0, then $00F0, then $00FF, then $FF00."
+      ],
+      "courseRef": "reference-meyne-hoppenot.md",
+      "starterCode": "    ORG $1000\nSTART:\n    MOVE.W  #$F0F0,D0\n\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 6,
+        "expected": {
+          "D0": "$0000FF00"
+        }
+      }
+    },
+    {
+      "id": "general-l2-e4",
+      "title": "ASL and LSR shifts",
+      "statement": "Put `3` in D0 (word), shift it left by 4 bits with ASL, then right by 1 bit with LSR.",
+      "hints": [
+        "ASL.W #n,Dn shifts left while preserving the sign; LSR.W #n,Dn shifts right, bringing in zeros.",
+        "3 shifted left by 4 gives 48 ($30); 48 shifted right by 1 gives 24 ($18)."
+      ],
+      "courseRef": "reference-meyne-hoppenot.md",
+      "starterCode": "    ORG $1000\nSTART:\n    MOVE.W  #3,D0\n\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 5,
+        "expected": {
+          "D0": "$00000018"
+        }
+      }
+    },
+    {
+      "id": "general-l2-e5",
+      "title": "NEG and NOT",
+      "statement": "Put `5` (long) in D0, then apply NEG.L (two's complement) and NOT.L (one's complement) to D0.",
+      "hints": [
+        "NEG.L Dn computes 0 - Dn → Dn.",
+        "NOT.L Dn flips every bit of Dn.",
+        "NEG of 5 gives -5 ($FFFFFFFB); NOT of $FFFFFFFB gives $00000004."
+      ],
+      "courseRef": "reference-meyne-hoppenot.md",
+      "starterCode": "    ORG $1000\nSTART:\n    MOVE.L  #5,D0\n\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 5,
+        "expected": {
+          "D0": "$00000004"
+        }
+      }
+    }
+  ]
+}

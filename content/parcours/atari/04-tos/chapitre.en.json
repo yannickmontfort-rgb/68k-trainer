@@ -1,0 +1,168 @@
+{
+  "titre": "TOS: system calls, supervisor mode and vectors",
+  "resume": "Your program now lives under TOS, the Atari's system, which it calls with `TRAP` to display text or change a color. As on a real ST, it now starts in **user mode**, which protects the machine: `Supexec` lets it leave that mode for the length of one routine, and `Setexec` lets it install its own exception routines. Module 2 of the Atari ST manual and exercise 2 of its module 7.",
+  "notions": {
+    "atari-ch04-n0": { "titre": "Review of chapters 2 and 3" },
+    "atari-ch04-n1": { "titre": "Calling TOS" },
+    "atari-ch04-n2": { "titre": "User and supervisor mode" },
+    "atari-ch04-n3": { "titre": "Vectors and exceptions" }
+  },
+  "contenus": {
+    "atari-ch04-rappel": {
+      "titre": "What you already know",
+      "introduction": "Three questions on the previous chapters, without rereading the lessons. Getting it wrong here does not matter: searching is what makes it stick.",
+      "questions": {
+        "q1": { "enonce": "What is D2, the sum computed by the loop?", "explication": "The counter starts at 4, so DBRA goes round 5 times: 5 × 3 = 15." },
+        "q2": { "enonce": "What is D0 at the end?", "explication": "15 ÷ 6 = 2, remainder 3: DIVU stores the quotient in the low word and the remainder in the high word." },
+        "q3": { "enonce": "At the moment of the final `RTS`, what must be on top of the stack?", "choix": ["The return address left by TOS when the program started", "Nothing: the stack must be empty", "The last value of D0"], "explication": "`RTS` pops the return address; if the program has left something else on top, it jumps anywhere." }
+      }
+    },
+    "atari-ch04-cours-trap": {
+      "titre": "TRAP, GEMDOS, BIOS, XBIOS",
+      "source": "Rephrased from the Atari ST manual v1 and v2 (§ 2.2-2.3) and the Féroce Lapin course; functions checked in the simulated TOS"
+    },
+    "atari-ch04-ex-bonjour": {
+      "titre": "Hello, Atari",
+      "introduction": "Watch the stack while the program prepares the call, then the Text output area when the GEMDOS displays the message.",
+      "explications": {
+        "2": "`PEA` pushes the address of the text and SP goes down by 4; in user mode, this is the USP stack.",
+        "3": "The function number, 9 for Cconws, takes 2 more bytes on the stack.",
+        "4": "`TRAP #1` calls the GEMDOS, which reads the number and the parameter from the stack and displays the text up to its final 0.",
+        "5": "The program cleans 4 + 2 = 6 bytes off the stack, and SP returns to its starting value.",
+        "6": "The pushed 0 selects the Pterm0 function.",
+        "7": "The GEMDOS ends the program and hands control back to the GEM desktop, without returning."
+      },
+      "conclusion": "Every system call pushes its parameters then its number, executes `TRAP` and cleans up the stack on return."
+    },
+    "atari-ch04-pred-cconout": {
+      "titre": "What is displayed?",
+      "introduction": "The program calls Cconout (GEMDOS 2), which displays a single character, twice.",
+      "questions": {
+        "q1": { "enonce": "What does this program display?", "explication": "The character is the parameter pushed before the function number: the first call displays 'O', the second 'K'." },
+        "q2": { "enonce": "Why `ADDQ.L #4,SP` and not `#6`?", "choix": ["Because two words were pushed (2 + 2 bytes)", "Because TRAP removes 2 bytes by itself", "By chance, 6 would work too"], "explication": "The character and the number take one word each, that is 4 bytes; with Cconws, the address is a long word, hence 4 + 2 = 6." }
+      }
+    },
+    "atari-ch04-exo-nettoyer": {
+      "titre": "The forgotten line",
+      "enonce": "This program does display `SALUT`, then crashes on the `RTS`. Add the missing line after the `TRAP`.",
+      "indices": ["How many bytes were pushed before the TRAP?", "`ADDQ.L #6,SP`"]
+    },
+    "atari-ch04-exo-ordonner": {
+      "titre": "Put the call back in order",
+      "enonce": "Put the lines back in order to display `A` with Cconout, then end with Pterm0.",
+      "indices": ["The parameter first, then the number, the TRAP and the cleanup.", "Pterm0 comes last."]
+    },
+    "atari-ch04-exo-afficher": {
+      "titre": "Displaying a text",
+      "enonce": "Display the text `TEXTE`, already defined, with Cconws, then end with Pterm0.",
+      "indices": ["`PEA TEXTE`, then the number 9.", "Clean up 6 bytes, then `CLR.W -(SP)` and `TRAP #1`."]
+    },
+    "atari-ch04-exo-etoiles": {
+      "titre": "Five stars",
+      "enonce": "Display five stars, `*****`, by calling Cconout in a loop, then end with Pterm0.",
+      "indices": ["TOS may modify D0-D2: choose a counter that it preserves.", "A counter in D3 and `DBRA`; the body of the loop pushes `'*'`, then 2, calls `TRAP #1` and cleans up 4 bytes."]
+    },
+    "atari-ch04-cours-superviseur": {
+      "titre": "Protections, Supexec and Super",
+      "source": "Rephrased from the Atari ST manual v2 (§ 1.4, exercise 7.1-2), the manual v1 (§ 2.3) and the EPITA course (II.2)"
+    },
+    "atari-ch04-ex-supexec": {
+      "titre": "Changing the background color with Supexec",
+      "introduction": "This is exercise 2 of module 7 of the manual, completed: the routine runs in supervisor mode so that it can touch the palette and a system variable. Watch the S bit and the switch of A7 from the user stack to the supervisor stack.",
+      "explications": {
+        "2": "The program pushes the address of the routine to run.",
+        "3": "Number 38 selects the XBIOS function Supexec.",
+        "4": "The XBIOS switches to supervisor mode (S = 1, A7 = SSP) and calls ROUTINE, where the PC now is.",
+        "9": "In supervisor mode, writing to the palette is allowed, and the background turns blue.",
+        "10": "So is writing to the system variable `conterm` ($484): its bit 0, the key click, drops to 0.",
+        "11": "The routine's `RTS` returns into the XBIOS, which switches back to user mode (S = 0) and hands control back just after the TRAP.",
+        "5": "Back in user mode, the program cleans the 6 bytes off the stack.",
+        "7": "Pterm0 ends the program."
+      },
+      "conclusion": "Supexec keeps supervisor mode for the only instructions that need it, and the rest of the program keeps the protections of user mode."
+    },
+    "atari-ch04-pred-bus": {
+      "titre": "Straight into the palette?",
+      "introduction": "The program writes to the palette without going through Supexec, so in user mode.",
+      "questions": {
+        "q1": { "enonce": "What happens?", "choix": ["The background turns blue", "Bus error: 2 bombs", "Address error: 3 bombs"], "explication": "In user mode, the hardware registers ($FF8000 and above) are protected, and the first access causes a bus error (exception 2). Since $FF8240 is even, it is not an address error." }
+      }
+    },
+    "atari-ch04-exo-vert": {
+      "titre": "The two bombs",
+      "enonce": "This program should turn the background green (`$070`), but it crashes with 2 bombs. Fix it by having the palette written by a routine called with Supexec.",
+      "indices": ["Move the `MOVE.W` into a routine that ends with `RTS`.", "Call it with `PEA routine`, `MOVE.W #38,-(SP)`, `TRAP #14`, `ADDQ.L #6,SP`."]
+    },
+    "atari-ch04-exo-setcolor": {
+      "titre": "Changing a color without supervisor mode",
+      "enonce": "The XBIOS function 7, `Setcolor(number, color)`, changes a color without you switching to supervisor mode. Set color 0 to yellow (`$770`), then end with Pterm0.",
+      "indices": ["The parameters are pushed from last to first: the color, then the number, then 7.", "Three words pushed: 6 bytes to clean up."]
+    },
+    "atari-ch04-exo-conterm": {
+      "titre": "Reading a system variable",
+      "enonce": "Store the byte `conterm` (address `$484`) in D7 without crashing, then end with Pterm0. TOS preserves D7, which therefore keeps its value after the routine.",
+      "indices": ["In user mode, reading $484 causes a bus error: go through Supexec.", "In the routine: `MOVEQ #0,D7` then `MOVE.B $484,D7`."]
+    },
+    "atari-ch04-cours-vecteurs": {
+      "titre": "The vector table, RTE and Setexec",
+      "source": "Rephrased from the Atari ST manual v1 (§ 2.1) and v2 (§ 2.1), the M68000PRM (chapter 6, exceptions) and the Féroce Lapin course"
+    },
+    "atari-ch04-ex-setexec": {
+      "titre": "Your own TRAP routine",
+      "introduction": "The program installs a routine on `TRAP #3`, which is free on the Atari, then calls it: watch the switch to supervisor mode at the TRAP and the return to user mode at the `RTE`.",
+      "explications": {
+        "2": "The first parameter pushed is the address of the routine.",
+        "3": "The vector number of TRAP #3 is 32 + 3 = 35.",
+        "4": "Number 5 selects the BIOS function Setexec.",
+        "5": "The BIOS writes the address of the routine into vector 35, at address $8C, and returns the old one in D0.",
+        "6": "The program cleans up 4 + 2 + 2 = 8 bytes.",
+        "8": "On `TRAP #3`, the 68000 switches to supervisor mode, pushes the PC and the SR onto the supervisor stack, reads vector 35 and jumps to MAROUTINE.",
+        "12": "The routine doubles D0, which is now 40.",
+        "13": "`RTE` pops the SR, which brings back user mode, then the PC: the program resumes just after the TRAP.",
+        "9": "Pterm0 ends the program."
+      },
+      "conclusion": "An exception routine ends with `RTE`, which also restores the status register, and a real program puts the old vector back before quitting."
+    },
+    "atari-ch04-pred-pile-trap": {
+      "titre": "What TRAP pushes",
+      "introduction": "The routine reads what the 68000 pushed during the TRAP; before the call, the flags are all 0 and the interrupt mask is 3.",
+      "questions": {
+        "q1": { "enonce": "What is D6 (the word on top of the supervisor stack)?", "choix": ["$0300: the old status register", "$2300: the new status register", "the return address"], "explication": "The 68000 pushes the PC, then the old SR, which is therefore on top: S at 0 (user mode), mask 3 and flags at 0 give $0300." },
+        "q2": { "enonce": "And D5, the long word read at `2(SP)`?", "choix": ["The address of the instruction after TRAP #4", "The address of TRAP #4 itself", "The address of the routine"], "explication": "For a TRAP, the pushed PC is that of the next instruction, so that after RTE the program carries on." }
+      }
+    },
+    "atari-ch04-exo-vecteur": {
+      "titre": "The right vector number",
+      "enonce": "Replace the `0` with the vector number of TRAP #5, so that the routine runs and sets D0 to 7.",
+      "indices": ["TRAP #0 to #15 use vectors 32 to 47.", "32 + 5 = 37."]
+    },
+    "atari-ch04-exo-divzero": {
+      "titre": "Intercepting the division by zero",
+      "enonce": "This program divides by zero and displays 5 bombs. At the start, use Setexec to install on vector 5 a routine that sets D7 to −1 and returns with `RTE`, so that the program gets as far as Pterm0.",
+      "indices": ["Setexec(5, DIVZERO): `PEA DIVZERO`, `MOVE.W #5,-(SP)` (the vector), `MOVE.W #5,-(SP)` (the function), `TRAP #13`, `ADDQ.L #8,SP`.", "The routine: `MOVEQ #-1,D7` then `RTE`."]
+    },
+    "atari-ch04-exo-compteur": {
+      "titre": "A TRAP that counts",
+      "enonce": "Install on TRAP #4 a routine that adds 1 to D6. The program calls it three times, and D6 must be 3 at the end.",
+      "indices": ["Vector 36 = TRAP #4.", "The routine: `ADDQ.L #1,D6` then `RTE`."]
+    },
+    "atari-ch04-bonus-palette": {
+      "titre": "A gradient of reds",
+      "enonce": "The XBIOS function 6, Setpalette, installs all 16 colors at once from a table of 16 words. Install the palette `PALETTE`, a gradient from black to red then to white by way of orange, and end with Pterm0.",
+      "indices": ["A single parameter: the address of the table (`PEA PALETTE`).", "Clean up 4 + 2 bytes."]
+    }
+  },
+  "qcm": {
+    "q1": { "enonce": "Which instruction calls the GEMDOS?", "explication": "TRAP #1 calls the GEMDOS, #13 the BIOS and #14 the XBIOS." },
+    "q2": { "enonce": "After `PEA TEXTE` / `MOVE.W #9,-(SP)` / `TRAP #1`, by how much must SP be corrected?", "explication": "A 4-byte address and a 2-byte function number." },
+    "q3": { "enonce": "In which register does TOS return the result of a function?", "explication": "TOS always returns its value in D0." },
+    "q10": { "enonce": "A `MOVE.W` to an odd address causes…", "choix": ["a bus error: 2 bombs", "an address error: 3 bombs", "nothing: the 68000 rounds the address"], "explication": "A word must be stored at an even address, otherwise the 68000 raises exception 3, the address error." },
+    "q4": { "enonce": "Which registers may TOS modify during a call?", "choix": ["D3-D7 and A3-A6", "D0-D2 and A0-A2", "none"], "explication": "D0-D2 and A0-A2 are scratch registers; D3-D7 and A3-A6 are preserved." },
+    "q5": { "enonce": "A program in user mode writes to `$FF8240`. What happens?", "choix": ["It works", "2 bombs (bus error)", "8 bombs (privilege violation)"], "explication": "In user mode, the hardware registers are protected and the access causes a bus error." },
+    "q6": { "enonce": "What is Supexec (XBIOS 38) for?", "choix": ["Running a routine in supervisor mode", "Stopping the program", "Changing the resolution"], "explication": "The routine runs in supervisor mode, then the program returns to user mode." },
+    "q11": { "enonce": "A subroutine starts with `MOVEM.L D3/A3,-(SP)`. By how much has SP gone down?", "explication": "Two registers saved in `.L`, that is 2 × 4 = 8 bytes." },
+    "q7": { "enonce": "At what address is the vector of TRAP #1?", "explication": "TRAP #1 uses vector 32 + 1 = 33, stored at 33 × 4 = 132 = $84." },
+    "q8": { "enonce": "How does an exception routine end?", "explication": "`RTE` pops the SR and the PC that the exception pushed." },
+    "q9": { "enonce": "What does Setexec return in D0?", "choix": ["0 if all went well", "The old vector", "The vector number"], "explication": "Setexec returns the old address, to be put back before quitting." }
+  }
+}

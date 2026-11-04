@@ -1,0 +1,110 @@
+{
+  "titre": "Tools, executable and demo",
+  "resume": "To take your programs out of the simulator, 68k Trainer builds an AmigaDOS executable, made of hunks that the system loads wherever it finds room and relocates, and that you start in WinUAE, FS-UAE or on a real Amiga. When a program crashes, the Guru Meditation tells you why, and a few golden rules avoid most failures. To finish, a small intro brings together the Copper, a sprite, sound and an interrupt.",
+  "notions": {
+    "amiga-ch10-n0": { "titre": "Review of chapters 4 and 9" },
+    "amiga-ch10-n1": { "titre": "The AmigaDOS executable" },
+    "amiga-ch10-n2": { "titre": "Debugging, programming well, making a demo" }
+  },
+  "contenus": {
+    "amiga-ch10-rappel": {
+      "titre": "What you already know",
+      "introduction": "Three questions on the previous chapters, without rereading the lessons. Getting it wrong here does not matter: searching is what makes it stick.",
+      "questions": {
+        "q1": {
+          "enonce": "D1 receives the length to write into AUD0LEN for a 64-byte sample. What is it?",
+          "explication": "AUD0LEN is counted in words: 64 bytes make 32 words."
+        },
+        "q2": {
+          "enonce": "If you double the period of a channel, the note…",
+          "choix": ["goes up an octave", "goes down an octave", "does not change"],
+          "explication": "Paula reads the bytes twice as slowly: the frequency is divided by two, which is one octave lower."
+        },
+        "q3": {
+          "enonce": "Where does a program find the address of ExecBase?",
+          "choix": ["At address $4", "In A5 at startup", "At $DFF000"],
+          "explication": "It is the only system address you need to know: the libraries and memory are then requested from exec."
+        }
+      }
+    },
+    "amiga-ch10-cours-executable": {
+      "titre": "Hunks, sections, and starting your program",
+      "source": "Written for 68k Trainer from The AmigaDOS Manual (hunk format), Amiga Intern (Abacus) and the vasm documentation"
+    },
+    "amiga-ch10-pred-retour": {
+      "titre": "The return code",
+      "introduction": "The program hands control back to the Shell with `RTS`, with 20 in D0.",
+      "questions": {
+        "q1": {
+          "enonce": "What is D0 at the end?",
+          "explication": "20 in decimal is written $14."
+        },
+        "q2": {
+          "enonce": "What does the Shell understand?",
+          "choix": ["The program failed (FAIL)", "All is well", "A warning"],
+          "explication": "0 = OK, 5 = WARN, 10 = ERROR, 20 = FAIL: a script that calls it can stop there."
+        }
+      }
+    },
+    "amiga-ch10-exo-retour": {
+      "titre": "Everything went well",
+      "enonce": "This program does its job, but reports a failure to the Shell: fix its return code.",
+      "indices": ["The return code is in D0 at the time of the `RTS`.", "`MOVEQ #0,D0`"]
+    },
+    "amiga-ch10-exo-ordonner": {
+      "titre": "The code that fits the measure",
+      "enonce": "Put back in order the lines of the `code` subroutine, which stores in D0 the return code matching the value of D1: 0 (OK) up to 100, 5 (WARN) up to 200, 10 (ERROR) beyond. The program tries it with 250, 50 then 150.",
+      "indices": ["You store a code in D0, then compare: if the value stays below the limit, you go to `.fin` with that code, otherwise you move on to the next code.", "`MOVEQ` also changes the flags: each `BLS` must come right after its `CMP`."],
+      "lignes": ["    MOVEQ   #0,D0           ; OK", "    CMP.W   #100,D1", "    BLS.S   .fin", "    MOVEQ   #5,D0           ; WARN", "    CMP.W   #200,D1", "    BLS.S   .fin", "    MOVEQ   #10,D0          ; ERROR"]
+    },
+    "amiga-ch10-exo-abime": {
+      "titre": "Damaged data",
+      "enonce": "Before using its data, the program checks it: add the 8 words of `table` into D7, compare the sum with the word `attendu`, then return code 0 to the Shell if they are equal, 10 (ERROR) otherwise.",
+      "indices": ["A loop of 8 iterations that adds `(A0)+` to D7, cleared beforehand.", "`CMP.W attendu(PC),D7` then `BEQ`: here the sum is 1300 and not 1310, so the program must return 10."]
+    },
+    "amiga-ch10-cours-pratiques": {
+      "titre": "Guru Meditation and golden rules",
+      "source": "Written for 68k Trainer from Amiga Intern (Abacus), the demo courses (Stash of Code) and the experience of the scene"
+    },
+    "amiga-ch10-ex-intro": {
+      "titre": "A small intro",
+      "introduction": "This program brings the course together: a gradient sky and a three-color bar that bounces (the Copper, animated by a VBL routine), a ball (sprite 0) and a held note (Paula). Tick 🔊, start \"🎬 Real time\" then click to finish; you can then export it and run it in an emulator.",
+      "explications": {
+        "4": "`prendre` shuts off the system, and the chips are ours.",
+        "5": "Sprite 0 receives the ball, and the 7 others the empty list.",
+        "22": "Paula plays a square wave at period 508, a low note, at volume 24.",
+        "26": "A single DMACON turns everything on: DMAEN, COPEN, SPREN and AUD0EN.",
+        "27": "The VBL routine moves the bar while the main program waits for the click.",
+        "30": "The sound stops before the system is handed back.",
+        "39": "The VBL reads the next position from the table, looping over 32 values.",
+        "46": "The three WAITs of the bar are rewritten, 4 lines apart."
+      },
+      "conclusion": "An Amiga scene intro is made of nothing but the Copper, sprites, sound and interrupts, with a lot of imagination."
+    },
+    "amiga-ch10-exo-pile": {
+      "titre": "The subroutine's Guru",
+      "enonce": "This program should store in D7 the sum of the 8 words of `table`, but it ends in a Guru Meditation. Step through it while watching A7 and the stack, and fix the subroutine.",
+      "indices": ["Look at what `RTS` pops at the end of `somme`, and compare it with the return address pushed by `BSR`.", "`somme` pushes D3 and A0 without popping them: add `MOVEM.L (SP)+,D3/A0` just before its `RTS`."]
+    },
+    "amiga-ch10-exo-moyenne": {
+      "titre": "The empty table",
+      "enonce": "This program stores in D7 the average of the first `nombre` words of `table`. Set `nombre` to 0 and run it: the division by zero causes a Guru Meditation. Change it so that with an empty table it does not divide, leaves D7 at 0 and returns code 10 (ERROR) to the Shell.",
+      "indices": ["You need to test `nombre` before the loop, and jump to an ending that puts 10 in D0.", "Right after `MOVE.W D1,D2`, the Z flag tells whether `nombre` is 0: `BEQ.S .vide`, then further down `.vide: MOVEQ #10,D0` and `RTS`."]
+    },
+    "amiga-ch10-bonus-intro": {
+      "titre": "Your intro",
+      "enonce": "Final challenge: the ball (sprite 0, a white square) in the middle of the screen at (152, 120), and the three-color bar that follows the `positions` table, one position per frame, for 40 frames; then everything stays in place until the click. The lists and the data are ready, and only the program remains to be written.",
+      "indices": ["The sprite pointers as in chapter 8; the control words: VSTART = $2C + 120, HSTART = $81 + 152, VSTOP = VSTART + 16.", "The bar: 4 WAITs to rewrite (barre, barre2, barre3, barre4), `$0400` apart. After 40 frames, the index is 7: the bar starts at line `$81`."]
+    }
+  },
+  "qcm": {
+    "q1": { "enonce": "Why does an AmigaDOS program have no ORG?", "choix": ["AmigaDOS loads it wherever it finds room and corrects its addresses (relocations)", "ORG does not exist on the Amiga", "To go faster"], "explication": "LoadSeg adds the actual load address to the addresses listed in the relocations." },
+    "q2": { "enonce": "What does `SECTION ecran,BSS_C` ask for?", "choix": ["An empty area in Chip RAM", "Code in Fast RAM", "A Workbench screen"], "explication": "BSS = empty area; _C = Chip RAM, visible to the chips." },
+    "q7": { "enonce": "The buttons read in `$BFE001` are active when their bit is…", "explication": "The bit drops to 0 when you press: you test it with BTST, then BEQ jumps if the button is pressed." },
+    "q3": { "enonce": "A Guru Meditation #00000004 reports…", "choix": ["an illegal instruction", "a division by zero", "a bus error"], "explication": "The number is that of the 68000 exception: 4 = illegal instruction." },
+    "q4": { "enonce": "Started from an icon, a program must first…", "choix": ["pick up and return the Workbench message", "open intuition.library", "do nothing special"], "explication": "WaitPort and GetMsg at the start, ReplyMsg before ending; otherwise, start it from the Shell." },
+    "q5": { "enonce": "For an animation to run at the same speed on an A500 and an A1200, you sync it to…", "choix": ["the VBL or the beam", "delay loops", "the speed of the 68000"], "explication": "A frame always lasts 1/50 of a second in PAL; the processor, on the other hand, can be much faster." },
+    "q8": { "enonce": "How does a program open dos.library?", "choix": ["With OpenLibrary, at −552 from ExecBase", "By reading address $DFF000", "With a TRAP"], "explication": "You load ExecBase from $4 into A6, the name into A1 and the version into D0, then `JSR -552(A6)`." },
+    "q6": { "enonce": "Which emulator can run your programs?", "choix": ["WinUAE or FS-UAE", "Hatari", "DOSBox"], "explication": "Hatari emulates the Atari ST; WinUAE and FS-UAE, the Amiga." }
+  }
+}

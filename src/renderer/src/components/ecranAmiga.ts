@@ -3,6 +3,26 @@ import { JOY_AMIGA, materielAmiga } from '../../../platforms/amiga/chipset'
 import { CODE_PC_AMIGA } from '../../../platforms/amiga/clavier'
 import { ECRAN_LARGEUR, ECRAN_LARGEUR_BASSE, ECRAN_LIGNES, rgb12 } from '../../../platforms/amiga/machine'
 import { activerSon, sonActif } from './son'
+import { traducteur } from '../langue'
+
+const t = traducteur({
+  fr: {
+    ecranTitre:
+      'Écran de l’Amiga 500 simulé (PAL, avec la bordure). Clique dessus pour taper au clavier de l’Amiga ; la souris du PC y pilote celle de l’Amiga.',
+    joystickTitre: 'Les flèches et Espace pilotent le joystick du port 2 au lieu du clavier (une manette branchée sur le PC marche toujours)',
+    joystick: '🕹 Flèches + Espace = joystick',
+    sonTitre: 'Le son de Paula, en mode Temps réel',
+    son: '🔊 Son'
+  },
+  en: {
+    ecranTitre:
+      'Simulated Amiga 500 screen (PAL, with the border). Click it to type on the Amiga keyboard; the PC mouse drives the Amiga mouse over it.',
+    joystickTitre: 'The arrow keys and Space drive the port 2 joystick instead of the keyboard (a gamepad plugged into the PC always works)',
+    joystick: '🕹 Arrows + Space = joystick',
+    sonTitre: 'The sound of Paula, in Real time mode',
+    son: '🔊 Sound'
+  }
+})
 
 const JOY_PC: Record<string, number> = {
   ArrowUp: JOY_AMIGA.haut,
@@ -45,20 +65,20 @@ export class EcranAmiga {
     this.canvas.height = ECRAN_LIGNES
     this.canvas.className = 'ecran-atari ecran-amiga'
     this.canvas.tabIndex = 0
-    this.canvas.title =
-      'Écran de l’Amiga 500 simulé (PAL, avec la bordure). Clique dessus pour taper au clavier de l’Amiga ; la souris du PC y pilote celle de l’Amiga.'
+    this.canvas.title = t('ecranTitre')
     this.ctx = this.canvas.getContext('2d')!
     this.image = this.ctx.createImageData(ECRAN_LARGEUR, ECRAN_LIGNES)
     this.pixels = new Uint32Array(this.image.data.buffer)
     const options = document.createElement('label')
     options.className = 'ecran-options'
-    options.title = 'Les flèches et Espace pilotent le joystick du port 2 au lieu du clavier (une manette branchée sur le PC marche toujours)'
-    options.innerHTML = '<input type="checkbox" /> 🕹 Flèches + Espace = joystick'
+    options.title = t('joystickTitre')
+    options.innerHTML = `<input type="checkbox" /> ${t('joystick')}`
     this.modeJoystick = options.querySelector('input')!
     const son = document.createElement('label')
     son.className = 'ecran-options'
-    son.title = 'Le son de Paula, en mode Temps réel'
-    son.innerHTML = '<input type="checkbox" /> 🔊 Son'
+    son.title = t('sonTitre')
+    son.innerHTML = `<input type="checkbox" /> ${t('son')}`
+
     const caseSon = son.querySelector('input')!
     caseSon.checked = sonActif()
     caseSon.addEventListener('change', () => activerSon(caseSon.checked))

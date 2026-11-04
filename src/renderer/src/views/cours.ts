@@ -4,6 +4,30 @@ import type { CourseFile } from '../../../shared/ipc'
 import type { ContenuCours } from '../../../shared/parcours'
 import { coursParChapitre, parcoursDeLaMachine, pisteDeLaMachine } from '../contenuParcours'
 import { echapper, renderMarkdown as afficherMarkdown } from './parcours/markdown'
+import { traducteur } from '../langue'
+
+const t = traducteur({
+  fr: {
+    chargement: 'Chargement du contenu…',
+    descriptionParcours: 'Tous les cours du parcours « {titre} », chapitre par chapitre, à relire quand tu veux.',
+    coursDuParcours: 'Cours du parcours',
+    fichesReference: 'Fiches de référence : {titre}',
+    sourceSuite: ' — Source : {source}',
+    pasDeCours: 'Pas encore de cours dans ce parcours.',
+    aucuneFiche: 'Aucune fiche pour ce parcours pour le moment.',
+    source: 'Source : {source}'
+  },
+  en: {
+    chargement: 'Loading content…',
+    descriptionParcours: 'All the lessons of the course “{titre}”, chapter by chapter, to reread whenever you like.',
+    coursDuParcours: 'Course lessons',
+    fichesReference: 'Reference sheets: {titre}',
+    sourceSuite: ' — Source: {source}',
+    pasDeCours: 'No lessons in this course yet.',
+    aucuneFiche: 'No sheets for this course yet.',
+    source: 'Source: {source}'
+  }
+})
 
 /** Onglet des cours du parcours (avant les fiches de référence). */
 const PARCOURS = 'parcours'
@@ -27,7 +51,7 @@ function resolveCourseLink(href: string, currentTrack: string): { track: string;
  * référence (communes au 68000 et propres à la machine).
  */
 export function renderCours(container: HTMLElement): () => void {
-  container.innerHTML = `<div class="cours-view"><p class="loading">Chargement du contenu…</p></div>`
+  container.innerHTML = `<div class="cours-view"><p class="loading">${t('chargement')}</p></div>`
   const root = container.querySelector('.cours-view') as HTMLDivElement
 
   let disposed = false
@@ -48,7 +72,7 @@ export function renderCours(container: HTMLElement): () => void {
       const track = pistes.find((t) => t.id === currentTrack)
       const description =
         currentTrack === PARCOURS
-          ? `Tous les cours du parcours « ${parcours?.titre ?? ''} », chapitre par chapitre, à relire quand tu veux.`
+          ? t('descriptionParcours', { titre: parcours?.titre ?? '' })
           : (track?.description ?? '')
       const liste =
         currentTrack === PARCOURS
@@ -74,11 +98,11 @@ export function renderCours(container: HTMLElement): () => void {
               .join('')
       root.innerHTML = `
         <div class="cours-tracks">
-          <button class="track-tab${currentTrack === PARCOURS ? ' active' : ''}" data-track="${PARCOURS}">Cours du parcours</button>
+          <button class="track-tab${currentTrack === PARCOURS ? ' active' : ''}" data-track="${PARCOURS}">${t('coursDuParcours')}</button>
           ${pistes
             .map(
-              (t) =>
-                `<button class="track-tab${t.id === currentTrack ? ' active' : ''}" data-track="${t.id}">Fiches de référence : ${t.title}</button>`
+              (p) =>
+                `<button class="track-tab${p.id === currentTrack ? ' active' : ''}" data-track="${p.id}">${t('fichesReference', { titre: p.title })}</button>`
             )
             .join('')}
         </div>
@@ -108,7 +132,7 @@ export function renderCours(container: HTMLElement): () => void {
     function renderCoursParcours(target: HTMLDivElement, cours: ContenuCours): void {
       const chapitre = groupes.find((g) => g.elements.includes(cours))?.chapitre
       target.innerHTML = `
-        <p class="cours-source">${echapper(chapitre?.titre ?? '')}${cours.source ? ` — Source : ${echapper(cours.source)}` : ''}</p>
+        <p class="cours-source">${echapper(chapitre?.titre ?? '')}${cours.source ? t('sourceSuite', { source: echapper(cours.source) }) : ''}</p>
         <h2>${echapper(cours.titre)}</h2>
         <div class="cours-texte"></div>`
       afficherMarkdown(target.querySelector('.cours-texte')!, cours.markdown ?? '')
@@ -119,15 +143,15 @@ export function renderCours(container: HTMLElement): () => void {
       if (currentTrack === PARCOURS) {
         const cours = tousLesCours.find((c) => c.id === currentSlug)
         if (cours) renderCoursParcours(target, cours)
-        else target.innerHTML = '<p>Pas encore de cours dans ce parcours.</p>'
+        else target.innerHTML = `<p>${t('pasDeCours')}</p>`
         return
       }
       const course = (content.courses[currentTrack] ?? []).find((c: CourseFile) => c.slug === currentSlug)
       if (!course) {
-        target.innerHTML = '<p>Aucune fiche pour ce parcours pour le moment.</p>'
+        target.innerHTML = `<p>${t('aucuneFiche')}</p>`
         return
       }
-      const sourceLine = course.source ? `<p class="cours-source">Source : ${course.source}</p>` : ''
+      const sourceLine = course.source ? `<p class="cours-source">${t('source', { source: course.source })}</p>` : ''
       target.innerHTML = sourceLine + (marked.parse(course.markdown) as string)
       target.querySelectorAll<HTMLAnchorElement>('a[href$=".md"], a[href*=".md#"]').forEach((a) => {
         const resolved = resolveCourseLink(a.getAttribute('href') ?? '', currentTrack)

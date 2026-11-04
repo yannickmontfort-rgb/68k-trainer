@@ -1,0 +1,153 @@
+{
+  "id": "atari-ch09",
+  "titre": "Ligne A et GEM",
+  "plateforme": "atari",
+  "resume": "Le TOS offre au programmeur ses primitives graphiques par la Ligne A, un mécanisme d'exception du 68000, et son interface graphique par le GEM, que l'on appelle par TRAP #2. Tu y allumes des pixels, tu traces des lignes dans les quatre modes d'écriture, puis tu ouvres ta première boîte d'alerte et tu réagis au bouton cliqué.",
+  "notions": [
+    {
+      "id": "atari-ch09-n0",
+      "titre": "Rappel des chapitres 5 et 8",
+      "contenus": [
+        {
+          "type": "prediction", "id": "atari-ch09-rappel", "titre": "Ce que tu sais déjà",
+          "introduction": "Trois questions sur les chapitres précédents, sans relire les cours. Se tromper ici n'est pas grave : c'est en cherchant qu'on retient.",
+          "code": "@code.s#rappel",
+          "machine": { "modeUtilisateur": true },
+          "questions": [
+            { "id": "q1", "enonce": "Que vaut D1 à la fin ?", "choix": ["30", "42", "12"], "bonne": 1, "explication": "Le programme lit les deux mots de la section DATA, 30 et 12, et les additionne.", "verification": { "D1": "$0000002A" } },
+            { "id": "q2", "enonce": "Que contient RESULTAT, dans la section BSS, au lancement du programme ?", "choix": ["0, car le TOS met la section BSS à zéro", "n'importe quoi, ce qui restait en mémoire", "42, la valeur calculée"], "bonne": 0, "explication": "La section BSS ne prend pas de place dans le fichier : le TOS la réserve et la remplit de zéros au chargement." },
+            { "id": "q3", "enonce": "Que vaut D2, le décalage du groupe de 16 pixels qui contient X = 160 ?", "choix": ["10", "80", "160"], "bonne": 1, "explication": "160 ÷ 16 = 10 groupes, de 8 octets chacun en basse résolution : 80 octets.", "verification": { "D2": "$00000050" } }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "atari-ch09-n1",
+      "titre": "La Ligne A",
+      "contenus": [
+        { "type": "cours", "id": "atari-ch09-cours-lignea", "titre": "Pixels et lignes par la Ligne A", "fichier": "01-lignea.md", "source": "Rédigé pour 68k Trainer d'après le cours du Féroce Lapin (volume 2), la documentation Line-A d'Atari et le code source d'EmuTOS (vdi_line.c, lineavars.S)" },
+        {
+          "type": "exemple", "id": "atari-ch09-ex-lignea", "titre": "Un pixel et une ligne",
+          "introduction": "Avance pas à pas et regarde l'écran, à droite : un point apparaît au milieu, puis une diagonale le traverse.",
+          "code": "@code.s#lignea-exemple",
+          "machine": { "modeUtilisateur": true, "ecran": true },
+          "explications": [
+            { "ligne": 2, "texte": "Le 68000 a traité `$A000` comme une exception, et le TOS a rendu dans A0 l'adresse des variables de la Ligne A, `$0E80` dans le simulateur." },
+            { "ligne": 3, "texte": "A5 garde cette adresse, que les appels suivants pourraient effacer de A0." },
+            { "ligne": 5, "texte": "Le premier mot de INTIN reçoit la couleur du pixel, 1." },
+            { "ligne": 8, "texte": "PTSIN contient maintenant les coordonnées, x = 160 puis y = 100." },
+            { "ligne": 9, "texte": "`$A001` allume le pixel (160, 100) en couleur 1, un point rouge au milieu de l'écran." },
+            { "ligne": 13, "texte": "La couleur 3 s'écrit `%0011`, et seuls les plans 0 et 1 reçoivent un 1." },
+            { "ligne": 14, "texte": "Le motif `$FFFF` donne un trait plein." },
+            { "ligne": 15, "texte": "Le mode 0, le remplacement, dessine la couleur là où le motif vaut 1." },
+            { "ligne": 19, "texte": "Les extrémités sont en place, de (10, 10) à (300, 190)." },
+            { "ligne": 20, "texte": "`$A003` trace la diagonale en couleur 3, qui passe tout près du point rouge." }
+          ],
+          "conclusion": "On prépare les variables de la Ligne A, puis on appelle la fonction : c'est le schéma de tous les appels."
+        },
+        {
+          "type": "prediction", "id": "atari-ch09-pred-lignea", "titre": "Relire un pixel",
+          "introduction": "Le programme allume un pixel en couleur 6, puis relit ce pixel et son voisin de droite avec `$A002`.",
+          "code": "@code.s#lignea-prediction",
+          "machine": { "modeUtilisateur": true, "ecran": true },
+          "questions": [
+            { "id": "q1", "enonce": "Que vaut D3, la couleur du pixel (20, 30) ?", "choix": ["0", "1", "6"], "bonne": 2, "explication": "`$A002` rend dans D0 la couleur du pixel, celle que `$A001` vient d'y mettre.", "verification": { "D3": "$00000006" } },
+            { "id": "q2", "enonce": "Et D4, la couleur du pixel (21, 30) ?", "choix": ["0", "6", "7"], "bonne": 0, "explication": "Seul le pixel (20, 30) a été allumé : son voisin garde la couleur du fond.", "verification": { "D4": "$00000000" } }
+          ]
+        },
+        { "type": "exercice", "id": "atari-ch09-exo-pixel", "titre": "Un pixel de couleur 2", "variante": "completer", "niveau": 1,
+          "enonce": "Complète le programme pour qu'il allume le pixel (100, 50) en couleur 2.",
+          "indices": ["Les coordonnées se rangent dans le tableau dont l'adresse est en 12(A5).", "`MOVEA.L 12(A5),A1`, puis x en (A1) et y en 2(A1)."],
+          "codeDepart": "@code.s#pixel-depart", "solution": "@code.s#pixel-solution",
+          "check": { "type": "pixels", "maxSteps": 200, "terminer": true, "expected": { "100,50": "2" } },
+          "machine": { "modeUtilisateur": true, "ecran": true } },
+        { "type": "exercice", "id": "atari-ch09-exo-ordonner", "titre": "Recopier une couleur", "variante": "ordonner", "niveau": 1,
+          "enonce": "Le pixel (50, 60) est de couleur 7. Remets les lignes dans l'ordre pour lire sa couleur et allumer son voisin de droite, (51, 60), de la même couleur.",
+          "indices": ["On ne peut recopier la couleur qu'après l'avoir lue avec `$A002`.", "La couleur va dans INTIN, et x + 1 dans PTSIN, avant `$A001`."],
+          "codeDepart": "", "entete": "@code.s#ordonner-entete", "pied": "@code.s#ordonner-pied", "solution": "",
+          "lignes": ["    MOVEA.L 12(A5),A1       ; PTSIN", "    MOVE.W  #50,(A1)", "    MOVE.W  #60,2(A1)", "    DC.W    $A002           ; D0 = couleur du pixel (50, 60)", "    MOVEA.L 8(A5),A1        ; INTIN", "    MOVE.W  D0,(A1)         ; la même couleur", "    MOVEA.L 12(A5),A1", "    ADDQ.W  #1,(A1)         ; x + 1", "    DC.W    $A001"],
+          "check": { "type": "pixels", "maxSteps": 200, "terminer": true, "expected": { "51,60": "7" } },
+          "machine": { "modeUtilisateur": true, "ecran": true } },
+        { "type": "exercice", "id": "atari-ch09-exo-cadre", "titre": "Un cadre", "variante": "ecrire", "niveau": 2,
+          "enonce": "Trace en couleur 1 le cadre dont les coins sont (20, 20) et (299, 179).",
+          "indices": ["Un cadre, ce sont quatre lignes : il suffit de changer X1, Y1, X2 et Y2 avant chaque `$A003`.", "La couleur, le motif et le mode restent en place d'une ligne à l'autre."],
+          "codeDepart": "@code.s#cadre-depart", "solution": "@code.s#cadre-solution",
+          "check": { "type": "pixels", "maxSteps": 500, "terminer": true, "expected": { "20,20": "1", "299,179": "1", "160,20": "1", "299,100": "1", "160,179": "1", "20,100": "1", "160,100": "0" } },
+          "machine": { "modeUtilisateur": true, "ecran": true } },
+        { "type": "exercice", "id": "atari-ch09-exo-eventail", "titre": "Un éventail", "variante": "ecrire", "niveau": 3,
+          "enonce": "Trace en couleur 5 les huit lignes qui partent du centre de l'écran, (160, 100), vers les huit points rangés dans la table BOUTS.",
+          "indices": ["Une boucle de huit tours, avec un pointeur qui avance dans la table.", "`MOVE.L (A4)+,42(A5)` range X2 et Y2 d'un coup et passe au point suivant."],
+          "codeDepart": "@code.s#eventail-depart", "solution": "@code.s#eventail-solution",
+          "check": { "type": "pixels", "maxSteps": 2000, "terminer": true, "expected": { "0,0": "5", "160,0": "5", "319,0": "5", "319,199": "5", "0,100": "5", "160,100": "5" } },
+          "machine": { "modeUtilisateur": true, "ecran": true } }
+      ]
+    },
+    {
+      "id": "atari-ch09-n2",
+      "titre": "Le GEM",
+      "contenus": [
+        { "type": "cours", "id": "atari-ch09-cours-gem", "titre": "L'AES et la boîte d'alerte", "fichier": "02-gem.md", "source": "Rédigé pour 68k Trainer d'après le cours du Féroce Lapin (volume 2, cours 8 et 9) et la documentation du GEM d'Atari ; valeurs vérifiées dans EmuTOS" },
+        {
+          "type": "exemple", "id": "atari-ch09-ex-gem", "titre": "Une boîte d'alerte",
+          "introduction": "Un premier programme GEM : il s'annonce, affiche une boîte d'alerte, puis rend la main. La boîte s'affiche dans la sortie texte, à droite.",
+          "code": "@code.s#gem-exemple",
+          "machine": { "modeUtilisateur": true },
+          "explications": [
+            { "ligne": 6, "texte": "CONTROL décrit l'appel à appl_init : la fonction 10, aucun entier en entrée, un en sortie, aucune adresse." },
+            { "ligne": 7, "texte": "Le sous-programme AES met l'adresse du bloc de paramètres dans D1 et `$C8` dans D0, puis appelle `TRAP #2`." },
+            { "ligne": 15, "texte": "form_alert affiche la boîte et attend un clic ; le bouton choisi revient dans INT_OUT." },
+            { "ligne": 16, "texte": "D7 garde le numéro du bouton cliqué, 1 pour OK." },
+            { "ligne": 21, "texte": "appl_exit rend la main au GEM avant la fin du programme." }
+          ],
+          "conclusion": "Chaque appel à l'AES suit le même chemin : on remplit CONTROL et les tableaux d'entrée, on appelle `TRAP #2`, puis on lit INT_OUT."
+        },
+        {
+          "type": "prediction", "id": "atari-ch09-pred-gem", "titre": "Oui ou non",
+          "introduction": "La boîte d'alerte demande « On continue ? ». Dans cet essai, l'utilisateur clique sur Non.",
+          "code": "@code.s#gem-prediction",
+          "machine": { "modeUtilisateur": true, "boutonAlerte": 2 },
+          "questions": [
+            { "id": "q1", "enonce": "Quel nombre form_alert range-t-il dans INT_OUT ?", "choix": ["0", "1", "2"], "bonne": 2, "explication": "Les boutons se comptent à partir de 1 : Oui est le bouton 1, Non le bouton 2." },
+            { "id": "q2", "enonce": "Que vaut la dernière ligne affichée ?", "choix": ["On continue.", "On arrete.", "rien"], "bonne": 1, "explication": "INT_OUT vaut 2, le `BEQ` saute à `.non`, et le programme affiche « On arrete. ».", "verification": { "SORTIE": "\nBoîte d'alerte : On continue ?\nBoutons : Oui | Non (clic sur « Non »)\nOn arrete." } }
+          ]
+        },
+        { "type": "exercice", "id": "atari-ch09-exo-alerte", "titre": "Une alerte mal écrite", "variante": "corriger", "niveau": 1,
+          "enonce": "Ce programme doit afficher une alerte « Disquette pleine » avec un seul bouton, « Compris ». Vérifie, lis le message d'erreur, puis corrige le texte de l'alerte.",
+          "indices": ["Le texte suit le format [icône][lignes][boutons].", "Il manque le crochet qui ferme la liste des boutons."],
+          "codeDepart": "@code.s#alerte-depart", "solution": "@code.s#alerte-solution",
+          "check": { "type": "output", "maxSteps": 200, "terminer": true, "expected": { "output": "\nBoîte d'alerte : Disquette pleine\nBoutons : Compris (clic sur « Compris »)\n" } },
+          "machine": { "modeUtilisateur": true } },
+        { "type": "exercice", "id": "atari-ch09-exo-annuler", "titre": "Enregistrer ou annuler", "variante": "completer", "niveau": 2,
+          "enonce": "Complète le programme : s'il reçoit le bouton 1, Enregistrer, il se termine avec le code de retour 0, et s'il reçoit le bouton 2, Annuler, avec le code 1. Dans cet essai, l'utilisateur clique sur Annuler.",
+          "indices": ["Le code de retour se donne à Pterm, la fonction GEMDOS `$4C`, qui le prend sur la pile.", "Bouton 1 → 0 et bouton 2 → 1 : il suffit de retirer 1 au numéro du bouton."],
+          "codeDepart": "@code.s#annuler-depart", "solution": "@code.s#annuler-solution",
+          "check": { "type": "registers", "maxSteps": 200, "terminer": true, "expected": { "D0": "$00000001" } },
+          "machine": { "modeUtilisateur": true, "boutonAlerte": 2 } }
+      ]
+    }
+  ],
+  "qcm": {
+    "id": "atari-ch09-qcm",
+    "seuil": 0.7,
+    "questions": [
+      { "id": "q1", "enonce": "Que fait le 68000 devant un mot d'instruction `$A001` ?", "choix": ["Il l'exécute comme un MOVE", "Il déclenche une exception et saute au vecteur 10, en $28", "Il s'arrête sur une erreur d'adresse"], "bonne": 1, "explication": "Les mots $Axxx ne sont pas des instructions du 68000 : l'exception de la Ligne A donne la main au TOS." },
+      { "id": "q2", "enonce": "Après `$A000`, où se trouve l'adresse des variables de la Ligne A ?", "choix": ["Dans A0", "Dans D7", "Au sommet de la pile"], "bonne": 0, "explication": "`$A000` rend cette adresse dans A0 (et dans D0)." },
+      { "id": "q3", "enonce": "Pour tracer en couleur 6, `%0110`, que valent COLBIT0, COLBIT1, COLBIT2 et COLBIT3 ?", "choix": ["1, 1, 0, 0", "0, 1, 1, 0", "0, 0, 1, 1"], "bonne": 1, "explication": "COLBIT0 est le bit 0 de la couleur : %0110 donne 0, 1, 1, 0." },
+      { "id": "q11", "enonce": "Combien de tours fait une boucle `DBRA` dont le compteur part de 7 ?", "choix": ["7", "8", "6"], "bonne": 1, "explication": "DBRA s'arrête quand le compteur passe à −1 : de 7 à 0, cela fait 8 tours." },
+      { "id": "q4", "enonce": "On trace deux fois la même ligne en OU exclusif. Que reste-t-il à l'écran ?", "choix": ["La ligne, deux fois plus épaisse", "Le décor d'origine, sans la ligne", "Un écran noir"], "bonne": 1, "explication": "Inverser deux fois un pixel le remet comme avant." },
+      { "id": "q5", "enonce": "Pourquoi garder l'adresse des variables dans A5 plutôt que dans A0 ?", "choix": ["Parce que la Ligne A, comme le TOS, peut modifier D0-D2 et A0-A2", "Parce que A0 ne peut pas servir de pointeur", "Pour aller plus vite"], "bonne": 0, "explication": "A3-A6 et D3-D7 sont préservés par le système ; A0 peut être modifié par l'appel suivant." },
+      { "id": "q6", "enonce": "Comment appelle-t-on l'AES ?", "choix": ["TRAP #1 avec le numéro sur la pile", "TRAP #2 avec $C8 dans D0 et l'adresse du bloc de paramètres dans D1", "DC.W $A0C8"], "bonne": 1, "explication": "Le GEM s'appelle par TRAP #2 ; D0 choisit l'AES ($C8) ou le VDI ($73)." },
+      { "id": "q12", "enonce": "Comment un programme rend-il le code de retour 1 au TOS ?", "choix": ["MOVE.W #1,D0 puis RTS", "MOVE.W #1,-(SP), puis MOVE.W #$4C,-(SP) et TRAP #1", "CLR.W -(SP) puis TRAP #1"], "bonne": 1, "explication": "Pterm, la fonction GEMDOS $4C, prend le code de retour sur la pile ; CLR.W -(SP) puis TRAP #1 est Pterm0, qui rend toujours 0." },
+      { "id": "q7", "enonce": "Où form_alert range-t-il le numéro du bouton cliqué ?", "choix": ["Dans D0", "Dans INT_OUT[0]", "Dans CONTROL[0]"], "bonne": 1, "explication": "Le résultat principal d'une fonction de l'AES revient dans INT_OUT[0]." },
+      { "id": "q8", "enonce": "Quelle icône affiche l'alerte `[2][Enregistrer ?][Oui|Non]` ?", "choix": ["Le point d'exclamation", "Le point d'interrogation", "Le panneau stop"], "bonne": 1, "explication": "1 : point d'exclamation, 2 : point d'interrogation, 3 : stop, 0 : aucune." }
+    ]
+  },
+  "bonus": [
+    { "type": "exercice", "id": "atari-ch09-bonus-croix", "titre": "Une croix en OU exclusif", "variante": "ecrire", "niveau": 3,
+      "enonce": "Trace en OU exclusif et en couleur 15 une ligne horizontale à y = 100 sur toute la largeur, puis une ligne verticale à x = 160 sur toute la hauteur, en traçant aussi leur dernier point. Regarde ensuite le point où elles se croisent.",
+      "indices": ["Le mode OU exclusif est le mode 2, et LSTLIN différent de 0 fait tracer le dernier point.", "Le point de croisement est inversé deux fois : il revient à la couleur du fond."],
+      "codeDepart": "@code.s#bonus-depart", "solution": "@code.s#bonus-solution",
+      "check": { "type": "pixels", "maxSteps": 500, "terminer": true, "expected": { "0,100": "15", "319,100": "15", "160,0": "15", "160,199": "15", "160,100": "0" } },
+      "machine": { "modeUtilisateur": true, "ecran": true } }
+  ]
+}

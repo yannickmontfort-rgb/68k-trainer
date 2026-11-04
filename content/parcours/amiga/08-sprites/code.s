@@ -1000,3 +1000,340 @@ sprite1:
     SECTION ecran,BSS_C
 plan:   DS.B    40*256
 
+
+;=== rappel
+START:
+    MOVEQ   #10,D1          ; 10 lignes
+    LSL.W   #6,D1           ; dans les bits 15-6
+    OR.W    #3,D1           ; 3 mots de large : D1 = BLTSIZE
+    MOVEQ   #0,D0
+    RTS
+
+;=== ordonner-entete
+; Calcule les deux mots de contrôle du carré pour x = 100, y = 80, et range-les en tête du sprite.
+START:
+    BSR     prendre
+    BSR     ecran           ; l'écran et les sprites (en bas du programme) s'affichent
+    MOVE.W  #$81+100,D2     ; HSTART
+    MOVE.W  #$2C+80,D3      ; VSTART
+
+;=== ordonner-pied
+    MOVE.W  D0,sprite       ; le premier mot de contrôle
+    MOVE.W  D1,sprite+2     ; le second
+    BSR     attendre_clic
+    BSR     rendre
+    MOVEQ   #0,D0
+    RTS
+
+; Affiche le plan à rayures ; le sprite 0 = « sprite », les autres = la liste vide
+ecran:
+    LEA     plan,A0         ; le décor : des rayures horizontales
+    MOVE.W  #256/8-1,D7
+.bande:
+    MOVEQ   #40*4/4-1,D6
+.plein:
+    MOVE.L  #$FFFFFFFF,(A0)+
+    DBF     D6,.plein
+    LEA     40*4(A0),A0     ; 4 lignes pleines, 4 vides
+    DBF     D7,.bande
+    MOVE.L  #plan,D0
+    MOVE.W  D0,cop_plans+6
+    SWAP    D0
+    MOVE.W  D0,cop_plans+2
+    LEA     cop_sprites,A0
+    MOVE.L  #sprite,D0      ; sprite 0
+    MOVE.W  D0,6(A0)
+    SWAP    D0
+    MOVE.W  D0,2(A0)
+    MOVE.L  #vide,D0    ; sprite 1
+    MOVE.W  D0,14(A0)
+    SWAP    D0
+    MOVE.W  D0,10(A0)
+    MOVE.L  #vide,D0        ; sprites 2 à 7 : la liste vide
+    LEA     16(A0),A0
+    MOVEQ   #5,D7
+.vides:
+    MOVE.W  D0,6(A0)
+    SWAP    D0
+    MOVE.W  D0,2(A0)
+    SWAP    D0
+    ADDQ.L  #8,A0
+    DBF     D7,.vides
+    MOVE.L  #copper,$80(A5)
+    MOVE.W  D0,$88(A5)
+    MOVE.W  #$83A0,$96(A5)  ; DMAEN + BPLEN + COPEN + SPREN
+    RTS
+    INCLUDE "amiga-systeme.s"
+
+    SECTION chip,DATA_C
+copper:
+    DC.W    $008E,$2C81,$0090,$2CC1,$0092,$0038,$0094,$00D0
+    DC.W    $0102,$0000,$0104,$0024,$0108,$0000,$010A,$0000
+    DC.W    $0180,$0000,$0182,$0444 ; le décor : noir et gris foncé
+    DC.W    $01A2,$0F00,$01A4,$0FF0,$01A6,$0FFF ; COLOR17-19 : rouge, jaune, blanc
+    DC.W    $0100,$1200
+cop_plans:
+    DC.W    $00E0,0,$00E2,0
+cop_sprites:
+    DC.W    $0120,0,$0122,0,$0124,0,$0126,0,$0128,0,$012A,0,$012C,0,$012E,0
+    DC.W    $0130,0,$0132,0,$0134,0,$0136,0,$0138,0,$013A,0,$013C,0,$013E,0
+    DC.W    $FFFF,$FFFE
+vide:   DC.W    0,0
+
+; Un carré plein de 16 x 16 en couleur 1 ; ses mots de contrôle restent à calculer
+sprite:
+    DC.W    0,0
+    DCB.L   16,$FFFF0000
+    DC.W    0,0
+
+    SECTION ecran,BSS_C
+plan:   DS.B    40*256
+
+;=== position-solution
+START:
+    BSR     prendre
+    BSR     ecran           ; l'écran et les sprites (en bas du programme) s'affichent
+    BSR     attendre_clic
+    BSR     rendre
+    MOVEQ   #0,D0
+    RTS
+
+; Affiche le plan à rayures ; le sprite 0 = « sprite », les autres = la liste vide
+ecran:
+    LEA     plan,A0         ; le décor : des rayures horizontales
+    MOVE.W  #256/8-1,D7
+.bande:
+    MOVEQ   #40*4/4-1,D6
+.plein:
+    MOVE.L  #$FFFFFFFF,(A0)+
+    DBF     D6,.plein
+    LEA     40*4(A0),A0     ; 4 lignes pleines, 4 vides
+    DBF     D7,.bande
+    MOVE.L  #plan,D0
+    MOVE.W  D0,cop_plans+6
+    SWAP    D0
+    MOVE.W  D0,cop_plans+2
+    LEA     cop_sprites,A0
+    MOVE.L  #sprite,D0      ; sprite 0
+    MOVE.W  D0,6(A0)
+    SWAP    D0
+    MOVE.W  D0,2(A0)
+    MOVE.L  #vide,D0    ; sprite 1
+    MOVE.W  D0,14(A0)
+    SWAP    D0
+    MOVE.W  D0,10(A0)
+    MOVE.L  #vide,D0        ; sprites 2 à 7 : la liste vide
+    LEA     16(A0),A0
+    MOVEQ   #5,D7
+.vides:
+    MOVE.W  D0,6(A0)
+    SWAP    D0
+    MOVE.W  D0,2(A0)
+    SWAP    D0
+    ADDQ.L  #8,A0
+    DBF     D7,.vides
+    MOVE.L  #copper,$80(A5)
+    MOVE.W  D0,$88(A5)
+    MOVE.W  #$83A0,$96(A5)  ; DMAEN + BPLEN + COPEN + SPREN
+    RTS
+    INCLUDE "amiga-systeme.s"
+
+    SECTION chip,DATA_C
+copper:
+    DC.W    $008E,$2C81,$0090,$2CC1,$0092,$0038,$0094,$00D0
+    DC.W    $0102,$0000,$0104,$0024,$0108,$0000,$010A,$0000
+    DC.W    $0180,$0000,$0182,$0444 ; le décor : noir et gris foncé
+    DC.W    $01A2,$0F00,$01A4,$0FF0,$01A6,$0FFF ; COLOR17-19 : rouge, jaune, blanc
+    DC.W    $0100,$1200
+cop_plans:
+    DC.W    $00E0,0,$00E2,0
+cop_sprites:
+    DC.W    $0120,0,$0122,0,$0124,0,$0126,0,$0128,0,$012A,0,$012C,0,$012E,0
+    DC.W    $0130,0,$0132,0,$0134,0,$0136,0,$0138,0,$013A,0,$013C,0,$013E,0
+    DC.W    $FFFF,$FFFE
+vide:   DC.W    0,0
+
+; Un carré plein de 16 x 16 en couleur 1 (DATA = $FFFF, DATB = 0)
+sprite:
+    DC.W    $5EA4,$6E01  ; VSTART = $5E, HSTART / 2 = $A4 ; VSTOP = $6E, bit 0 de HSTART = 1
+    DCB.L   16,$FFFF0000
+    DC.W    0,0
+
+    SECTION ecran,BSS_C
+plan:   DS.B    40*256
+
+
+;=== vstop-depart
+; Pose le carré (sprite 0, 16 lignes) en x = 60, y = 100.
+START:
+    BSR     prendre
+    BSR     ecran           ; l'écran et les sprites (en bas du programme) s'affichent
+    MOVE.W  #$81+60,D2      ; HSTART
+    MOVE.W  #$2C+100,D3     ; VSTART
+    MOVE.W  D3,D0
+    LSL.W   #8,D0           ; VSTART dans l'octet fort
+    MOVE.W  D2,D4
+    LSR.W   #1,D4
+    MOVE.B  D4,D0           ; HSTART / 2 dans l'octet faible : le premier mot
+    MOVE.W  D3,D1
+    ADD.W   #15,D1          ; VSTOP : la dernière ligne du carré
+    LSL.W   #8,D1
+    AND.W   #1,D2
+    OR.W    D2,D1           ; bit 0 de HSTART : le second mot
+    MOVE.W  D0,sprite
+    MOVE.W  D1,sprite+2
+    BSR     attendre_clic
+    BSR     rendre
+    MOVEQ   #0,D0
+    RTS
+
+; Affiche le plan à rayures ; le sprite 0 = « sprite », les autres = la liste vide
+ecran:
+    LEA     plan,A0         ; le décor : des rayures horizontales
+    MOVE.W  #256/8-1,D7
+.bande:
+    MOVEQ   #40*4/4-1,D6
+.plein:
+    MOVE.L  #$FFFFFFFF,(A0)+
+    DBF     D6,.plein
+    LEA     40*4(A0),A0     ; 4 lignes pleines, 4 vides
+    DBF     D7,.bande
+    MOVE.L  #plan,D0
+    MOVE.W  D0,cop_plans+6
+    SWAP    D0
+    MOVE.W  D0,cop_plans+2
+    LEA     cop_sprites,A0
+    MOVE.L  #sprite,D0      ; sprite 0
+    MOVE.W  D0,6(A0)
+    SWAP    D0
+    MOVE.W  D0,2(A0)
+    MOVE.L  #vide,D0    ; sprite 1
+    MOVE.W  D0,14(A0)
+    SWAP    D0
+    MOVE.W  D0,10(A0)
+    MOVE.L  #vide,D0        ; sprites 2 à 7 : la liste vide
+    LEA     16(A0),A0
+    MOVEQ   #5,D7
+.vides:
+    MOVE.W  D0,6(A0)
+    SWAP    D0
+    MOVE.W  D0,2(A0)
+    SWAP    D0
+    ADDQ.L  #8,A0
+    DBF     D7,.vides
+    MOVE.L  #copper,$80(A5)
+    MOVE.W  D0,$88(A5)
+    MOVE.W  #$83A0,$96(A5)  ; DMAEN + BPLEN + COPEN + SPREN
+    RTS
+    INCLUDE "amiga-systeme.s"
+
+    SECTION chip,DATA_C
+copper:
+    DC.W    $008E,$2C81,$0090,$2CC1,$0092,$0038,$0094,$00D0
+    DC.W    $0102,$0000,$0104,$0024,$0108,$0000,$010A,$0000
+    DC.W    $0180,$0000,$0182,$0444 ; le décor : noir et gris foncé
+    DC.W    $01A2,$0F00,$01A4,$0FF0,$01A6,$0FFF ; COLOR17-19 : rouge, jaune, blanc
+    DC.W    $0100,$1200
+cop_plans:
+    DC.W    $00E0,0,$00E2,0
+cop_sprites:
+    DC.W    $0120,0,$0122,0,$0124,0,$0126,0,$0128,0,$012A,0,$012C,0,$012E,0
+    DC.W    $0130,0,$0132,0,$0134,0,$0136,0,$0138,0,$013A,0,$013C,0,$013E,0
+    DC.W    $FFFF,$FFFE
+vide:   DC.W    0,0
+
+; Un carré plein de 16 x 16 en couleur 1 ; ses mots de contrôle sont calculés par le programme
+sprite:
+    DC.W    0,0
+    DCB.L   16,$FFFF0000
+    DC.W    0,0
+
+    SECTION ecran,BSS_C
+plan:   DS.B    40*256
+
+;=== vstop-solution
+START:
+    BSR     prendre
+    BSR     ecran           ; l'écran et les sprites (en bas du programme) s'affichent
+    MOVE.W  #$81+60,D2      ; HSTART
+    MOVE.W  #$2C+100,D3     ; VSTART
+    MOVE.W  D3,D0
+    LSL.W   #8,D0           ; VSTART dans l'octet fort
+    MOVE.W  D2,D4
+    LSR.W   #1,D4
+    MOVE.B  D4,D0           ; HSTART / 2 dans l'octet faible : le premier mot
+    MOVE.W  D3,D1
+    ADD.W   #16,D1          ; VSTOP : la ligne après la dernière
+    LSL.W   #8,D1
+    AND.W   #1,D2
+    OR.W    D2,D1           ; bit 0 de HSTART : le second mot
+    MOVE.W  D0,sprite
+    MOVE.W  D1,sprite+2
+    BSR     attendre_clic
+    BSR     rendre
+    MOVEQ   #0,D0
+    RTS
+
+; Affiche le plan à rayures ; le sprite 0 = « sprite », les autres = la liste vide
+ecran:
+    LEA     plan,A0         ; le décor : des rayures horizontales
+    MOVE.W  #256/8-1,D7
+.bande:
+    MOVEQ   #40*4/4-1,D6
+.plein:
+    MOVE.L  #$FFFFFFFF,(A0)+
+    DBF     D6,.plein
+    LEA     40*4(A0),A0     ; 4 lignes pleines, 4 vides
+    DBF     D7,.bande
+    MOVE.L  #plan,D0
+    MOVE.W  D0,cop_plans+6
+    SWAP    D0
+    MOVE.W  D0,cop_plans+2
+    LEA     cop_sprites,A0
+    MOVE.L  #sprite,D0      ; sprite 0
+    MOVE.W  D0,6(A0)
+    SWAP    D0
+    MOVE.W  D0,2(A0)
+    MOVE.L  #vide,D0    ; sprite 1
+    MOVE.W  D0,14(A0)
+    SWAP    D0
+    MOVE.W  D0,10(A0)
+    MOVE.L  #vide,D0        ; sprites 2 à 7 : la liste vide
+    LEA     16(A0),A0
+    MOVEQ   #5,D7
+.vides:
+    MOVE.W  D0,6(A0)
+    SWAP    D0
+    MOVE.W  D0,2(A0)
+    SWAP    D0
+    ADDQ.L  #8,A0
+    DBF     D7,.vides
+    MOVE.L  #copper,$80(A5)
+    MOVE.W  D0,$88(A5)
+    MOVE.W  #$83A0,$96(A5)  ; DMAEN + BPLEN + COPEN + SPREN
+    RTS
+    INCLUDE "amiga-systeme.s"
+
+    SECTION chip,DATA_C
+copper:
+    DC.W    $008E,$2C81,$0090,$2CC1,$0092,$0038,$0094,$00D0
+    DC.W    $0102,$0000,$0104,$0024,$0108,$0000,$010A,$0000
+    DC.W    $0180,$0000,$0182,$0444 ; le décor : noir et gris foncé
+    DC.W    $01A2,$0F00,$01A4,$0FF0,$01A6,$0FFF ; COLOR17-19 : rouge, jaune, blanc
+    DC.W    $0100,$1200
+cop_plans:
+    DC.W    $00E0,0,$00E2,0
+cop_sprites:
+    DC.W    $0120,0,$0122,0,$0124,0,$0126,0,$0128,0,$012A,0,$012C,0,$012E,0
+    DC.W    $0130,0,$0132,0,$0134,0,$0136,0,$0138,0,$013A,0,$013C,0,$013E,0
+    DC.W    $FFFF,$FFFE
+vide:   DC.W    0,0
+
+; Un carré plein de 16 x 16 en couleur 1 ; ses mots de contrôle sont calculés par le programme
+sprite:
+    DC.W    0,0
+    DCB.L   16,$FFFF0000
+    DC.W    0,0
+
+    SECTION ecran,BSS_C
+plan:   DS.B    40*256

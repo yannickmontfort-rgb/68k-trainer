@@ -1,0 +1,198 @@
+{
+  "titre": "Devpac in depth, advanced debugging and good practices",
+  "resume": "Devpac lays out a program in TEXT, DATA and BSS sections, names values and fields with EQU and RS, copies macros and includes files such as a Degas picture, then the assembler turns it into a .PRG file that TOS relocates at load time. When the program crashes, the stack frame and breakpoints lead you to the cause, and a few good practices leave the machine as you found it. The chapter matches module 6 of the manual and ends with a small demo-style intro.",
+  "notions": {
+    "atari-ch08-n0": { "titre": "Review of chapters 5 to 7" },
+    "atari-ch08-n1": { "titre": "Sections, constants, macros and includes" },
+    "atari-ch08-n2": { "titre": "Exporting a real program" },
+    "atari-ch08-n3": { "titre": "Advanced debugging" },
+    "atari-ch08-n4": { "titre": "Good practices" },
+    "atari-ch08-n5": { "titre": "Rasters" }
+  },
+  "contenus": {
+    "atari-ch08-rappel": {
+      "titre": "What you already know",
+      "introduction": "Three questions on the previous chapters, without rereading the lessons. Getting it wrong here does not matter: searching is what makes it stick.",
+      "questions": {
+        "q1": { "enonce": "The key typed is Return, scancode `$1C` and ASCII code `$0D`. What is D0 after Cnecin?", "explication": "Cnecin stores the ASCII code in the low byte and the scancode in bits 23 to 16." },
+        "q2": { "enonce": "Which value of the YM2149 mixer enables only the square wave of channel C?", "explication": "In the mixer, 0 enables the source: the square wave of C is bit 2, and all the other bits stay at 1." },
+        "q3": { "enonce": "To change a palette color without switching to supervisor mode, you call…", "explication": "Setcolor writes the color for you, whereas writing directly to `$FF8240` requires supervisor mode." }
+      }
+    },
+    "atari-ch08-cours-devpac": {
+      "titre": "Devpac, sections, EQU, RS, macros and INCBIN",
+      "source": "Rephrased from the Atari ST manual v2 (§ 6.1 and 6.2) and the Devpac 2 manual (HiSoft)"
+    },
+    "atari-ch08-ex-sections": {
+      "titre": "A program in three sections",
+      "introduction": "The code is in TEXT, the message in DATA and a buffer in BSS: the addresses of MESSAGE and TAMPON, in A0 and A1, show the sections laid out end to end.",
+      "explications": {
+        "4": "A0 points to the message, stored in the DATA section just after the code.",
+        "5": "A1 points to the buffer in the BSS section, after the data, and the Memory view shows only zeros there.",
+        "7": "MOVE copies a byte and sets Z to 1 when that byte is the final 0.",
+        "8": "As long as the copied byte is not zero, the copy goes on; \"Run to the end\" finishes it in one go.",
+        "11": "Cconws displays the copy, made in the BSS."
+      },
+      "conclusion": "TEXT receives the code, DATA what has a starting value and BSS what starts at zero, which only costs the 4 bytes of its size in the .PRG."
+    },
+    "atari-ch08-pred-rs": {
+      "titre": "A structure with RS",
+      "introduction": "The fields of a ship are described with RS, then used as displacements.",
+      "questions": {
+        "q1": { "enonce": "What is D0 (the value of VIES)?", "explication": "POS_X is 0, POS_Y 2 after one word, and VIES 4 after two words." },
+        "q2": { "enonce": "And D1 (TAILLE)?", "explication": "After VIES, a byte, the counter is 5, and `RS.B 0` gives that value without adding anything: it is the size of the structure." },
+        "q3": { "enonce": "And D2?", "explication": "`MOVE.B #3,VIES(A0)` wrote 3 at 4 bytes from the start of the ship, and the program reads it back from the same place." }
+      }
+    },
+    "atari-ch08-exo-equ": {
+      "titre": "The missing constant",
+      "enonce": "The program displays NB_ETOILES stars, but the assembler does not know NB_ETOILES. Define the constant with EQU so that it displays 5 of them.",
+      "indices": ["One line in column 1 is enough: the name, EQU, the value.", "`NB_ETOILES EQU 5`, before or after the code."]
+    },
+    "atari-ch08-exo-macro": {
+      "titre": "Your first macro",
+      "enonce": "The program uses three times an AFFICHE macro that does not exist yet. Write it above START: it displays with Cconws the text whose label is passed as a parameter, to get \"Bonjour et au revoir\".",
+      "indices": ["`AFFICHE MACRO` in column 1, the body, then `ENDM`.", "In the body, `\\1` is replaced by the parameter: `PEA \\1`, then the usual Cconws call."]
+    },
+    "atari-ch08-ex-image": {
+      "titre": "A Degas picture with INCBIN",
+      "introduction": "The picture `LOGO.PI1`, included as is in the DATA section, installs its palette, then has its 32,000 bytes copied to the screen; \"Run to the end\" goes through the 8,000 passes of the copy.",
+      "explications": {
+        "3": "IMAGE + 2 is the palette, just after the resolution word.",
+        "5": "Setpalette replaces the TOS colors with the 16 of the picture, and the background turns dark blue.",
+        "11": "IMAGE + 34, that is 2 + 32, is the start of the picture's screen.",
+        "15": "8,000 long words make 32,000 bytes, the whole picture."
+      },
+      "conclusion": "INCBIN, Setpalette and a copy loop are enough to display a title screen drawn with Degas Elite or NEOchrome."
+    },
+    "atari-ch08-exo-image": {
+      "titre": "Displaying the picture",
+      "enonce": "The picture `LOGO.PI1` is already included at the label IMAGE. Display it: its palette with Setpalette, then its 32,000 bytes of screen copied to the address returned by Physbase.",
+      "indices": ["The palette is at IMAGE + 2 (`PEA IMAGE+2`, XBIOS 6), the screen at IMAGE + 34.", "The copy does `MOVE.L (A0)+,(A1)+` in a loop loaded with 32000/4 − 1."]
+    },
+    "atari-ch08-cours-prg": {
+      "titre": "The .PRG format, relocation and export",
+      "source": "Atari GEMDOS Reference Manual (executable format), Atari Compendium"
+    },
+    "atari-ch08-pred-entete": {
+      "titre": "Reading a .PRG header",
+      "introduction": "The program reads field by field a .PRG header stored in memory.",
+      "questions": {
+        "q1": { "enonce": "What is the size of the TEXT section (D1)?", "choix": ["36 bytes", "24 bytes", "16 bytes"], "explication": "The long word at offset 2 is $24, that is 36." },
+        "q2": { "enonce": "And the size of the BSS (D2)?", "choix": ["256 bytes", "16 bytes", "0: it is not in the file"], "explication": "The long word at offset 10 is $100, that is 256: the BSS is not in the file, but its size is, so that TOS knows how much to reserve." },
+        "q3": { "enonce": "What is D0, the \"magic number\", seen as an instruction?", "choix": ["A BRA.S that jumps over the header", "NOP", "RTS"], "explication": "$60xx is a BRA.S of xx bytes, and $601A jumps 26 bytes further, just after the 28 bytes of the header." }
+      }
+    },
+    "atari-ch08-exo-prg": {
+      "titre": "Your first .PRG",
+      "enonce": "Write a complete program that displays \"Bonjour, Atari !\" without a line break, waits for a key, then returns to TOS with Pterm0. Once the exercise is passed, the \"Export .PRG\" button lets you run it in Hatari.",
+      "indices": ["Cconws (GEMDOS 9) for the text, Cnecin (GEMDOS 8) for the key.", "The text is stored as `DC.B 'Bonjour, Atari !',0` after the code."]
+    },
+    "atari-ch08-cours-debogage": {
+      "titre": "Bombs, stack frame, method and classic traps",
+      "source": "M68000PRM (Motorola) for the stack frame, the Féroce Lapin course and the manual's errata for the traps"
+    },
+    "atari-ch08-ex-cadre": {
+      "titre": "The frame of an address error",
+      "introduction": "The program installs with Setexec (BIOS 5) its own routine for the address error, vector 3, then causes one by reading a word at an odd address: instead of the 3 bombs, ERREUR takes over and stores the stack frame in D3 to D7.",
+      "explications": {
+        "6": "Setexec(3, ERREUR) makes vector no. 3, at $0C, point to the ERREUR routine.",
+        "9": "Reading a word at $2001 causes an address error: the 68000 switches to supervisor mode, pushes 7 words and jumps to ERREUR.",
+        "15": "The status word `$0019` indicates a read (bit 4), not an instruction fetch (bit 3), of user-mode data (type 1).",
+        "16": "The faulting address, `$00002001`, is odd.",
+        "17": "`$3010` is the first word of `MOVE.W (A0),D0`.",
+        "18": "The SR from before the fault shows user mode, S bit at 0.",
+        "19": "The pushed PC leads to the offending instruction."
+      },
+      "conclusion": "Faulting address, instruction, SR and PC: the stack frame tells the story of the crash."
+    },
+    "atari-ch08-pred-cadre": {
+      "titre": "What the frame says",
+      "introduction": "The same program stores the stack frame in the registers.",
+      "questions": {
+        "q1": { "enonce": "What is D5, the faulting address?", "explication": "It is the address the instruction tried to read." },
+        "q2": { "enonce": "What is D6?", "explication": "It is the first word of the faulting instruction, `MOVE.W (A0),D0` = $3010." },
+        "q3": { "enonce": "Without the ERREUR routine, how many bombs would TOS have displayed?", "explication": "The address error is vector 3, hence 3 bombs." }
+      }
+    },
+    "atari-ch08-exo-pile": {
+      "titre": "The unbalanced stack",
+      "enonce": "SOMME3 should return in D0 the sum of D1, D2 and D3 without damaging them, but the program crashes on return from the subroutine. Fix it.",
+      "indices": ["Set a breakpoint on the RTS of SOMME3: the top of the stack should be the return address.", "MOVEM saves three registers, D1-D3, but only restores two."]
+    },
+    "atari-ch08-exo-pieges": {
+      "titre": "Two classic traps",
+      "enonce": "MAXI should find the largest of the 4 unsigned words of the table, from 0 to 65,535, here `$9000`, but it finds something else. It contains two classic mistakes: fix them.",
+      "indices": ["How many passes does DBF make when you load 4, and which word is read on the last pass?", "`$9000` is negative for a signed comparison like BLE; you need an unsigned comparison, BLS."]
+    },
+    "atari-ch08-cours-pratiques": {
+      "titre": "Registers, comments, vectors given back, supervisor mode",
+      "source": "Rephrased from the Atari ST manual v2 (module 6), the Féroce Lapin course and the errata (preserving D3-D7/A3-A6)"
+    },
+    "atari-ch08-exo-registre": {
+      "titre": "The subroutine that damages a register",
+      "enonce": "The program adds into D3 the 5 values of TABLE, doubled by DOUBLE, and the total should be 30, but DOUBLE uses D3 as an intermediate and destroys the total. Fix DOUBLE, without touching the main program, so that it leaves D3 intact.",
+      "indices": ["D3 is one of the lasting registers, which a subroutine saves when it uses them.", "`MOVE.L D3,-(SP)` at the start of DOUBLE and `MOVE.L (SP)+,D3` before RTS, or else D1, a scratch register."]
+    },
+    "atari-ch08-exo-chainer": {
+      "titre": "Chaining and giving the vector back",
+      "enonce": "Install at `$70` your own VBL routine, which adds 1 to COMPTEUR then chains to the TOS VBL routine. The main program waits for COMPTEUR to reach 10, puts the old vector back and quits. The checker makes sure that `$70` is given back and that the TOS routine went on counting frames: `_frclock`, at `$466`, must be 10.",
+      "indices": ["Two small routines called through Supexec install and remove yours (`MOVE.L $70.W,ANCIEN`, `MOVE.L #MAVBL,$70.W`).", "MAVBL chains with `MOVE.L ANCIEN(PC),-(SP)` then `RTS`, and the program waits with Vsync in a loop that compares COMPTEUR with 10."]
+    },
+    "atari-ch08-cours-rasters": {
+      "titre": "Timer B and colors line by line",
+      "source": "Written for 68k Trainer from the MFP 68901 data sheet and the behavior of the simulator (Timer B in event count mode, palette read at each line)"
+    },
+    "atari-ch08-ex-rasters": {
+      "titre": "Three color bands",
+      "introduction": "The program installs a VBL and a Timer B routine, lets three frames go by, then puts everything back in place. Run it in \"Real time\" to see the background change color every 50 lines, or go step by step.",
+      "explications": {
+        "4": "Supexec runs INSTALLER in supervisor mode, since the vectors and the MFP are protected in user mode.",
+        "24": "The program's two routines are now plugged in, the VBL at `$70` and Timer B at `$120`.",
+        "27": "Timer B is enabled and unmasked; it is still stopped, and the VBL will start it.",
+        "41": "At the start of each frame, the VBL sets the background back to black for the top of the screen.",
+        "44": "TBDR receives 50: the first change will happen after 50 lines.",
+        "45": "In mode 8, Timer B counts line ends instead of time.",
+        "55": "The Timer B routine stores the next color in the background register: the Shifter will display it from the next line.",
+        "59": "Clearing bit 0 of ISRA tells the MFP the interrupt has been handled; without it, the MFP would not signal any other.",
+        "11": "Three frames have gone by, each with its black, red, green and blue bands.",
+        "14": "RETIRER stops the timer and gives back the vectors and the background color, as the program found them."
+      },
+      "conclusion": "The VBL prepares each frame and Timer B changes the color on the chosen line: that is the whole secret of rasters."
+    },
+    "atari-ch08-pred-rasters": {
+      "titre": "Counting lines",
+      "introduction": "Reread the three-band example before answering.",
+      "questions": {
+        "q1": { "enonce": "The Timer B routine never stores anything in TBDR. Why does the next change still come 50 lines later?", "choix": ["Because the VBL restarts it at each line", "Because Timer B reloads its starting value by itself when it reaches 0", "By chance"], "explication": "Timer B starts again from the value stored in TBDR each time it reaches 0: it therefore triggers its interrupt every 50 lines." },
+        "q2": { "enonce": "Why does the VBL set the background back to black at the start of each frame?", "choix": ["Because at the end of the previous frame, the background kept the color of the last band", "Because the Shifter clears the palette at each frame", "To save cycles"], "explication": "The palette keeps the last color stored: without the VBL, the top of the next frame would be blue." }
+      }
+    },
+    "atari-ch08-exo-rasters": {
+      "titre": "Bands half as thick",
+      "enonce": "The program cuts the background into bands of 50 lines. Modify it so that they are 25 lines high: black, then red, green, blue, yellow and cyan, in the order of the COULEURS table.",
+      "indices": ["A single value decides the height of the bands.", "It is the number of lines the VBL stores in TBDR: `MOVE.B #25,$FFFFFA21.W`."]
+    },
+    "atari-ch08-bonus-intro": {
+      "titre": "Final challenge: your small intro",
+      "enonce": "Write a small demo-style intro: the logo `LOGO.PI1`, color bars in the bottom band of the logo (rasters with Timer B), a short tune played under the VBL, and a clean exit on the Space key, with vectors, timer and sound put back in place. The checker looks at the logo and the exit, the simulator pressing Space after one second; the rasters and the music can be seen and heard in \"Real time\", and the .PRG export runs it in Hatari.",
+      "indices": ["The outline: Setpalette and copy of the logo, Supexec(INSTALLER), a Vsync loop with Cconis/Cnecin until Space, Supexec(RETIRER), Pterm0.", "The VBL restarts Timer B (stop, 100 lines, mode 8), moves the music forward, then chains; TIMERB changes color 2, reprograms 2 lines, does `BCLR #0,$FFFFFA0F.W` and RTE. The complete solution can serve as a model for your own demos."]
+    }
+  },
+  "qcm": {
+    "q1": { "enonce": "In which section do you put a 32,000-byte buffer at zero?", "explication": "The BSS takes no room in the file, where only its size is recorded, and TOS fills it with zeros." },
+    "q2": { "enonce": "What does `LARGEUR EQU 320` do?", "choix": ["Reserves 320 bytes", "Gives the name LARGEUR to the value 320", "Stores 320 in memory"], "explication": "EQU produces no byte; it names a value." },
+    "q11": { "enonce": "How many bytes does `MOVEM.L D3-D4/A3,-(SP)` push?", "explication": "Three registers in `.L`, 4 bytes each: SP moves back by 12." },
+    "q3": { "enonce": "In a macro, what does `\\1` stand for?", "choix": ["Register D1", "The first parameter of the macro", "The first line of the macro"], "explication": "Each use replaces \\1, \\2… with the parameters written after the macro name." },
+    "q4": { "enonce": "How many bytes is a Degas .PI1 picture?", "choix": ["32,000", "32,034", "32,768"], "explication": "2 bytes of resolution, 32 of palette and 32,000 of screen." },
+    "q5": { "enonce": "What is the relocation table of a .PRG for?", "choix": ["Fixing the absolute addresses according to where TOS loads the program", "Compressing the program", "Finding the symbols for the debugger"], "explication": "TOS adds the load address to each long word recorded in the table." },
+    "q12": { "enonce": "With double buffering, on which screen does the program draw?", "choix": ["On the screen you cannot see", "On the displayed screen", "On both at once"], "explication": "It draws on the hidden screen, then displays it with Setscreen during the VBL: the displayed screen is never being modified." },
+    "q6": { "enonce": "In the stack frame of an address error, what do you find at 2(SP)?", "choix": ["The SR", "The faulting address", "The PC"], "explication": "The status word is at 0, the faulting address at 2, the instruction at 6, the SR at 8 and the PC at 10." },
+    "q7": { "enonce": "To compare two (unsigned) addresses, after CMP you use…", "explication": "BGT compares signed values, whereas BHI, higher in unsigned terms, suits addresses and values from 0 to 65,535." },
+    "q8": { "enonce": "Which registers does a TOS call leave intact?", "choix": ["D0-D2 and A0-A2", "D3-D7 and A3-A6", "All of them"], "explication": "D0-D2 and A0-A2 may be modified, D0 carrying the result, whereas D3-D7 and A3-A6 are preserved." },
+    "q9": { "enonce": "Why must your own VBL routine \"chain\" to the old one?", "choix": ["To go faster", "So that TOS goes on doing its work (counters, VBL queue, palette…)", "Because RTE is forbidden"], "explication": "Otherwise, _frclock no longer moves, Vsync waits forever and the VBL queue is no longer called." },
+    "q10": { "enonce": "Before quitting, a program must…", "choix": ["put the vectors and the hardware back in their state", "clear the memory", "switch back to supervisor mode"], "explication": "A program leaves the machine as it found it, and quits with Pterm0." },
+    "q13": { "enonce": "In mode 8, what does the ST's Timer B count?", "choix": ["Time, in microseconds", "The ends of displayed lines", "Frames"], "explication": "Each end of a displayed line is an event for Timer B: that is what lets you change a color on a precise line." },
+    "q14": { "enonce": "What must a Timer B routine do before its RTE?", "choix": ["Clear bit 0 of ISRA", "Set color 0 back to black", "Give back the $120 vector"], "explication": "TOS runs the MFP in software end-of-interrupt mode: as long as that bit stays at 1, the MFP signals no other interrupt of that level." }
+  }
+}

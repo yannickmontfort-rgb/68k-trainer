@@ -24,14 +24,14 @@ describe('certificat', () => {
     const html = htmlCertificat(parcours, progression(false), { nom: 'Philippe <test>', date: new Date(2026, 9, 19) })
     expect(html).toContain('Attestation de progression')
     expect(html).toContain('Philippe &lt;test&gt;')
-    expect(html).toContain('a validé 1 chapitre sur 8')
+    expect(html).toContain('a validé 1 chapitre sur 9')
     expect(html).toContain('19 octobre 2026')
   })
 
   it('certificat quand tout est fait, avec chaque chapitre validé', () => {
     const html = htmlCertificat(parcours, progression(true), { nom: 'Yannick', version: '1.0.0' })
     expect(html).toContain('Certificat de fin de parcours')
-    expect(html.match(/<tr class="ok">/g)?.length).toBe(8)
+    expect(html.match(/<tr class="ok">/g)?.length).toBe(9)
     expect(html).toContain('9/10')
     expect(html).toContain('68k Trainer 1.0.0')
   })

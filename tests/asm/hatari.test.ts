@@ -7,12 +7,13 @@
  *   HATARI="C:/outils/hatari-2.6.1_windows64/hatari.exe" npx vitest run tests/asm/hatari.test.ts
  */
 import { spawnSync } from 'child_process'
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { dirname, join } from 'path'
 import { describe, expect, it } from 'vitest'
 import { assembler } from '../../src/asm/assembleur'
 import { creerPrg } from '../../src/asm/prg'
+import { sourceLanceurAtari } from '../../src/main/emulateurs/lanceurAtari'
 
 const HATARI = process.env.HATARI ?? ''
 
@@ -54,5 +55,30 @@ describe.skipIf(!HATARI || !existsSync(HATARI))('les .PRG tournent dans Hatari (
       '    SECTION BSS', 'COMPTEUR: DS.L 1'
     ].join('\n')
     expect(lancerDansHatari('RELOC', source)).toBe('un deux trois quatre cinq')
+  }, 200000)
+})
+
+describe.skipIf(!HATARI || !existsSync(HATARI))('lanceur du bouton « Essayer dans Hatari »', () => {
+  it('lance le programme et écrit son code de retour dans C:\ESSAI68K.RET', () => {
+    const programme = ['    PEA     MESSAGE', '    MOVE.W  #9,-(SP)', '    TRAP    #1', '    ADDQ.L  #6,SP',
+      '    MOVE.W  #7,-(SP)', '    MOVE.W  #$4C,-(SP)', '    TRAP    #1', 'MESSAGE:', "    DC.B    'Essai 68k',13,10,0"].join('\n')
+    const disque = mkdtempSync(join(tmpdir(), '68k-lanceur-'))
+    try {
+      for (const [nom, source] of [['ESSAI', programme], ['ESSAI68K', sourceLanceurAtari('ESSAI.PRG')]]) {
+        const r = assembler(source, { prg: true })
+        if (!r.ok) throw new Error(JSON.stringify(r.erreurs))
+        writeFileSync(join(disque, `${nom}.PRG`), creerPrg(r))
+      }
+      const res = spawnSync(
+        HATARI,
+        ['--conout', '2', '--run-vbls', '1500', '--fast-forward', 'yes', '--sound', 'off', '--confirm-quit', 'no',
+          '--tos', join(dirname(HATARI), 'tos.img'), '--harddrive', disque, '--auto', 'C:\ESSAI68K.PRG'],
+        { encoding: 'utf-8', timeout: 180000, env: { ...process.env, SDL_VIDEODRIVER: 'dummy', SDL_AUDIODRIVER: 'dummy' }, input: '' }
+      )
+      expect(res.stdout).toContain('Essai 68k')
+      expect(readFileSync(join(disque, 'ESSAI68K.RET')).readInt32BE(0)).toBe(7)
+    } finally {
+      rmSync(disque, { recursive: true, force: true })
+    }
   }, 200000)
 })

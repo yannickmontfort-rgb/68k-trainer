@@ -1,5 +1,6 @@
 import type { ProgressState } from './ipc'
 import type { Parcours } from './parcours'
+import type { Langue } from './traduction'
 import { detailChapitre, detailParcours } from './progression'
 
 const echapper = (s: string): string =>
@@ -10,6 +11,42 @@ export interface InfosCertificat {
   /** Date du document (par défaut : aujourd'hui). */
   date?: Date
   version?: string
+  /** Langue du document (par défaut : le français). */
+  langue?: Langue
+}
+
+/** Textes du document, dans chaque langue. */
+const TEXTES = {
+  fr: {
+    locale: 'fr-FR',
+    certificat: 'Certificat',
+    attestation: 'Attestation',
+    titreCertificat: 'Certificat de fin de parcours',
+    titreAttestation: 'Attestation de progression',
+    atteste: 'Ce document atteste que',
+    complet: (total: number): string =>
+      `a terminé l'ensemble des ${total} chapitres du parcours : cours, exemples, exercices vérifiés par exécution sur la machine simulée et QCM de fin de chapitre (seuil de réussite 70 %).`,
+    partiel: (faits: number, total: number, pourcentage: number): string =>
+      `a validé ${faits} chapitre${faits > 1 ? 's' : ''} sur ${total} et réalisé ${pourcentage} % du parcours (exercices vérifiés par exécution sur la machine simulée, QCM réussis à 70 % au moins).`,
+    colonnes: ['Chapitre', 'Progression', 'Meilleur QCM', 'Défis bonus', 'Validé'],
+    total: (pourcentage: number, faits: number, tous: number): string => `Parcours : ${pourcentage} % · défis bonus : ${faits}/${tous}`,
+    delivre: 'Délivré le'
+  },
+  en: {
+    locale: 'en-US',
+    certificat: 'Certificate',
+    attestation: 'Progress report',
+    titreCertificat: 'Course completion certificate',
+    titreAttestation: 'Progress report',
+    atteste: 'This document certifies that',
+    complet: (total: number): string =>
+      `has completed all ${total} chapters of the course: lessons, examples, exercises checked by running them on the simulated machine, and end-of-chapter quizzes (pass mark 70%).`,
+    partiel: (faits: number, total: number, pourcentage: number): string =>
+      `has completed ${faits} chapter${faits > 1 ? 's' : ''} out of ${total} and ${pourcentage}% of the course (exercises checked by running them on the simulated machine, quizzes passed with at least 70%).`,
+    colonnes: ['Chapter', 'Progress', 'Best quiz', 'Bonus challenges', 'Completed'],
+    total: (pourcentage: number, faits: number, tous: number): string => `Course: ${pourcentage}% · bonus challenges: ${faits}/${tous}`,
+    delivre: 'Issued on'
+  }
 }
 
 /**
@@ -19,17 +56,19 @@ export interface InfosCertificat {
 export function htmlCertificat(parcours: Parcours, p: ProgressState, infos: InfosCertificat): string {
   const d = detailParcours(parcours, p)
   const complet = d.chapitresTermines === d.chapitresTotal && d.chapitresTotal > 0
-  const date = (infos.date ?? new Date()).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+  const langue = infos.langue ?? 'fr'
+  const x = TEXTES[langue]
+  const date = (infos.date ?? new Date()).toLocaleDateString(x.locale, { day: 'numeric', month: 'long', year: 'numeric' })
   const lignes = parcours.chapitres
     .map((ch, i) => {
       const dc = detailChapitre(ch, p)
       const resultat = ch.qcm ? p.qcm?.[ch.qcm.id] : undefined
       const qcm = dc.qcm.present ? (resultat ? `${resultat.meilleurScore}/${resultat.total}` : '—') : ''
-      return `<tr class="${dc.termine ? 'ok' : ''}"><td>${i + 1}</td><td>${echapper(ch.titre)}</td><td>${dc.pourcentage} %</td><td>${qcm}</td><td>${dc.bonus.faits}/${dc.bonus.total}</td><td>${dc.termine ? '✔' : ''}</td></tr>`
+      return `<tr class="${dc.termine ? 'ok' : ''}"><td>${i + 1}</td><td>${echapper(ch.titre)}</td><td>${dc.pourcentage}${langue === 'fr' ? ' ' : ''}%</td><td>${qcm}</td><td>${dc.bonus.faits}/${dc.bonus.total}</td><td>${dc.termine ? '✔' : ''}</td></tr>`
     })
     .join('')
   return `<!doctype html>
-<html lang="fr"><head><meta charset="utf-8"><title>${complet ? 'Certificat' : 'Attestation'} — ${echapper(infos.nom)}</title>
+<html lang="${langue}"><head><meta charset="utf-8"><title>${complet ? x.certificat : x.attestation} — ${echapper(infos.nom)}</title>
 <style>
   @page { size: A4 landscape; margin: 12mm; }
   * { box-sizing: border-box; }
@@ -50,22 +89,18 @@ export function htmlCertificat(parcours: Parcours, p: ProgressState, infos: Info
 </style></head>
 <body><div class="cadre">
   <div class="marque">68k Trainer</div>
-  <h1>${complet ? 'Certificat de fin de parcours' : 'Attestation de progression'}</h1>
+  <h1>${complet ? x.titreCertificat : x.titreAttestation}</h1>
   <p class="sous">${echapper(parcours.titre)}</p>
-  <p>Ce document atteste que</p>
+  <p>${x.atteste}</p>
   <p class="nom">${echapper(infos.nom)}</p>
-  <p>${
-    complet
-      ? `a terminé l'ensemble des ${d.chapitresTotal} chapitres du parcours : cours, exemples, exercices vérifiés par exécution sur la machine simulée et QCM de fin de chapitre (seuil de réussite 70 %).`
-      : `a validé ${d.chapitresTermines} chapitre${d.chapitresTermines > 1 ? 's' : ''} sur ${d.chapitresTotal} et réalisé ${d.pourcentage} % du parcours (exercices vérifiés par exécution sur la machine simulée, QCM réussis à 70 % au moins).`
-  }</p>
+  <p>${complet ? x.complet(d.chapitresTotal) : x.partiel(d.chapitresTermines, d.chapitresTotal, d.pourcentage)}</p>
   <table>
-    <thead><tr><th>#</th><th>Chapitre</th><th>Progression</th><th>Meilleur QCM</th><th>Défis bonus</th><th>Validé</th></tr></thead>
+    <thead><tr><th>#</th>${x.colonnes.map((c) => `<th>${c}</th>`).join('')}</tr></thead>
     <tbody>${lignes}</tbody>
   </table>
   <div class="bas">
-    <span class="total">Parcours : ${d.pourcentage} % · défis bonus : ${d.bonusFaits}/${d.bonusTotal}</span>
-    <span>Délivré le ${date}${infos.version ? ` · 68k Trainer ${echapper(infos.version)}` : ''}</span>
+    <span class="total">${x.total(d.pourcentage, d.bonusFaits, d.bonusTotal)}</span>
+    <span>${x.delivre} ${date}${infos.version ? ` · 68k Trainer ${echapper(infos.version)}` : ''}</span>
   </div>
 </div></body></html>`
 }

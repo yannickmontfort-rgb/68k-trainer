@@ -96,6 +96,9 @@ describe('fiches Atari ST : les exemples tournent sur le TOS simulé', () => {
   it('table des débuts de ligne (REPT/SET) : y x 320 + x', () => {
     const cpu = atari('        MOVE.W  #5,D0\n        MOVE.W  #2,D1\n        LEA     $20000,A0\n' + bloc('atari-st/demarrage-includes-macros-tableaux.md', 'LIGNES:'))
     expect(cpu.d[1] & 0xffff).toBe(2 * 320 + 5)
+    // Bas de l'image : 199 x 320 dépasse un mot signé, la table et l'index sont en .L
+    const bas = atari('        MOVE.W  #7,D0\n        MOVE.W  #199,D1\n        LEA     $20000,A0\n' + bloc('atari-st/demarrage-includes-macros-tableaux.md', 'LIGNES:'))
+    expect(bas.d[1]).toBe(199 * 320 + 7)
   })
 
   it('macro avec \\@ : deux utilisations sans conflit', () => {

@@ -34,6 +34,8 @@ import { screenAddress } from './screen'
 import { routinesRom } from './rom'
 import { CODE, traduire } from './clavier'
 import { materielAtari } from './materiel'
+import { LA, LIGNEA_VARS, ligneA } from './lignea'
+import { gem } from './gem'
 
 export interface AtariKey {
   ascii: number
@@ -54,6 +56,8 @@ export interface TosOptions {
    * de l'interface). Faux : erreur « aucune touche prévue » (exercices vérifiés automatiquement).
    */
   clavierInteractif?: boolean
+  /** Bouton « cliqué » dans une boîte d'alerte du GEM (form_alert) ; sinon, le bouton par défaut. */
+  boutonAlerte?: number
 }
 
 /** Longueur des paquets de l'IKBD (en-tête compris), selon l'en-tête $F6-$FF. */
@@ -367,6 +371,8 @@ export function createTos(options: TosOptions = {}): Platform {
       kbshift = 0
       paquet = null
       const mem = cpu.memory
+      // Ligne A : trait plein, comme le laisse le bureau du TOS
+      mem.writeU16(LIGNEA_VARS + LA.LN_MASK, 0xffff)
       for (const [adresse, octets] of routinesRom()) mem.loadBytes(adresse, octets)
       mem.loadBytes(ROM_CLOCHE, CLOCHE)
       mem.writeU32(0x114, ROM_TIMER_C)
@@ -401,6 +407,7 @@ export function createTos(options: TosOptions = {}): Platform {
 
     onTrap(cpu: Cpu, n: number): boolean {
       if (n === 1) return gemdos(cpu)
+      if (n === 2) return gem(cpu, options.boutonAlerte)
       if (n === 13) return bios(cpu)
       if (n === 14) return xbios(cpu)
       return false
@@ -423,6 +430,7 @@ export function createTos(options: TosOptions = {}): Platform {
         cpu.pc = saved.pc
         return true
       }
+      if (opcode >= 0xa000 && opcode <= 0xa00f) return ligneA(cpu, opcode)
       return false
     },
 

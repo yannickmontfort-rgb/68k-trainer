@@ -383,11 +383,6 @@
   color: #ddd;
 }
 
-.badge-relire {
-  background: #4d3410;
-  color: var(--orange);
-}
-
 .badge-non-teste {
   background: #4d1a1a;
   color: var(--rouge);
@@ -1281,4 +1276,9 @@
 .profils-machine small {
   flex-basis: 100%;
   color: var(--texte-doux);
+}
+
+/* Messages d’export et d’essai : retours à la ligne et texte affiché par le programme */
+.export-prg {
+  white-space: pre-wrap;
 }

@@ -617,3 +617,14 @@ DESSINER:
     LEA     160(A0),A0
     DBF     D0,.ligne
     RTS
+
+;=== rappel
+START:
+    MOVE.W  #50,D0          ; X
+    MOVE.W  #10,D1          ; Y
+    MULU    #160,D1         ; Y × 160
+    LSR.W   #4,D0           ; X ÷ 16
+    LSL.W   #3,D0           ; × 8
+    ADD.W   D0,D1           ; D1 = position du groupe dans l'écran
+    CLR.W   -(SP)           ; Pterm0
+    TRAP    #1

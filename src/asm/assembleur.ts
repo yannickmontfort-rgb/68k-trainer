@@ -511,7 +511,7 @@ class Assembleur {
     }
 
     if (DIRECTIVES.has(nom)) {
-      this.directive(nom, d.taille, d.etiquette, d.operandes, mnemo)
+      this.directive(nom, d.taille, d.etiquette, d.operandes, mnemo, l)
       return
     }
 
@@ -596,7 +596,7 @@ class Assembleur {
 
   // --- Directives ------------------------------------------------------------------------
 
-  private directive(nom: string, taille: Taille | undefined, etiquette: Champ | undefined, op: Champ | undefined, mnemo: Champ): void {
+  private directive(nom: string, taille: Taille | undefined, etiquette: Champ | undefined, op: Champ | undefined, mnemo: Champ, l?: LigneSrc): void {
     const exigerOp = (): Champ => {
       if (!op) throw new AsmErreur(`${nom} attend une valeur.`, mnemo.col, mnemo.texte.length)
       return op
@@ -691,6 +691,12 @@ class Assembleur {
         const t = octetsTaille(2)
         if (t > 1 && this.aligner()) this.avertir('Donnée alignée sur une adresse paire (un octet nul ajouté).', mnemo.col, mnemo.texte.length)
         if (etiquette) this.definirEtiquetteIci(etiquette)
+        // Un DC.W dans le code (Ligne A $A000…, opcode écrit à la main) s'exécute : le pas à pas doit
+        // pouvoir surligner sa ligne
+        if (t === 2 && l && this.courant.section === 'TEXT') {
+          if (!l.fichier) this.adresseVersLigne[this.pc] = l.ligne
+          else this.adresseVersLigne[this.pc] ??= l.ligne
+        }
         for (const c of separerOperandes(exigerOp())) this.donnee(c, t)
         return
       }

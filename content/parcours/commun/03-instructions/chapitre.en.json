@@ -1,0 +1,351 @@
+{
+  "titre": "The instruction set: calculating, comparing, looping",
+  "resume": "The 68000 moves its data around through its addressing modes, calculates, handles bits, compares and branches, which lets you write loops and subroutines. [[atari:The Atari manual went straight from the architecture to TOS, even though its own routines use DBRA, Bcc or `MOVE.L (A0),A0`: this chapter fills that gap.|amiga:The Amiga's system and chips constantly use DBRA, Bcc or `MOVE.L (A0),A0`, and this chapter gives you everything you need before tackling them.]] It also brings back the exercises from the first version of 68k Trainer.",
+  "notions": {
+    "atari-ch03-n0": { "titre": "Review of chapters 1 and 2" },
+    "atari-ch03-n1": { "titre": "MOVE and the addressing modes" },
+    "atari-ch03-n2": { "titre": "Calculating" },
+    "atari-ch03-n3": { "titre": "Logic, shifts and bits" },
+    "atari-ch03-n4": { "titre": "Comparing and branching" },
+    "atari-ch03-n5": { "titre": "Loops" },
+    "atari-ch03-n6": { "titre": "Subroutines" },
+    "atari-ch03-n7": { "titre": "Chapter wrap-up" }
+  },
+  "contenus": {
+    "atari-ch03-rappel": {
+      "titre": "What you already know",
+      "introduction": "Three questions on the previous chapters, without rereading the lessons. Getting it wrong here does not matter: searching is what makes it stick.",
+      "questions": {
+        "q1": { "enonce": "What is D0 at the end?", "explication": "In `.W`, only the low word changes: $FFFF + 1 gives $0000 there, and the high word $1122 stays intact." },
+        "q2": { "enonce": "Which flags are 1 after `ADDQ.W #1,D0`?", "choix": ["none", "Z and C (and X)", "N and V"], "explication": "The low word goes from $FFFF to $0000 with a carry: Z = 1 and C = X = 1." },
+        "q3": { "enonce": "In `ADDQ.W #1,D0`, which operand receives the result?", "choix": ["#1, the source", "D0, the destination"], "explication": "An instruction always stores its result in the destination, the second operand." }
+      }
+    },
+    "atari-ch03-cours-adressage": {
+      "titre": "MOVE, its variants and the addressing modes",
+      "source": "Rephrased from David Bouchet's EPITA course (IV), Philippe Meyne's course notes and the M68000PRM"
+    },
+    "atari-ch03-ex-adressage": {
+      "titre": "Pointers, displacement and index",
+      "introduction": "The program copies two words from a table to `$3000` with postincremented pointers, then reads the table in two other ways. The Memory view shows `$3000`.",
+      "explications": {
+        "2": "`LEA` puts the address of the table in A0, not its contents.",
+        "3": "A1 points to the destination area, `$3000`.",
+        "4": "`(A0)+` reads the word A0 points to, `$1111`, and `(A1)+` writes it at the address A1 points to; only then do both pointers move forward by 2 bytes.",
+        "5": "The 2nd word, `$2222`, lands at `$3002`, and A0 now points to the 3rd.",
+        "6": "`2(A0)` reads the word located 2 bytes after A0, the 4th: D0 = `$4444`, and A0 does not move.",
+        "8": "D1 serves as an index in bytes: 4 bytes, that is 2 words after the start.",
+        "9": "`0(A2,D1.W)` reads the word at address A2 + D1, the 3rd: D2 = `$3333`, the equivalent of `TABLE[2]`."
+      },
+      "conclusion": "You walk through a table with `(An)+`, aim at a fixed position with `d16(An)` and at a variable index with `d8(An,Dn)`."
+    },
+    "atari-ch03-pred-adressage": {
+      "titre": "Forward, backward",
+      "introduction": "`(A0)+` reads then moves forward, whereas `-(A0)` moves back then reads.",
+      "questions": {
+        "q1": { "enonce": "What is D1?", "explication": "After the first read, A0 points to the 2nd word: D1 = 20." },
+        "q2": { "enonce": "What is D2?", "explication": "After two `(A0)+`, A0 points to the 3rd word; `-(A0)` first moves back by 2 and reads the 2nd again, 20." }
+      }
+    },
+    "general-l1-e1": {
+      "titre": "First transfer",
+      "enonce": "Put the value `$2A` in the low byte of register D0, using immediate addressing.",
+      "indices": ["The transfer mnemonic is MOVE, followed by a dot and a size (.B, .W or .L).", "A # in front of a value means immediate addressing: the data is inside the instruction itself."]
+    },
+    "general-l1-e2": {
+      "titre": "Copying between registers",
+      "enonce": "Put `$1234` in D1 (word, .W), then copy that word into D2 with a direct register-to-register transfer.",
+      "indices": ["A MOVE.W only changes the 16 low-order bits of the destination register.", "The high word of D2 must stay at 0, since it was never initialized."]
+    },
+    "general-l1-e3": {
+      "titre": "MOVEQ and sign extension",
+      "enonce": "Use MOVEQ to put the decimal value **-5** in D3. Look at the 32-bit result: the negative number must be sign-extended across the whole register.",
+      "indices": ["MOVEQ #<value>,Dn loads an immediate byte into Dn, sign-extended to 32 bits.", "-5 in two's complement on a byte is $FB."]
+    },
+    "general-l1-e4": {
+      "titre": "Writing to and reading from memory",
+      "enonce": "Write the value `$1234` (word) at address `$2000`, then read that value back from memory into D4.",
+      "indices": ["MOVE.W #value,$address writes to memory (absolute addressing as the destination).", "MOVE.W $address,Dn then reads that same memory location back."]
+    },
+    "general-l1-e5": {
+      "titre": "Indirect addressing",
+      "enonce": "Load the address `$3000` into A0 (with LEA), write the value `$ABCD` (word) there through indirect addressing `(A0)`, then read that value back into D5 the same way.",
+      "indices": ["LEA computes an effective address and puts it in an address register, without touching memory.", "(A0) means the contents of memory at the address A0 points to, not A0 itself."]
+    },
+    "atari-ch03-exo-copie": {
+      "titre": "Put the copy back in order",
+      "enonce": "Put the lines back in order to copy the two long words of `SOURCE` to address `$3000`.",
+      "indices": ["The pointers must be loaded before they are used.", "`RTS` last, otherwise the copies are never reached."]
+    },
+    "general-l1-e6": {
+      "titre": "Walking through memory with postincrement",
+      "enonce": "Starting at address `$4000`, write the words `$000A` and then `$0014` one after the other, using indirect addressing with postincrement `(A0)+`. Then, starting again from the beginning of that area, read these two words back (still with `(A0)+`) and put their sum in D6.",
+      "indices": ["MOVE.W value,(A0)+ writes at the address A0 points to, THEN moves A0 forward by 2 (the size of a word).", "You need to reload A0 with $4000 using LEA before reading back, since it moved forward during the writes.", "Expected result: $000A + $0014 = $001E."]
+    },
+    "atari-ch03-cours-arithmetique": {
+      "titre": "Addition, subtraction, multiplication, division",
+      "source": "Rephrased from the EPITA course (VIII.2) and the M68000PRM"
+    },
+    "atari-ch03-ex-arithmetique": {
+      "titre": "Quotient, remainder and signed numbers",
+      "introduction": "A division with a remainder, then a signed multiplication: watch where the 68000 stores the quotient and the remainder.",
+      "explications": {
+        "2": "D0 = 47.",
+        "3": "47 ÷ 5 = 9, remainder 2: the quotient goes into the low word and the remainder into the high word, D0 = `$00020009`.",
+        "5": "`SWAP` swaps the two halves of D1: the remainder moves into the low word, D1 = `$00090002`.",
+        "6": "−3 in `.W` gives D2 = `$0000FFFD`: only the low word is negative.",
+        "7": "`EXT.L` copies bit 15 into bits 16 to 31: D2 = `$FFFFFFFD`, which is −3 on 32 bits.",
+        "8": "`MULS` multiplies as signed numbers: −3 × 10 = −30 = `$FFFFFFE2`."
+      },
+      "conclusion": "Extend the sign with `EXT` before mixing sizes, and separate the quotient from the remainder after a division."
+    },
+    "atari-ch03-pred-mul": {
+      "titre": "MULU or MULS?",
+      "introduction": "D0 and D1 hold the same word `$FFFF`, multiplied by 2 as unsigned and then as signed.",
+      "questions": {
+        "q1": { "enonce": "What is D0 after `MULU`?", "explication": "Unsigned, $FFFF = 65,535; × 2 = 131,070 = $0001FFFE, on 32 bits." },
+        "q2": { "enonce": "What is D1 after `MULS`?", "explication": "Signed, $FFFF = −1; × 2 = −2 = $FFFFFFFE." }
+      }
+    },
+    "general-l2-e1": {
+      "titre": "Adding in memory",
+      "enonce": "The starting code writes two unsigned words to memory, at `$2000` (`$1234`) and `$2002` (`$0111`). Add them and put the result in D0 (and at address `$2004`).",
+      "indices": ["First read the two values back from memory with MOVE.W before adding them.", "ADD.W <ea>,D0 adds the source to the destination register."]
+    },
+    "general-l2-e2": {
+      "titre": "Unsigned multiplication",
+      "enonce": "Compute the unsigned product of 9 and 6 using MULU, with the result in D2.",
+      "indices": ["MULU.W <ea>,Dn puts the full product in the 32 bits of Dn, so there is no separate overflow to handle.", "First put one of the two values in D2, then multiply by the other (immediate)."]
+    },
+    "general-l2-e5": {
+      "titre": "NEG and NOT",
+      "enonce": "Put `5` (long) in D0, then apply NEG.L (two's complement) and NOT.L (one's complement) to D0.",
+      "indices": ["NEG.L Dn computes 0 - Dn → Dn.", "NOT.L Dn flips every bit of Dn.", "NEG of 5 gives -5 ($FFFFFFFB); NOT of $FFFFFFFB gives $00000004."]
+    },
+    "atari-ch03-exo-moyenne": {
+      "titre": "The average",
+      "enonce": "Compute in D0 the integer average of D1, D2 and D3, which are 12, 7 and 20. At the end, D0 must hold only the quotient, `$0000000D`.",
+      "indices": ["First add the three values in D0.", "After `DIVU`, the high word holds the remainder: clear it (`AND.L #$FFFF,D0`, or `SWAP`/`CLR.W`/`SWAP`)."]
+    },
+    "atari-ch03-cours-logique": {
+      "titre": "Masks, shifts and bits",
+      "source": "Rephrased from the EPITA course (VIII.3-5), the Atari ST manual v2 (§ 3.3) and the M68000PRM"
+    },
+    "atari-ch03-ex-logique": {
+      "titre": "Setting, clearing, flipping, shifting",
+      "introduction": "Follow the binary value of D0, then of D1; the masks are written in binary so that you can see which bits they target.",
+      "explications": {
+        "2": "D0.B = `%10110110` = `$B6`.",
+        "3": "AND with `%00001111` clears the 4 high-order bits: `%00000110` = `$06`.",
+        "4": "OR with `%10000000` sets bit 7: `%10000110` = `$86`.",
+        "5": "EOR with `%00000001` flips bit 0: `%10000111` = `$87`.",
+        "7": "Shifting left by 4 multiplies by 16: 3 × 16 = 48 = `$30`.",
+        "8": "Shifting right by 1 divides by 2: 24 = `$18`, and ASR keeps the sign.",
+        "9": "`BSET #0` sets bit 0 to 1: `$19` = 25."
+      },
+      "conclusion": "AND clears, OR sets and EOR flips: this is how you will draw pixels on the [[atari:Atari|amiga:Amiga]] screen."
+    },
+    "atari-ch03-pred-decalage": {
+      "titre": "LSR or ASR?",
+      "introduction": "−8, written `$FFF8` in `.W`, is divided by 2 in two ways.",
+      "questions": {
+        "q1": { "enonce": "What is the low word of D1 after `ASR.W #1`?", "explication": "ASR copies the sign bit: −8 ÷ 2 = −4, which is $FFFC." },
+        "q2": { "enonce": "And the low word of D0 after `LSR.W #1`?", "explication": "LSR brings a 0 in on the left: it is an unsigned division of 65,528 by 2, which gives $7FFC." }
+      }
+    },
+    "general-l2-e3": {
+      "titre": "A chain of logical operations",
+      "enonce": "Put `$F0F0` in D0, then apply in order: a logical AND with `$0FF0`, a logical OR with `$000F`, then an EXCLUSIVE OR with `$FFFF`, each operation changing D0.",
+      "indices": ["AND.W, OR.W and EOR.W work like MOVE.W: <source>,<destination>.", "Work it out bit by bit on paper to check each step: $F0F0, then $00F0, then $00FF, then $FF00."]
+    },
+    "general-l2-e4": {
+      "titre": "ASL and LSR shifts",
+      "enonce": "Put `3` in D0 (word), shift it left by 4 bits with ASL, then right by 1 bit with LSR.",
+      "indices": ["ASL.W #n,Dn shifts left while preserving the sign; LSR.W #n,Dn shifts right, bringing in zeros.", "3 shifted left by 4 gives 48 ($30); 48 shifted right by 1 gives 24 ($18)."]
+    },
+    "atari-ch03-exo-fois10": {
+      "titre": "Multiplying by 10 without MULU",
+      "enonce": "D0 is 7. Compute D0 = 7 × 10 with shifts and additions, without `MULU` or `MULS`.",
+      "indices": ["10 = 8 + 2.", "×8 = three left shifts; ×2 = one shift (or adding the value to itself)."]
+    },
+    "atari-ch03-cours-branchements": {
+      "titre": "CMP, TST and conditional branches",
+      "source": "Rephrased from the EPITA course (V), Philippe Meyne's course notes and the M68000PRM"
+    },
+    "atari-ch03-ex-branchements": {
+      "titre": "An \"if… else…\" in assembly",
+      "introduction": "The program puts the greater of D1 and D2 in D0, using a signed comparison. Look at the flags just after `CMP`, then whether the PC jumps.",
+      "explications": {
+        "4": "`CMP.W D2,D1` computes D1 − D2 = −5 − 3 = −8 without storing anything: N = 1, Z = 0, V = 0.",
+        "5": "`BGT` jumps if the result is greater in signed terms, that is if Z = 0 and N = V. Here N ≠ V, so the program carries on with the next line.",
+        "6": "In the \"else\" block, D0 receives D2, which is 3.",
+        "7": "`BRA FIN` jumps over the \"then\" block, which would otherwise overwrite D0 with D1.",
+        "10": "D0 is 3. With `BHI`, the unsigned condition, you would have got −5, because `$FFFB` is 65,531 unsigned."
+      },
+      "conclusion": "The processor only computes D1 − D2: it is the choice of condition, BGT or BHI, that decides whether your numbers are signed."
+    },
+    "atari-ch03-pred-branchements": {
+      "titre": "Which path?",
+      "introduction": "The program puts 100, 200 or 300 in D0 depending on the byte D1; from one question to the next, only the value of D1 changes.",
+      "questions": {
+        "q1": { "enonce": "With `MOVE.B #-5,D1` (the program shown), what is D0?", "explication": "−5 is not zero (no BEQ), and it is negative: BMI jumps to NEGATIF." },
+        "q2": { "enonce": "With `MOVE.B #0,D1`?", "explication": "Z = 1 after TST: BEQ jumps to ZERO." },
+        "q3": { "enonce": "With `MOVE.B #200,D1`?", "explication": "200 is written `$C8`, whose bit 7 is 1: N = 1 and BMI jumps, because on a byte 200 is −56 for signed conditions." }
+      }
+    },
+    "general-l3-e1": {
+      "titre": "Testing the sign of a value",
+      "enonce": "D1 holds -10 (`$FFFFFFF6`, already loaded by the starting code). Test its sign with TST: if it is negative, put 1 in D0; otherwise, put 0 in D0.",
+      "indices": ["TST.L Dn sets the N and Z flags without changing Dn.", "BMI branches if N=1 (negative result)."]
+    },
+    "general-l3-e2": {
+      "titre": "The greater of two numbers",
+      "enonce": "D1 = 21 and D2 = 30 (already loaded). Compare them with CMP and put the greater of the two values in D0 (signed comparison).",
+      "indices": ["CMP.L D1,D2 computes D2 - D1 and sets the flags, without changing D1 or D2.", "BGT branches if the result of the comparison is strictly positive (signed comparison)."]
+    },
+    "general-l3-e3": {
+      "titre": "Testing a specific bit",
+      "enonce": "D3 = 5 (already loaded). Test bit 0 of D3 with BTST: if that bit is 1, put `$FF` in D0; otherwise, put `0`.",
+      "indices": ["BTST #n,Dn only updates the Z flag: Z=1 if the tested bit is 0, Z=0 if it is 1.", "5 in binary is 101: bit 0 (the rightmost one) is 1."]
+    },
+    "atari-ch03-exo-nonsigne": {
+      "titre": "Signed or unsigned?",
+      "enonce": "D1 and D2 are unsigned bytes, from 0 to 255. The program should put the greater of the two in D0, which is 200, but it finds 100. Work out why and fix a single instruction.",
+      "indices": ["How is 200 written in hexadecimal? What is its bit 7?", "For unsigned numbers, \"greater than\" is written `BHI`."]
+    },
+    "atari-ch03-cours-boucles": {
+      "titre": "Counters, DBRA and walking through strings",
+      "source": "Rephrased from the EPITA course (V.3-4) and David Bouchet's lab 2"
+    },
+    "atari-ch03-ex-boucles": {
+      "titre": "Counting the characters of a text",
+      "introduction": "The loop walks through a string up to its final 0. Go step by step for one or two iterations, then run to the end.",
+      "explications": {
+        "2": "A0 points to the first character, `'A'`.",
+        "3": "D0 will count the characters.",
+        "5": "`TST.B (A0)+` compares the character pointed to with zero, then moves A0 forward by one byte.",
+        "6": "If it was the final 0, Z is 1 and the loop is exited.",
+        "7": "Otherwise, one more character is counted.",
+        "8": "`BRA` brings the PC back to BOUCLE.",
+        "10": "Out of the loop: D0 = 5, the length of `'[[atari:ATARI|amiga:AMIGA]]'`."
+      },
+      "conclusion": "In a \"while\" loop, you test before processing, and the postincremented pointer moves through the text by itself."
+    },
+    "atari-ch03-pred-boucles": {
+      "titre": "How many iterations?",
+      "introduction": "Count the iterations of each loop exactly.",
+      "questions": {
+        "q1": { "enonce": "What is D1 at the end (number of iterations)?", "explication": "DBRA stops when the counter reaches −1: starting from 9, it makes 10 iterations." },
+        "q2": { "enonce": "What is D0 at the end?", "explication": "DBRA only decrements the low word of D0, down to −1, which is $FFFF; the high word stays at 0." },
+        "q3": { "enonce": "With this other loop (SUBQ / BNE), what is D2?", "explication": "The loop stops when D0 reaches 0: it goes through 3, 2 and 1, which makes 3 iterations." }
+      }
+    },
+    "general-l4-e1": {
+      "titre": "Summing with DBRA",
+      "enonce": "The starting code sets D0 to 0 (accumulator), D2 to 1 (first value) and D1 to 4 (loop counter). Write a loop that adds D2 to D0 then increments D2, ending with DBRA D1, to compute the sum of the integers from 1 to 5.",
+      "indices": ["DBRA decrements its register then loops as long as the result is not -1: with a counter set to n, the loop body runs n+1 times, which is why D1 starts at 4 for 5 iterations, not 5.", "ADDQ.W #1,D2 increments D2 without needing a full ADD instruction."]
+    },
+    "atari-ch03-exo-ordonner-boucle": {
+      "titre": "Put the loop back in order",
+      "enonce": "Put the lines back in order so that the loop adds 2 to D0 five times, ending with D0 = 10.",
+      "indices": ["The initializations come before the loop label.", "The loop body sits between the label and DBRA."]
+    },
+    "general-l4-e2": {
+      "titre": "Counting the positive values",
+      "enonce": "The starting code writes 4 signed values (word) to memory starting at `$5000`: 5, -3, 0, 7. Walk through them with postincrement addressing `(A0)+` and count in D0 the number of **strictly positive** values.",
+      "indices": ["TST.W Dn sets the N and Z flags without changing Dn, which is handy for testing each value read.", "BLE (Branch if Less or Equal) jumps if the value is ≤ 0, which is useful for *skipping* the counter increment.", "0 is not strictly positive: it must not be counted."]
+    },
+    "atari-ch03-exo-espaces": {
+      "titre": "Counting the spaces",
+      "enonce": "Put in D0 the number of spaces in the text `'IL ETAIT UNE FOIS'`, which A0 already points to.",
+      "indices": ["Walk through the text with `MOVE.B (A0)+,D1` up to the final 0.", "The ASCII code of the space is written `#' '`: `CMP.B #' ',D1`."]
+    },
+    "atari-ch03-cours-sousprog": {
+      "titre": "BSR, RTS, parameters and MOVEM",
+      "source": "Rephrased from the EPITA course (VI-VII), the Atari ST manual v1 (§ 1.5, 2.2) and David Bouchet's lab 3"
+    },
+    "atari-ch03-ex-sousprog": {
+      "titre": "A clean subroutine",
+      "introduction": "Watch the stack during the call: `BSR` puts the return address there, then D1 is saved there.",
+      "explications": {
+        "2": "D0 receives 7, the input parameter.",
+        "3": "`BSR` pushes the address of the next instruction, visible at the top of the stack, then jumps to CARRE.",
+        "10": "`MOVEM.L D1,-(SP)` saves D1, which the subroutine is going to use without being allowed to change it.",
+        "11": "D0 is copied into D1.",
+        "12": "D0 = 7 × 7 = 49 (`$31`).",
+        "13": "D1 gets back its value from before the call, and the return address is at the top again.",
+        "14": "`RTS` pops the return address and comes back just after the BSR.",
+        "4": "Back in the main program, D3 = 49."
+      },
+      "conclusion": "A well-written subroutine documents its inputs and outputs, saves the registers it uses and leaves the stack as it found it."
+    },
+    "atari-ch03-pred-sousprog": {
+      "titre": "What BSR puts on the stack",
+      "introduction": "D6 keeps SP from before the call, and the subroutine computes how far SP has moved.",
+      "questions": {
+        "q1": { "enonce": "What is D6 at the end?", "explication": "BSR pushes the return address, a long word: SP decreases by 4." }
+      }
+    },
+    "general-l5-e1": {
+      "titre": "First subroutine",
+      "enonce": "D0 is 7 (already loaded). Write a subroutine DOUBLE that doubles the value of D0, then call it once with BSR.",
+      "indices": ["BSR label jumps to the subroutine, saving the return address on the stack.", "RTS pops that address and returns to it; without it, execution would carry on into the void after the end of the subroutine.", "Doubling a value means adding it to itself."]
+    },
+    "general-l5-e2": {
+      "titre": "Saving a register on the stack",
+      "enonce": "D1 is `$12345678` before the call, and the subroutine MODIFIE sets it to 0 for its calculations. Complete the subroutine so that after the call, D1 is `$12345678` again.",
+      "indices": ["MOVE.L D1,-(SP) pushes D1; MOVE.L (SP)+,D1 restores it. Do this at the very start and the very end of the subroutine.", "In between, D1 can be used freely for any internal calculation: it will not affect its value after it is restored."]
+    },
+    "general-l5-e3": {
+      "titre": "Passing parameters on the stack",
+      "enonce": "The starting code pushes two words (10, then 20) before calling ADDITIONNE. Write this subroutine so that it reads the two values directly from the stack (without popping them) and puts their sum in D0. Cleaning up the stack after the call is already provided.",
+      "indices": ["Just after the BSR, the top of the stack (A7) holds the return address (4 bytes); the parameters pushed by the caller are just above it.", "MOVE.W 4(A7),D0 reads the last word pushed (20, the closest to the return address); 6(A7) reads the word pushed just before it (10).", "No need to copy A7 into another register here: reading with a displacement does not change A7."]
+    },
+    "atari-ch03-exo-abs": {
+      "titre": "The VALABS subroutine",
+      "enonce": "Write the body of the VALABS subroutine, which replaces D0.L with its absolute value. The main program calls it with −42 and stores the result in D5.",
+      "indices": ["If D0 is already positive, there is nothing to do: `TST.L D0` then `BPL`.", "Otherwise, `NEG.L D0` changes its sign."]
+    },
+    "atari-ch03-exo-bilan-syntaxe": {
+      "titre": "Two syntax errors",
+      "enonce": "This program should add up the 4 words of `TABLE` to get D0 = 100, but it contains two syntax errors. Fix them one at a time by reading the messages.",
+      "indices": ["The postincrement mode is written `(A0)+`, with the `+` after the parenthesis.", "Check the spelling of the label in `DBRA`."]
+    },
+    "atari-ch03-exo-bilan-logique": {
+      "titre": "The off-by-one error",
+      "enonce": "This program assembles and does not crash, but it finds 1100 instead of 100. Count the loop iterations step by step, then fix it.",
+      "indices": ["How many iterations does `DBRA` make when the counter starts at 4?", "For 4 iterations, the counter must start at 3."]
+    },
+    "atari-ch03-exo-bilan-max": {
+      "titre": "The maximum of a table",
+      "enonce": "Put in D0.W the largest signed value of `TABLE`, which holds 6 words.",
+      "indices": ["Take the first element as a provisional maximum, then compare each of the next 5 with it.", "Signed comparison: `CMP.W D0,D2` then `BLE` to skip the smaller values."]
+    },
+    "atari-ch03-bonus-bits": {
+      "titre": "Counting the bits at 1",
+      "enonce": "Put in D0 the number of bits at 1 in the word D1, which is `$F0F1`, by shifting the bits out one at a time into the C flag.",
+      "indices": ["`LSR.W #1,D1` shifts bit 0 out into C.", "16 loop iterations, and `BCC` to jump when the bit shifted out is 0."]
+    },
+    "atari-ch03-bonus-fibo": {
+      "titre": "The Fibonacci sequence",
+      "enonce": "Compute in D0 the 20th term of the Fibonacci sequence, where F(1) = F(2) = 1 and each term is the sum of the two before it: 1, 1, 2, 3, 5, 8…",
+      "indices": ["Keep the last two terms in two registers.", "F(20) = 6765: check your number of loop iterations."]
+    }
+  },
+  "qcm": {
+    "q1": { "enonce": "What does `MOVE.W (A0)+,D1` do?", "choix": ["A0 moves forward by 2, then a read", "A read of the word A0 points to, then A0 moves forward by 2", "A read of the word at A0 + 2"], "explication": "Postincrement: read first, then the pointer moves forward by the size of the operand." },
+    "q2": { "enonce": "Which instruction loads the address of TABLE into A0, rather than its contents?", "explication": "`LEA` loads the effective address; `MOVE.L TABLE,A0` would load the long word stored at that address." },
+    "q3": { "enonce": "`MOVEQ` accepts values from…", "choix": ["0 to 255", "−128 to 127", "1 to 8"], "explication": "MOVEQ loads a signed byte extended to 32 bits. Values 1 to 8 are for ADDQ/SUBQ." },
+    "q4": { "enonce": "After `DIVU #10,D0` with D0 = 123, D0 is…", "explication": "Quotient 12 ($C) in the low word, remainder 3 in the high word." },
+    "q5": { "enonce": "To clear bit 3 of a byte without touching the others, you use…", "explication": "AND with a mask where only the targeted bit is 0." },
+    "q6": { "enonce": "After `BTST #2,D0`, the Z flag is 1. This means that…", "choix": ["bit 2 of D0 is 1", "bit 2 of D0 is 0", "D0 is 0"], "explication": "BTST puts the inverse of the tested bit into Z." },
+    "q7": { "enonce": "After these two lines, which of these branches jumps?", "explication": "CMP.W #9,D1 computes D1 − 9 = 5 − 9 < 0: \"D1 is less than 9\" in signed terms (BLT jumps)." },
+    "q8": { "enonce": "To compare two unsigned numbers, \"greater than\" is written…", "explication": "BHI/BCS/BCC/BLS are the unsigned conditions; BGT/BLT/BGE/BLE the signed ones." },
+    "q9": { "enonce": "How many times does `ADDQ.W #1,D1` run?", "explication": "DBRA makes N + 1 iterations: 4 + 1 = 5." },
+    "q10": { "enonce": "What does `BSR` do before jumping?", "choix": ["It saves all the registers", "It pushes the return address", "Nothing, like BRA"], "explication": "BSR pushes the address of the next instruction; RTS will pop it." },
+    "q11": { "enonce": "A subroutine starts with `MOVEM.L D1-D3,-(SP)`. What must it do before `RTS`?", "choix": ["MOVEM.L (SP)+,D1-D3", "MOVEM.L D1-D3,(SP)+", "Nothing special"], "explication": "It restores the same registers by popping them, so that the return address is back at the top." },
+    "q12": { "enonce": "To quickly multiply D0.W by 4 (unsigned), you can write…", "explication": "Shifting left by 2 bits multiplies by 2², which is 4." },
+    "q13": { "enonce": "After `MOVE.L #$AABBCCDD,$2000`, what does `MOVE.W $2002,D0` read?", "explication": "The most significant byte is at the lowest address: $2000-$2001 hold $AABB, and $2002-$2003 hold $CCDD." },
+    "q14": { "enonce": "After `MOVE.L D0,-(SP)`, SP has…", "choix": ["increased by 4", "decreased by 4", "kept its value"], "explication": "The stack grows downwards: SP moves back by 4 before the long word is written." }
+  }
+}

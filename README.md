@@ -4,7 +4,7 @@ Apprendre l'assembleur **Motorola 68000** en programmant un **Atari ST** ou un *
 simulés, pas à pas. À notre connaissance, c'est le premier outil qui réunit les deux machines.
 
 - Deux **parcours guidés** façon OpenClassrooms, avec un **tronc commun** (les chapitres 1 à 3, le
-  68000) : **Atari ST** en 8 chapitres (TOS, écran, animation, clavier, joystick, son, Devpac) et
+  68000) : **Atari ST** en 9 chapitres (TOS, écran, animation, clavier, joystick, son, Devpac, Ligne A et GEM) et
   **Amiga** en 10 chapitres (Exec et bibliothèques, puces custom, Copper, Blitter, sprites, Paula,
   exécutable AmigaDOS). La machine se choisit dans le profil. Barre de
   progression, « reprendre là où je me suis arrêté », attestation et certificat en PDF.
@@ -26,9 +26,8 @@ simulés, pas à pas. À notre connaissance, c'est le premier outil qui réunit 
 - Des **émulateurs d'étude** installés à la demande (Windows) : **Hatari** avec EmuTOS et
   **WinUAE** avec le Kickstart libre AROS, aucune ROM sous droits ; un dossier de partage dans les
   Documents, et un bouton **« Essayer dans l'émulateur »**.
-- Un **bac à sable** qui est un vrai éditeur (ouvrir, enregistrer, `INCLUDE` à côté du source), des
-  **fiches de référence** (68000, TOS, MFP, Ligne A et GEM, bibliothèques et puces de l'Amiga) et
-  tous les exercices du parcours en **exercices libres**.
+- Un **bac à sable** qui est un vrai éditeur (ouvrir, enregistrer, `INCLUDE` à côté du source), et des
+  **fiches de référence** (68000, TOS, MFP, Ligne A et GEM, bibliothèques et puces de l'Amiga).
 
 Les choix pédagogiques s'appuient sur la recherche : exemples résolus puis retrait progressif de
 l'aide, une difficulté à la fois, lire et prédire avant d'écrire, enseignement explicite du

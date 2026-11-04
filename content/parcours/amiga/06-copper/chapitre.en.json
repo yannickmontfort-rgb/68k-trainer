@@ -1,0 +1,191 @@
+{
+  "titre": "The Copper",
+  "resume": "The Copper is a small processor that follows the beam: it waits for a line, writes a register, and starts again on every frame without tying up the 68000. The 68000 prepares its list and changes it between two frames, during the beam's return, which the VBL interrupt signals to it. Matches chapter 3 of the Amiga manual (its exercise 2 is corrected: see the errata).",
+  "notions": {
+    "amiga-ch06-n0": { "titre": "Review of chapters 4 and 5" },
+    "amiga-ch06-n1": { "titre": "MOVE, WAIT and the end of the list" },
+    "amiga-ch06-n2": { "titre": "Below line 255" },
+    "amiga-ch06-n3": { "titre": "Animating the copper list" },
+    "amiga-ch06-n4": { "titre": "Interrupts: the VBL" }
+  },
+  "contenus": {
+    "amiga-ch06-rappel": {
+      "titre": "What you already know",
+      "introduction": "Three questions on the previous chapters, without rereading the lessons. Getting it wrong here does not matter: searching is what makes it stick.",
+      "questions": {
+        "q1": { "enonce": "At the start, DMACONR is `$03E0`. What is D1?", "explication": "Bit 15 of the word written is 0: bit 8, BPLEN, becomes 0 and the other channels do not move, so $03E0 becomes $02E0." },
+        "q2": { "enonce": "What is D3, the byte of pixel (17, 2) counted from the start of the plane?", "explication": "A line is 40 bytes: 2 × 40 + 17 ÷ 8 = 80 + 2 = 82, that is $52." },
+        "q3": { "enonce": "Why does the program set D0 to 0 just before `RTS`?", "choix": ["It is the return code the CLI reads, and 0 means all is well", "To turn off the DMA", "RTS only works with D0 = 0"], "explication": "When the program ends, the CLI reads D0 as its return code, and 0 means \"all is well\"." }
+      }
+    },
+    "amiga-ch06-cours-copper": {
+      "titre": "The Copper and its three instructions",
+      "source": "Written for 68k Trainer from Amiga Intern (Abacus, ch. 11), the Hardware Reference Manual and the Amiga manual (ch. 3)"
+    },
+    "amiga-ch06-ex-degrade": {
+      "titre": "A gradient sky",
+      "introduction": "A copper list of 15 WAIT + MOVE pairs takes the background from black to blue, then to white: click Real time, open \"Vectors and hardware\" to see COP1LC, then click on the screen to finish.",
+      "explications": {
+        "2": "`prendre` shuts the system down, and only our Copper will drive the screen.",
+        "3": "COP1LC receives the address of the list, stored in Chip RAM (`SECTION chip,DATA_C`) since that is the only memory the Copper reads.",
+        "5": "The Copper's DMA is turned on, and it starts executing the list.",
+        "14": "The MOVE to BPLCON0 (`$100`) declares no plane: the whole screen takes color 0, the background color.",
+        "16": "After the WAIT for line `$60`, the MOVE to COLOR00 makes the background a very dark blue from that line on.",
+        "29": "The last change puts white from line `$94` on.",
+        "30": "The list ends with an impossible WAIT, and on the next frame Agnus restarts it at the beginning, where the first MOVE puts black back at the top."
+      },
+      "conclusion": "A copper list reads from top to bottom, like the screen, \"wait for this line, change that register\", while the 68000 waits for the click."
+    },
+    "amiga-ch06-pred-wait": {
+      "titre": "Which line of the image?",
+      "introduction": "The program computes at which line of the standard image, y = 0 at the top, the WAIT `DC.W $9007,$FFFE` wakes up.",
+      "questions": {
+        "q1": { "enonce": "What is D0?", "explication": "The beam is at line `$90` = 144, and the standard image starts at line `$2C` = 44: y = 144 − 44 = 100." },
+        "q2": { "enonce": "And if you write `DC.W $9006,$FFFE` (bit 0 at 0)?", "choix": ["It is a MOVE to register $006: forbidden, the Copper stops", "It is the same WAIT", "The Copper waits for line $90, position 6"], "explication": "Bit 0 of the first word tells WAIT (1) from MOVE (0), and a MOVE to a register below `$80` stops the Copper." }
+      }
+    },
+    "amiga-ch06-exo-bande": {
+      "titre": "The blue band",
+      "enonce": "The list draws a green band from `$60` to `$70`, then should draw a blue band from `$A0` to `$B0`: fix the WAIT of the blue band.",
+      "indices": ["The WAIT for line `$A0` has the line in the high byte and `$07` in the low byte.", "`DC.W $A007,$FFFE`"]
+    },
+    "amiga-ch06-exo-ordonner": {
+      "titre": "Three bands in order",
+      "enonce": "Put the lines of the copper list back in order to get a black top, then a red band from line `$50`, a white one from `$80` and a blue one from `$B0`, all the way down.",
+      "indices": ["The Copper reads its list from top to bottom, as the beam sweeps the screen: the WAITs follow one another in line order.", "Black is set before the first WAIT, then each WAIT is followed by the MOVE of the color that starts at its line."],
+      "lignes": ["    DC.W    $0180,$0000     ; black", "    DC.W    $5007,$FFFE", "    DC.W    $0180,$0F00     ; red", "    DC.W    $8007,$FFFE", "    DC.W    $0180,$0FFF     ; white", "    DC.W    $B007,$FFFE", "    DC.W    $0180,$000F     ; blue"]
+    },
+    "amiga-ch06-exo-faux-wait": {
+      "titre": "The WAIT that is not one",
+      "enonce": "The bottom of the screen should be yellow from line `$80`, but it stays red and the debugger reports that the Copper has stopped: find the faulty word in the list.",
+      "indices": ["The first word of a WAIT has its bit 0 at 1: look at the `$80` line.", "`$8006` is even, and the Copper sees it as a MOVE to register `$006`: write `$8007`."]
+    },
+    "amiga-ch06-exo-drapeau": {
+      "titre": "The German flag",
+      "enonce": "Complete the copper list to get three horizontal bands: black at the top, red (`$F00`) from line `$80`, gold (`$FC0`) from line `$D5`.",
+      "indices": ["A MOVE of `$0000` into COLOR00 for the top, then two WAIT + MOVE pairs.", "`DC.W $8007,$FFFE,$0180,$0F00` then the same thing for `$D5`."]
+    },
+    "amiga-ch06-cours-bas": {
+      "titre": "Lines beyond 255, masks, SKIP",
+      "source": "Written for 68k Trainer from the Hardware Reference Manual (ch. 2) and Amiga Intern (Abacus)"
+    },
+    "amiga-ch06-ex-bas": {
+      "titre": "A gradient all the way down",
+      "introduction": "A red gradient goes down to the bottom of the image, below line 255: look in the debugger at the beam position when the frame ends.",
+      "explications": {
+        "15": "Line `$F0` (240) is waited for with an ordinary WAIT.",
+        "16": "`$FFDF` waits for line 255 at position `$DE`, at the very end of the line, after which the 8-bit line number starts again from 0.",
+        "17": "This `$08` therefore means line `$108` (264).",
+        "21": "At line `$12C` (300), the last one of the standard image, the background turns black again for the bottom border."
+      },
+      "conclusion": "The `$FFDF` WAIT lets the Copper reach the last 57 lines of the PAL image, whose WAITs would otherwise be met from the top of the image."
+    },
+    "amiga-ch06-pred-256": {
+      "titre": "After $FFDF",
+      "introduction": "The program computes the line of a `$2C07,$FFFE` WAIT placed just after `$FFDF,$FFFE`.",
+      "questions": {
+        "q1": { "enonce": "At which line does the Copper wake up (D0)?", "explication": "After line 255, the 8-bit counter starts again from 0, and `$2C` means line 256 + 44 = 300." }
+      }
+    },
+    "amiga-ch06-exo-sous255": {
+      "titre": "The green that rises too high",
+      "enonce": "The background must turn green from line `$110`, at the very bottom, but the whole screen is green: add the missing line to the list.",
+      "indices": ["On 8 bits, `$10` is also line 16, at the very top, so the WAIT is met from the start of the frame.", "Add `DC.W $FFDF,$FFFE` just before the `$1007` WAIT."]
+    },
+    "amiga-ch06-cours-animer": {
+      "titre": "The 68000 changes the list, once per frame",
+      "source": "Written for 68k Trainer from demo tutorials (Stash of Code, RamJam) and the Amiga manual (exercise 2, corrected)"
+    },
+    "amiga-ch06-ex-barre": {
+      "titre": "The bar that moves down",
+      "introduction": "A red bar 8 lines tall moves down one line per frame and starts again at the top, because the 68000 rewrites its two WAITs once per frame: click Real time, then step through `placer` while watching the Memory view at the address of `barre`.",
+      "explications": {
+        "6": "D0 holds the line of the top of the bar.",
+        "8": "You wait for the beam to be below the image, at line 303, where the Copper no longer reads the bar and where you can therefore change it.",
+        "10": "The bar moves down one line per frame and so crosses the screen in 4 seconds, at 50 frames per second.",
+        "13": "When it reaches line `$F0`, it starts again at the top.",
+        "24": "The line number goes into the high byte of the word.",
+        "25": "`$07` gives position `$06` and the bit 0 at 1 of a WAIT.",
+        "26": "The new WAIT for the top of the bar is written directly into the list.",
+        "28": "The bottom WAIT follows, 8 lines further on, by adding `$0800` to the word.",
+        "36": "The label `barre` designates the first word of the WAIT, the one `placer` rewrites."
+      },
+      "conclusion": "The Copper executes and the 68000 prepares, touching the list only during the beam's return."
+    },
+    "amiga-ch06-pred-mot": {
+      "titre": "Building a WAIT",
+      "introduction": "The program builds the two WAITs of a bar placed at line `$50`.",
+      "questions": {
+        "q1": { "enonce": "What is D1?", "explication": "`LSL.W #8` puts `$50` in the high byte, $5000, then `OR.W #$07` adds the position: `$5007`." },
+        "q2": { "enonce": "And D2 (the bottom of the bar)?", "explication": "Adding `$0800` adds 8 to the high byte: line `$58`." }
+      }
+    },
+    "amiga-ch06-exo-disparait": {
+      "titre": "The bar that disappears",
+      "enonce": "The bar must move down one line per frame for 30 frames, then stay in place, but it disappears almost at once, as in exercise 2 of the manual: fix it.",
+      "indices": ["The program only changes the top WAIT: where is the bottom WAIT once the bar has moved down?", "After `MOVE.W D1,barre`, add `$0800` to D1 and write it to `fin_barre`."]
+    },
+    "amiga-ch06-exo-haute": {
+      "titre": "A bar twice as tall",
+      "enonce": "This program, the solution to the previous exercise, moves a red bar 8 lines tall down for 30 frames, then leaves it in place. Change it so that the bar is 16 lines tall, still starting at the same place.",
+      "indices": ["The height of the bar is the gap between its two WAITs: look for where the program builds the bottom one.", "Adding `$0800` to the WAIT word moves down 8 lines: add `$1000`."]
+    },
+    "amiga-ch06-exo-soixante": {
+      "titre": "Sixty frames",
+      "enonce": "Move the red bar down 2 lines per frame, 60 times, starting from line `$40`, so that it ends up from line `$B8` to line `$C0` and stays there until the click.",
+      "indices": ["A loop of 60 iterations (`MOVEQ #59,D7` and `DBF`): `attendre_vbl`, `ADDQ.W #2`, then the two WAITs.", "Do not forget the bottom WAIT: `ADD.W #$0800` then `MOVE.W` into `fin_barre`."]
+    },
+    "amiga-ch06-cours-vbl": {
+      "titre": "Your own VBL routine, and the Copper interrupt",
+      "source": "Written for 68k Trainer from Amiga Intern (Abacus, ch. 11) and the Hardware Reference Manual (ch. 7)"
+    },
+    "amiga-ch06-ex-vbl": {
+      "titre": "A VBL of your own",
+      "introduction": "The bar, green this time, is moved by an interrupt routine called 50 times per second, while the main program waits for the click: when stepping, the PC jumps into `vbl` on its own at the end of a frame.",
+      "explications": {
+        "6": "Vector `$6C`, level 3, now points to our routine, and `prendre` had noted the system's one.",
+        "7": "INTENA receives SET (`$8000`) + INTEN (`$4000`, the master switch) + VERTB (`$0020`).",
+        "8": "All the main program has left to do is wait for the click, since the bar moves on its own.",
+        "14": "You save the registers used, because the routine interrupts the program anywhere.",
+        "15": "The position of the bar is kept in memory, from one frame to the next.",
+        "27": "Writing bit 5 to INTREQ with bit 15 at 0 clears the VERTB request, otherwise the routine would be called again at once, endlessly.",
+        "29": "`RTE`, not `RTS`, pops the status register and the return address, and the main program resumes."
+      },
+      "conclusion": "A VBL interrupt does the work for each frame without the main program having to watch the beam."
+    },
+    "amiga-ch06-exo-intena": {
+      "titre": "Enabling the VBL",
+      "enonce": "The routine counts frames, and the program waits for it to have counted 50 before storing the counter in D7, but nothing happens because the interrupt is not enabled: fill in the value written to INTENA.",
+      "indices": ["You need bit 15 (SET), bit 14 (INTEN) and bit 5 (VERTB).", "`MOVE.W #$C020,$9A(A5)`"]
+    },
+    "amiga-ch06-exo-sans-fin": {
+      "titre": "The endless interrupt",
+      "enonce": "The VBL routine changes the background color on every frame, and the program should stop after 100 frames, but it never stops: step through it to see where the PC goes, then fix the routine.",
+      "indices": ["After the `RTE`, does the PC really return to the main program?", "The VERTB request is never cleared: add `MOVE.W #$0020,$DFF09C` before the `RTE`."]
+    },
+    "amiga-ch06-exo-compte": {
+      "titre": "Counting a hundred frames",
+      "enonce": "Install a VBL routine that adds 1 to `compteur` on every frame; the main program waits for the counter to reach 100, stores it in D7, cleared beforehand, then gives control back.",
+      "indices": ["Vector `$6C`, then INTENA = `$C020`.", "The routine: `ADDQ.W #1,compteur`, clear the request in INTREQ, then `RTE`."]
+    },
+    "amiga-ch06-bonus-rebond": {
+      "titre": "The bouncing bar",
+      "enonce": "The blue bar 8 lines tall must follow the table `positions`, already prepared with 32 starting lines, at one position per frame, in a loop, for 80 frames, then stay in place until the click. Run the program in Real time to see it bounce.",
+      "indices": ["An index D6 goes from 0 to 31: `MOVE.B 0(A0,D6.W),D0` with A0 = the table, then `ADDQ.W #1,D6` and `AND.W #31,D6`.", "After 80 frames, the index has gone round two and a half times, and the bar ends at line `$DF`."]
+    }
+  },
+  "qcm": {
+    "q1": { "enonce": "What are the Copper's three instructions?", "explication": "MOVE writes a register, WAIT waits for a position, and SKIP skips the next instruction if the position has been passed." },
+    "q2": { "enonce": "What tells a WAIT apart from a MOVE?", "choix": ["Bit 0 of the first word: 1 for WAIT, 0 for MOVE", "The second word", "Their length"], "explication": "A MOVE starts with a register offset, which is always even." },
+    "q3": { "enonce": "What does this instruction do at the end of the list?", "choix": ["It waits for a position that never comes: the Copper stops until the next frame", "It clears the screen", "It restarts the list at once"], "explication": "Position `$FE` does not exist, and this is the conventional end of a list." },
+    "q4": { "enonce": "When does the Copper start again from the beginning of its list?", "choix": ["On every frame, or when you write to COPJMP1", "Never", "When the 68000 asks it to through an interrupt"], "explication": "Agnus restarts the list from COP1LC at the start of every frame." },
+    "q11": { "enonce": "Why must the copper list be in Chip RAM?", "choix": ["Because the chips, and therefore the Copper, only read Chip RAM", "Because Fast RAM is read-only", "It is not necessary"], "explication": "Fast RAM is visible only to the 68000, and a list stored anywhere but Chip RAM would make the Copper read garbage." },
+    "q5": { "enonce": "The WAIT `$2C07,$FFFE` waits for line…", "choix": ["$2C, the first line of the standard image", "$2C07", "$07"], "explication": "The high byte gives the line, and the low byte the horizontal position." },
+    "q6": { "enonce": "To wait for line $110, you first need…", "choix": ["a WAIT $FFDF,$FFFE", "a WAIT $0110,$FFFE", "nothing special"], "explication": "WAIT only compares 8 bits of the line: you wait for the end of line 255, then for `$10`." },
+    "q7": { "enonce": "Why does the 68000 change the copper list during the beam's return?", "choix": ["So as not to change it while the Copper is reading it", "Because the list is read-only the rest of the time", "To go faster"], "explication": "Otherwise part of the image would use the old version, and the other part the new one." },
+    "q8": { "enonce": "Which vector calls the VBL on the Amiga?", "choix": ["$6C, the level 3 interrupt", "$70", "$84"], "explication": "Level 3 groups the VBL, the Copper and the Blitter; $70 is the Atari ST's VBL." },
+    "q12": { "enonce": "After `MOVEM.L D0-D2,-(SP)`, SP has…", "choix": ["decreased by 12", "decreased by 4", "increased by 12"], "explication": "MOVEM pushes three long words, that is 12 bytes, and the stack grows downward." },
+    "q9": { "enonce": "A VBL routine that forgets to clear its request in INTREQ…", "choix": ["is called again endlessly: the main program no longer runs", "is only called once", "causes no problem"], "explication": "Paula keeps the request up, and as soon as the RTE runs the interrupt starts again." },
+    "q10": { "enonce": "An interrupt routine ends with…", "explication": "RTE also pops the status register saved by the exception." }
+  }
+}

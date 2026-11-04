@@ -6,6 +6,12 @@ import type { AssembleError, AssembleResult } from '../../../shared/ipc'
 import { MACHINES, type Machine } from '../../../shared/machines'
 import type { Debogueur } from './debogueur'
 import { SortieSon } from './son'
+import { traducteur } from '../langue'
+
+const t = traducteur({
+  fr: { pointArret: "Point d'arrêt : l'exécution s'arrêtera avant cette ligne" },
+  en: { pointArret: 'Breakpoint: execution will stop before this line' }
+})
 
 export type FinTempsReel = 'fin' | 'erreur' | 'arret' | 'point'
 
@@ -45,7 +51,8 @@ export class Execution {
       this.decorationsArret.set(
         [...this.pointsArret].map((l) => ({
           range: new monaco.Range(l, 1, l, 1),
-          options: { glyphMarginClassName: 'point-arret', glyphMarginHoverMessage: { value: "Point d'arrêt : l'exécution s'arrêtera avant cette ligne" } }
+          options: { glyphMarginClassName: 'point-arret', glyphMarginHoverMessage: { value: t('pointArret') } }
+
         }))
       )
     })

@@ -266,3 +266,141 @@ balle:
     DC.W    0,0
     DCB.L   16,$FFFF0000
     DC.W    0,0
+
+;=== rappel
+START:
+    MOVEQ   #64,D1          ; un échantillon de 64 octets
+    LSR.L   #1,D1           ; D1 = sa longueur pour AUD0LEN
+    MOVEQ   #0,D0           ; tout va bien
+    RTS
+
+;=== abime-depart
+; Additionne les 8 mots de « table » dans D7 et compare la somme à « attendu » :
+; code de retour 0 si elles sont égales, 10 (ERROR) sinon.
+START:
+    ; à toi
+    MOVEQ   #0,D0
+    RTS
+table:  DC.W    120,250,75,300,55,400,90,10
+attendu: DC.W   1310
+
+;=== abime-solution
+START:
+    LEA     table(PC),A0
+    MOVEQ   #0,D7
+    MOVEQ   #7,D1           ; 8 mots
+.somme:
+    ADD.W   (A0)+,D7
+    DBRA    D1,.somme
+    MOVEQ   #0,D0           ; 0 : tout va bien...
+    CMP.W   attendu(PC),D7
+    BEQ.S   .fin
+    MOVEQ   #10,D0          ; ... sauf si la somme est fausse : 10, ERROR
+.fin:
+    RTS
+table:  DC.W    120,250,75,300,55,400,90,10
+attendu: DC.W   1310
+
+;=== ordonner-entete
+; Le sous-programme « code » range dans D0 le code de retour qui correspond à la valeur D1 :
+; 0 (OK) jusqu'à 100, 5 (WARN) jusqu'à 200, 10 (ERROR) au-delà. On l'essaie avec trois valeurs.
+START:
+    MOVE.W  #250,D1
+    BSR.S   code
+    MOVE.L  D0,D6           ; 10 attendu
+    MOVE.W  #50,D1
+    BSR.S   code
+    MOVE.L  D0,D5           ; 0 attendu
+    MOVE.W  #150,D1
+    BSR.S   code            ; 5 attendu, rendu au Shell
+    RTS
+
+code:
+
+;=== ordonner-pied
+.fin:
+    RTS
+
+;=== pile-depart
+; Range dans D7 la somme des 8 mots de « table », calculée par le sous-programme « somme »,
+; puis rends la main au Shell avec le code 0.
+START:
+    MOVEQ   #1,D3           ; le numéro de la table, que « somme » doit préserver
+    LEA     table(PC),A0
+    BSR     somme
+    MOVE.L  D2,D7
+    MOVEQ   #0,D0
+    RTS
+
+; Additionne les 8 mots pointés par A0 ; résultat dans D2, D3 et A0 rendus intacts
+somme:
+    MOVEM.L D3/A0,-(SP)
+    MOVEQ   #0,D2
+    MOVEQ   #7,D3
+.boucle:
+    ADD.W   (A0)+,D2
+    DBRA    D3,.boucle
+    RTS
+table:  DC.W    120,250,75,300,55,400,90,10
+
+;=== pile-solution
+START:
+    MOVEQ   #1,D3           ; le numéro de la table, que « somme » doit préserver
+    LEA     table(PC),A0
+    BSR     somme
+    MOVE.L  D2,D7
+    MOVEQ   #0,D0
+    RTS
+
+; Additionne les 8 mots pointés par A0 ; résultat dans D2, D3 et A0 rendus intacts
+somme:
+    MOVEM.L D3/A0,-(SP)
+    MOVEQ   #0,D2
+    MOVEQ   #7,D3
+.boucle:
+    ADD.W   (A0)+,D2
+    DBRA    D3,.boucle
+    MOVEM.L (SP)+,D3/A0     ; la pile retrouve son état : RTS dépile la bonne adresse
+    RTS
+table:  DC.W    120,250,75,300,55,400,90,10
+
+;=== moyenne-depart
+; Range dans D7 la moyenne des « nombre » premiers mots de « table », et rend 0 au Shell.
+START:
+    LEA     table(PC),A0
+    MOVE.W  nombre(PC),D1
+    MOVEQ   #0,D7
+    MOVE.W  D1,D2
+    BRA.S   .test
+.boucle:
+    ADD.W   (A0)+,D7
+.test:
+    DBRA    D2,.boucle
+    DIVU    D1,D7           ; la somme divisée par le nombre de mots
+    AND.L   #$FFFF,D7       ; le quotient seul
+    MOVEQ   #0,D0
+    RTS
+table:  DC.W    120,250,75,300,55,400,90,10
+nombre: DC.W    8
+
+;=== moyenne-solution
+START:
+    LEA     table(PC),A0
+    MOVE.W  nombre(PC),D1
+    MOVEQ   #0,D7
+    MOVE.W  D1,D2
+    BEQ.S   .vide           ; une table vide : pas de division
+    BRA.S   .test
+.boucle:
+    ADD.W   (A0)+,D7
+.test:
+    DBRA    D2,.boucle
+    DIVU    D1,D7           ; la somme divisée par le nombre de mots
+    AND.L   #$FFFF,D7       ; le quotient seul
+    MOVEQ   #0,D0
+    RTS
+.vide:
+    MOVEQ   #10,D0          ; ERROR
+    RTS
+table:  DC.W    120,250,75,300,55,400,90,10
+nombre: DC.W    0

@@ -13,6 +13,8 @@ export interface MachineOptions {
   modeUtilisateur?: boolean
   /** Touches tapées à l'avance (Cnecin, Bconin...). */
   touches?: { ascii: number; scancode: number }[]
+  /** GEM : bouton « cliqué » dans une boîte d'alerte (form_alert), sinon le bouton par défaut. */
+  boutonAlerte?: number
   /** Afficher l'aperçu de l'écran Atari (basse résolution). */
   ecran?: boolean
   /** Adresse affichée au départ dans la vue mémoire du débogueur (sinon : début du programme). */
@@ -51,8 +53,6 @@ interface ContenuBase {
   /** Identifiant globalement unique (préfixé par le parcours) : sert de clé de progression. */
   id: string
   titre: string
-  /** Contenu rédigé par Claude, à relire par Yannick. */
-  aRelire?: boolean
   /** Code qui n'a pas pu être assemblé et exécuté par le simulateur. */
   nonTeste?: boolean
   /** Source d'origine (manuel, cours...), affichée discrètement. */
@@ -81,7 +81,8 @@ export interface ContenuExemple extends ContenuBase {
   machine?: MachineOptions
 }
 
-export type VarianteExercice = 'completer' | 'ecrire' | 'corriger' | 'ordonner'
+/** « modifier » : un programme qui marche, à changer pour obtenir un autre résultat. */
+export type VarianteExercice = 'completer' | 'ecrire' | 'corriger' | 'ordonner' | 'modifier'
 
 export interface ContenuExercice extends ContenuBase {
   type: 'exercice'
@@ -168,10 +169,3 @@ export interface Parcours {
 }
 
 export const SEUIL_QCM_DEFAUT = 0.7
-
-export const LIBELLE_VARIANTE: Record<VarianteExercice, string> = {
-  completer: 'À compléter',
-  ecrire: 'À écrire',
-  corriger: 'À corriger',
-  ordonner: 'À remettre dans l’ordre'
-}

@@ -1,6 +1,6 @@
 {
-  "name": "trainer-68k",
-  "version": "1.1.1",
+  "name": "trainer-68k-2",
+  "version": "2.0.0",
   "description": "Application d'apprentissage de l'assembleur 68000",
   "main": "./out/main/index.js",
   "author": "Yannick Montfort",
@@ -39,8 +39,8 @@
     "vitest": "^2.1.5"
   },
   "build": {
-    "appId": "com.yannick.trainer68k",
-    "productName": "68k Trainer",
+    "appId": "com.yannick.trainer68k2",
+    "productName": "68k Trainer 2",
     "directories": {
       "output": "dist",
       "buildResources": "resources"

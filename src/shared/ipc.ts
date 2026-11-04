@@ -46,6 +46,8 @@ export interface ProgressState {
   positions?: Record<string, { chapitreId: string; etapeId: string }>
   /** Machine choisie par l'apprenant (Atari ST par défaut). */
   machine?: 'atari' | 'amiga'
+  /** Langue de l'interface et du contenu choisie par l'apprenant. */
+  langue?: 'fr' | 'en'
 }
 
 export interface Track {
@@ -179,6 +181,17 @@ export interface EtatEmulateurPublic {
   disponible: boolean
 }
 
+/** « Ma propre ROM » : la ROM d'origine fournie par l'utilisateur, vue par l'interface. */
+export interface RomPublique {
+  nom: string
+  /** Vrai : elle remplace le système libre dans l'émulateur. */
+  actif: boolean
+  /** Amiga : le bouton « Essayer » lance le programme tout seul (Kickstart 2.0 et plus). */
+  essaiAutomatique: boolean
+  /** Amiga, Kickstart 1.3 : une disquette Workbench a été donnée. */
+  adf: boolean
+}
+
 export const IPC = {
   listerProfils: '68k:listerProfils',
   creerProfil: '68k:creerProfil',
@@ -201,10 +214,17 @@ export const IPC = {
   emulateurLancer: '68k:emulateurLancer',
   emulateurEssayer: '68k:emulateurEssayer',
   emulateurProgression: '68k:emulateurProgression',
+  emulateurFin: '68k:emulateurFin',
+  romsEtat: '68k:romsEtat',
+  romChoisir: '68k:romChoisir',
+  romAdfChoisir: '68k:romAdfChoisir',
+  romUtiliser: '68k:romUtiliser',
+  romRetirer: '68k:romRetirer',
   ouvrirPartage: '68k:ouvrirPartage',
   assemble: '68k:assemble',
   loadProgress: '68k:loadProgress',
   saveProgress: '68k:saveProgress',
   loadContent: '68k:loadContent',
-  getBuildInfo: '68k:getBuildInfo'
+  getBuildInfo: '68k:getBuildInfo',
+  definirLangue: '68k:definirLangue'
 } as const

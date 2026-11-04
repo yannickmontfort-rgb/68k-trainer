@@ -3,12 +3,65 @@ import { is } from '@electron-toolkit/utils'
 import { mkdirSync } from 'fs'
 import { readFile, writeFile } from 'fs/promises'
 import { join } from 'path'
-import { IPC, type AssembleRequest, type ProgressState } from '../shared/ipc'
+import { IPC, type AssembleRequest, type ProgressState, type RomPublique } from '../shared/ipc'
 import { assemblerDansApplication, fabriquerPrg } from './assemblage'
 import * as emulateurs from './emulateurs/installation'
+import { nomRom } from './emulateurs/roms'
 import { GestionProfils } from './profils'
 import { loadContent } from './content'
 import { getBuildInfo } from './buildInfo'
+import { definirLangueMain, traducteurMain } from './langue'
+
+const t = traducteurMain({
+  fr: {
+    couper: 'Couper',
+    copier: 'Copier',
+    coller: 'Coller',
+    toutSelectionner: 'Tout sélectionner',
+    exporterProfil: 'Exporter mon profil',
+    importerProfil: 'Importer un profil',
+    filtreProfil: 'Profil 68k Trainer',
+    profilIllisible: "Ce fichier n'est pas un profil 68k Trainer lisible.",
+    exporterAmiga: 'Exporter pour un émulateur Amiga (WinUAE, FS-UAE) ou un vrai Amiga',
+    filtreAmiga: 'Programme Amiga (sans extension)',
+    exporterAtari: 'Exporter pour Hatari ou un vrai Atari ST',
+    filtreAtari: 'Programme Atari ST',
+    filtreSource: 'Source assembleur 68000',
+    tousLesFichiers: 'Tous les fichiers',
+    ouvrirSource: 'Ouvrir un source assembleur',
+    enregistrerSource: 'Enregistrer le source',
+    choisirTos: 'Choisir ta ROM du TOS',
+    choisirKickstart: 'Choisir ton Kickstart',
+    choisirAdf: 'Choisir ta disquette Workbench',
+    filtreAdf: 'Disquette Amiga',
+    enregistrerCertificat: 'Enregistrer le certificat',
+    filtrePdf: 'Document PDF'
+  },
+  en: {
+    couper: 'Cut',
+    copier: 'Copy',
+    coller: 'Paste',
+    toutSelectionner: 'Select all',
+    exporterProfil: 'Export my profile',
+    importerProfil: 'Import a profile',
+    filtreProfil: '68k Trainer profile',
+    profilIllisible: 'This file is not a readable 68k Trainer profile.',
+    exporterAmiga: 'Export for an Amiga emulator (WinUAE, FS-UAE) or a real Amiga',
+    filtreAmiga: 'Amiga program (no extension)',
+    exporterAtari: 'Export for Hatari or a real Atari ST',
+    filtreAtari: 'Atari ST program',
+    filtreSource: '68000 assembly source',
+    tousLesFichiers: 'All files',
+    ouvrirSource: 'Open an assembly source',
+    enregistrerSource: 'Save the source',
+    choisirTos: 'Choose your TOS ROM',
+    choisirKickstart: 'Choose your Kickstart',
+    choisirAdf: 'Choose your Workbench disk',
+    filtreAdf: 'Amiga disk',
+    enregistrerCertificat: 'Save the certificate',
+    filtrePdf: 'PDF document'
+  }
+})
 
 /** Installe un émulateur ; la progression est envoyée à toutes les fenêtres (onglet « Émulateurs »). */
 async function installerEmulateur(id: 'hatari' | 'winuae'): Promise<{ ok: boolean; erreur?: string }> {
@@ -43,15 +96,15 @@ function createWindow(): void {
     const f = params.editFlags
     const modele: Electron.MenuItemConstructorOptions[] = params.isEditable
       ? [
-          { label: 'Couper', role: 'cut', enabled: f.canCut },
-          { label: 'Copier', role: 'copy', enabled: f.canCopy },
-          { label: 'Coller', role: 'paste', enabled: f.canPaste },
+          { label: t('couper'), role: 'cut', enabled: f.canCut },
+          { label: t('copier'), role: 'copy', enabled: f.canCopy },
+          { label: t('coller'), role: 'paste', enabled: f.canPaste },
           { type: 'separator' },
-          { label: 'Tout sélectionner', role: 'selectAll' }
+          { label: t('toutSelectionner'), role: 'selectAll' }
         ]
       : [
-          { label: 'Copier', role: 'copy', enabled: params.selectionText.length > 0 },
-          { label: 'Tout sélectionner', role: 'selectAll' }
+          { label: t('copier'), role: 'copy', enabled: params.selectionText.length > 0 },
+          { label: t('toutSelectionner'), role: 'selectAll' }
         ]
     Menu.buildFromTemplate(modele).popup({ window })
   })
@@ -71,6 +124,9 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  // Langue du système en attendant celle de l'interface (installations lancées au démarrage)
+  definirLangueMain(app.getLocale().toLowerCase().startsWith('fr') ? 'fr' : 'en')
+  ipcMain.handle(IPC.definirLangue, (_e, langue: unknown) => definirLangueMain(langue))
   ipcMain.handle(IPC.assemble, (_event, request: AssembleRequest) => assemblerDansApplication(request.source, request.dossier))
   const profils = new GestionProfils(app.getPath('userData'))
   ipcMain.handle(IPC.loadProgress, () => profils.chargerProgression())
@@ -87,9 +143,9 @@ app.whenReady().then(() => {
     const donnees = await profils.exporter(brouillons)
     const fenetre = BrowserWindow.fromWebContents(event.sender)!
     const choix = await dialog.showSaveDialog(fenetre, {
-      title: 'Exporter mon profil',
+      title: t('exporterProfil'),
       defaultPath: `${donnees.nom}.68kprofil`,
-      filters: [{ name: 'Profil 68k Trainer', extensions: ['68kprofil'] }]
+      filters: [{ name: t('filtreProfil'), extensions: ['68kprofil'] }]
     })
     if (choix.canceled || !choix.filePath) return { ok: false }
     await writeFile(choix.filePath, JSON.stringify(donnees, null, 2), 'utf-8')
@@ -98,31 +154,34 @@ app.whenReady().then(() => {
   ipcMain.handle(IPC.importerProfil, async (event, motDePasse?: string) => {
     const fenetre = BrowserWindow.fromWebContents(event.sender)!
     const choix = await dialog.showOpenDialog(fenetre, {
-      title: 'Importer un profil',
+      title: t('importerProfil'),
       properties: ['openFile'],
-      filters: [{ name: 'Profil 68k Trainer', extensions: ['68kprofil', 'json'] }]
+      filters: [{ name: t('filtreProfil'), extensions: ['68kprofil', 'json'] }]
     })
     if (choix.canceled || choix.filePaths.length === 0) return { ok: false }
     try {
       return await profils.importer(JSON.parse(await readFile(choix.filePaths[0], 'utf-8')), motDePasse)
     } catch {
-      return { ok: false, erreur: "Ce fichier n'est pas un profil 68k Trainer lisible." }
+      return { ok: false, erreur: t('profilIllisible') }
     }
   })
   ipcMain.handle(IPC.enregistrerPrg, async (event, octets: Uint8Array, nom: string, format: 'prg' | 'hunk' = 'prg') => {
     const fenetre = BrowserWindow.fromWebContents(event.sender)!
+    // Proposé dans le dossier de partage de la machine (Documents\68k Trainer\Atari ou Amiga)
+    const dossier = emulateurs.dossierPartage(format === 'hunk' ? 'amiga' : 'atari')
+    mkdirSync(dossier, { recursive: true })
     const choix = await dialog.showSaveDialog(
       fenetre,
       format === 'hunk'
         ? {
-            title: 'Exporter pour un émulateur Amiga (WinUAE, FS-UAE) ou un vrai Amiga',
-            defaultPath: nom,
-            filters: [{ name: 'Programme Amiga (sans extension)', extensions: ['*'] }]
+            title: t('exporterAmiga'),
+            defaultPath: join(dossier, nom),
+            filters: [{ name: t('filtreAmiga'), extensions: ['*'] }]
           }
         : {
-            title: 'Exporter pour Hatari ou un vrai Atari ST',
-            defaultPath: `${nom}.PRG`,
-            filters: [{ name: 'Programme Atari ST', extensions: ['PRG', 'TOS', 'TTP'] }]
+            title: t('exporterAtari'),
+            defaultPath: join(dossier, `${nom}.PRG`),
+            filters: [{ name: t('filtreAtari'), extensions: ['PRG', 'TOS', 'TTP'] }]
           }
     )
     if (choix.canceled || !choix.filePath) return { ok: false }
@@ -131,17 +190,17 @@ app.whenReady().then(() => {
   })
   // Sources du bac à sable : rangées par défaut dans le dossier de partage de la machine
   // (Documents\68k Trainer\Atari ou Amiga), lisibles directement par l'émulateur
-  const filtresSource = [
-    { name: 'Source assembleur 68000', extensions: ['s', 'asm', 'i'] },
-    { name: 'Tous les fichiers', extensions: ['*'] }
+  const filtresSource = (): Electron.FileFilter[] => [
+    { name: t('filtreSource'), extensions: ['s', 'asm', 'i'] },
+    { name: t('tousLesFichiers'), extensions: ['*'] }
   ]
   ipcMain.handle(IPC.ouvrirSource, async (event, machine: 'atari' | 'amiga') => {
     const dossier = emulateurs.dossierPartage(machine)
     mkdirSync(dossier, { recursive: true })
     const choix = await dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender)!, {
-      title: 'Ouvrir un source assembleur',
+      title: t('ouvrirSource'),
       defaultPath: dossier,
-      filters: filtresSource,
+      filters: filtresSource(),
       properties: ['openFile']
     })
     if (choix.canceled || choix.filePaths.length === 0) return { ok: false }
@@ -163,9 +222,9 @@ app.whenReady().then(() => {
         const dossier = emulateurs.dossierPartage(machine)
         mkdirSync(dossier, { recursive: true })
         const choix = await dialog.showSaveDialog(BrowserWindow.fromWebContents(event.sender)!, {
-          title: 'Enregistrer le source',
+          title: t('enregistrerSource'),
           defaultPath: join(dossier, nom),
-          filters: filtresSource
+          filters: filtresSource()
         })
         if (choix.canceled || !choix.filePath) return { ok: false }
         cible = choix.filePath
@@ -191,11 +250,44 @@ app.whenReady().then(() => {
     if (!exe.octets) return { ok: false, erreur: exe.raison }
     const lanceur = id === 'hatari' ? fabriquerPrg(emulateurs.sourceLanceurAtari(`${nom}.PRG`)).octets : undefined
     try {
-      return { ok: true, chemin: await emulateurs.essayer(id, exe.octets, nom, lanceur) }
+      const fenetre = BrowserWindow.fromWebContents(_e.sender)
+      const chemin = await emulateurs.essayer(id, exe.octets, nom, lanceur, (fin) => {
+        if (fenetre && !fenetre.isDestroyed()) fenetre.webContents.send(IPC.emulateurFin, fin)
+      })
+      return { ok: true, chemin, manuel: !emulateurs.essaiAutomatique(id) }
     } catch (e) {
       return { ok: false, erreur: (e as Error).message }
     }
   })
+  ipcMain.handle(IPC.romsEtat, () => {
+    const roms = emulateurs.romsUtilisateur()
+    const r: Partial<Record<'atari' | 'amiga', RomPublique>> = {}
+    for (const m of ['atari', 'amiga'] as const) {
+      const rom = roms[m]
+      if (rom) r[m] = { nom: nomRom(rom.nom), actif: rom.actif, essaiAutomatique: m === 'atari' || !!rom.shellEnRom, adf: !!rom.adf }
+    }
+    return r
+  })
+  ipcMain.handle(IPC.romChoisir, async (event, machine: 'atari' | 'amiga') => {
+    const choix = await dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender)!, {
+      title: machine === 'atari' ? t('choisirTos') : t('choisirKickstart'),
+      properties: ['openFile'],
+      filters: [{ name: 'ROM', extensions: ['img', 'rom', 'bin', 'tos'] }, { name: t('tousLesFichiers'), extensions: ['*'] }]
+    })
+    if (choix.canceled || choix.filePaths.length === 0) return { ok: false }
+    return emulateurs.importerRom(machine, choix.filePaths[0])
+  })
+  ipcMain.handle(IPC.romAdfChoisir, async (event) => {
+    const choix = await dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender)!, {
+      title: t('choisirAdf'),
+      properties: ['openFile'],
+      filters: [{ name: t('filtreAdf'), extensions: ['adf'] }]
+    })
+    if (choix.canceled || choix.filePaths.length === 0) return { ok: false }
+    return emulateurs.importerAdf(choix.filePaths[0])
+  })
+  ipcMain.handle(IPC.romUtiliser, (_e, machine: 'atari' | 'amiga', actif: boolean) => emulateurs.utiliserRom(machine, actif))
+  ipcMain.handle(IPC.romRetirer, (_e, machine: 'atari' | 'amiga') => emulateurs.retirerRom(machine))
   ipcMain.handle(IPC.ouvrirPartage, (_e, machine: 'atari' | 'amiga') => {
     const d = emulateurs.dossierPartage(machine)
     mkdirSync(d, { recursive: true })
@@ -208,9 +300,9 @@ app.whenReady().then(() => {
   ipcMain.handle(IPC.exporterPdf, async (event, html: string, nom: string) => {
     const fenetre = BrowserWindow.fromWebContents(event.sender)!
     const choix = await dialog.showSaveDialog(fenetre, {
-      title: 'Enregistrer le certificat',
+      title: t('enregistrerCertificat'),
       defaultPath: `${nom}.pdf`,
-      filters: [{ name: 'Document PDF', extensions: ['pdf'] }]
+      filters: [{ name: t('filtrePdf'), extensions: ['pdf'] }]
     })
     if (choix.canceled || !choix.filePath) return { ok: false }
     const invisible = new BrowserWindow({ show: false, webPreferences: { javascript: false } })
@@ -224,7 +316,7 @@ app.whenReady().then(() => {
     void shell.openPath(choix.filePath)
     return { ok: true, chemin: choix.filePath }
   })
-  ipcMain.handle(IPC.loadContent, () => loadContent())
+  ipcMain.handle(IPC.loadContent, (_e, langue: 'fr' | 'en' = 'fr') => loadContent(undefined, langue === 'en' ? 'en' : 'fr'))
   ipcMain.handle(IPC.getBuildInfo, () => getBuildInfo())
 
   // macOS : le menu de l'application (« 68k Trainer », Quitter avec Cmd+Q) est obligatoire

@@ -68,6 +68,14 @@ function verifierParcours(parcours: Parcours): void {
             expect(ids.has(chapitre.qcm.id)).toBe(false)
             ids.add(chapitre.qcm.id)
             for (const q of chapitre.qcm.questions) expect(q.bonne).toBeLessThan(q.choix.length)
+            const questions = chapitre.qcm.questions.map((q) => q.id)
+            expect(new Set(questions).size, `question en double dans le QCM : ${questions.join(', ')}`).toBe(questions.length)
+          }
+          // Les questions d'une prédiction aussi doivent avoir des identifiants distincts
+          for (const c of contenus) {
+            if (c.type !== 'prediction') continue
+            const questions = c.questions.map((q) => q.id)
+            expect(new Set(questions).size, `question en double dans ${c.id}`).toBe(questions.length)
           }
         })
 
@@ -116,7 +124,7 @@ function verifierParcours(parcours: Parcours): void {
                 expect(cpu.d[0], 'code de retour (D0) à la fin : MOVEQ #0,D0 avant le RTS').toBe(0)
               }
             })
-            if (c.variante === 'completer' || c.variante === 'corriger') {
+            if (c.variante === 'completer' || c.variante === 'corriger' || c.variante === 'modifier') {
               it(`exercice « ${c.titre} » : le code de départ n'est pas déjà juste`, () => {
                 const asm = assemble(c.codeDepart)
                 if (!asm.success) return // erreur de syntaxe volontaire

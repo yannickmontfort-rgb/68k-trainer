@@ -1,5 +1,6 @@
 import type { ProgressState } from '../../shared/ipc'
 import { normaliserProgression } from '../../shared/progression'
+import { definirLangue, langueCourante } from './langue'
 
 /** Progression en mémoire, chargée une fois et réenregistrée à chaque changement. */
 let state: ProgressState | null = null
@@ -10,6 +11,9 @@ export function chargerProgression(): Promise<ProgressState> {
   if (!loading) {
     loading = window.api.loadProgress().then((raw) => {
       state = normaliserProgression(raw)
+      // La langue du profil, s'il en a choisi une ; sinon il garde celle de l'écran d'accueil
+      if (state.langue) definirLangue(state.langue)
+      else state.langue = langueCourante()
       return state
     })
   }
@@ -62,6 +66,15 @@ export function choisirMachine(machine: 'atari' | 'amiga'): void {
   if (!state || state.machine === machine) return
   state.machine = machine
   enregistrer()
+}
+
+/** Langue choisie dans le profil ouvert : elle change aussi l'interface. */
+export function choisirLangue(langue: 'fr' | 'en'): void {
+  if (state) {
+    state.langue = langue
+    enregistrer()
+  }
+  definirLangue(langue)
 }
 
 /** Oublie la progression en mémoire (changement de profil) : elle sera relue au prochain accès. */

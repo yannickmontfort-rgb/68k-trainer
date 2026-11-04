@@ -288,3 +288,14 @@ START:
 PALETTE:
     DC.W    $000,$100,$200,$300,$400,$500,$600,$700
     DC.W    $710,$720,$730,$740,$750,$760,$770,$777
+
+;=== rappel
+START:
+    MOVEQ   #0,D0
+    MOVE.W  #4,D1
+BOUCLE:
+    ADDQ.W  #3,D0
+    DBRA    D1,BOUCLE
+    MOVE.L  D0,D2           ; la somme
+    DIVU    #6,D0
+    RTS

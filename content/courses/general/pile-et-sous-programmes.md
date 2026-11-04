@@ -8,23 +8,22 @@ themes: ["sous-programmes", "pile"]
 
 ## Le principe de la pile (LIFO)
 
-La pile est une zone de mémoire gérée différemment du reste : au lieu de retenir une adresse
-pour chaque donnée, on **empile** (*push*) et on **dépile** (*pop*) — toujours dans cet ordre :
-le dernier élément empilé est le premier ressorti. C'est une structure **LIFO**
-(*Last In, First Out*), comme une pile d'assiettes.
+La pile est une zone de mémoire qu'on gère sans retenir d'adresse pour chaque donnée : on empile
+(*push*) et on dépile (*pop*), et le dernier élément empilé est toujours le premier ressorti, comme
+dans une pile d'assiettes. C'est une structure **LIFO** (*Last In, First Out*).
 
-Avantage : pas besoin de gérer d'adresse explicite, et pas de place gaspillée pour une donnée
-temporaire. Inconvénient : la gestion doit être **rigoureuse** — empiler/dépiler dans le mauvais
-ordre ou avec la mauvaise taille corrompt silencieusement tout ce qui suit sur la pile.
+On n'a donc aucune adresse à gérer et aucune place à réserver pour une donnée temporaire. En
+contrepartie, la gestion doit être rigoureuse, car empiler et dépiler dans le mauvais ordre ou avec
+la mauvaise taille corrompt sans bruit tout ce qui suit sur la pile.
 
 ## Le pointeur de pile : A7 / SP
 
-Le registre **A7** est réservé à la pile — c'est le **Stack Pointer** (SP), qui pointe en permanence
-sur la **dernière donnée empilée**. La pile **descend** vers les adresses basses : empiler fait
-diminuer SP. Il existe deux A7 physiques : `USP` pour le mode utilisateur et `SSP` pour le mode
-superviseur ; le processeur prend automatiquement le bon.
+Le registre A7 est réservé à la pile : c'est le *Stack Pointer* (SP), qui pointe en permanence sur
+la dernière donnée empilée. La pile descend vers les adresses basses, si bien qu'empiler fait
+diminuer SP. Il existe deux A7 physiques, `USP` pour le mode utilisateur et `SSP` pour le mode
+superviseur, et le processeur prend automatiquement le bon.
 
-Empiler et dépiler se font avec deux modes d'adressage :
+On empile et on dépile avec deux modes d'adressage :
 
 ```asm
         MOVE.L  D0,-(SP)        ; SP -= 4, puis écrit D0 à l'adresse SP : « push »
@@ -33,9 +32,9 @@ Empiler et dépiler se font avec deux modes d'adressage :
         MOVE.W  (SP)+,D1
 ```
 
-> **Particularité utile :** empiler un `.B` décrémente quand même SP de **2** — la pile reste
-> toujours sur une adresse paire. (Ce n'est vrai que pour A7 ; un autre registre d'adresse utilisé
-> de la même façon avance bien d'un seul octet.)
+Empiler un `.B` décrémente quand même SP de 2, pour que la pile reste sur une adresse paire. Ce
+n'est vrai que pour A7 : un autre registre d'adresse employé de la même façon n'avance que d'un
+octet.
 
 ## Appel de sous-programme : BSR / JSR / RTS
 
@@ -47,17 +46,17 @@ AJOUTE: ADD.L   D1,D0
         RTS                     ; dépile l'adresse de retour et y retourne
 ```
 
-- `BSR` (*Branch to SubRoutine*) : appel **relatif** au PC (code relogeable). `BSR.S` pour un
-  sous-programme proche (±126 octets), `BSR` (mot) jusqu'à ±32 Ko.
-- `JSR` (*Jump to SubRoutine*) : appel par une **adresse effective** — `JSR (A0)` (adresse calculée,
-  table de sauts), `JSR -552(A6)` (bibliothèque Amiga), `JSR ETIQUETTE(PC)`.
-- `RTS` (*ReTurn from Subroutine*) dépile 4 octets dans le PC. `RTR` dépile en plus le CCR (s'il a
-  été empilé par `MOVE SR,-(SP)`), `RTE` sert à sortir d'une **exception** (voir plus bas).
+- `BSR` (*Branch to SubRoutine*) appelle de façon relative au PC, ce qui garde le code relogeable :
+  `BSR.S` pour un sous-programme proche (±126 octets), `BSR` (mot) jusqu'à ±32 Ko.
+- `JSR` (*Jump to SubRoutine*) appelle par une adresse effective : `JSR (A0)` pour une adresse
+  calculée ou une table de sauts, `JSR -552(A6)` pour une bibliothèque Amiga, `JSR ETIQUETTE(PC)`.
+- `RTS` (*ReTurn from Subroutine*) dépile 4 octets dans le PC. `RTR` dépile en plus le CCR, s'il a
+  été empilé par `MOVE SR,-(SP)`, et `RTE` sert à sortir d'une exception (voir plus bas).
 
-> **Un sous-programme ne sauvegarde que l'adresse de retour** — rien d'autre. Si la routine
-> modifie D0-D7/A0-A6, ces registres restent modifiés au retour : il n'existe pas de variable
-> locale automatique en assembleur. C'est **au programmeur** de sauvegarder ce qui doit
-> survivre à l'appel, et de **documenter** en commentaire ce que la routine reçoit, rend et modifie.
+Un appel ne sauvegarde que l'adresse de retour. Si la routine modifie D0-D7 ou A0-A6, ces registres
+restent modifiés au retour, puisqu'il n'existe pas de variable locale automatique en assembleur.
+C'est au programmeur de sauvegarder ce qui doit survivre à l'appel, et de noter en commentaire ce
+que la routine reçoit, rend et modifie.
 
 ### Sauvegarder des registres : MOVEM
 
@@ -69,20 +68,20 @@ AJOUTE: ADD.L   D1,D0
         MOVEM.L (SP)+,D0-D2/A0-A1       ; restaure exactement la MÊME liste
 ```
 
-- On écrit la **même liste** à l'entrée et à la sortie : `MOVEM` range toujours les registres dans un
-  ordre fixe en mémoire (D0 à l'adresse la plus basse … A7), quel que soit l'ordre d'écriture de la
-  liste.
-- `MOVEM` **ne modifie pas les flags** : on peut donc restaurer les registres juste avant un `RTS`
+- On écrit la **même liste** à l'entrée et à la sortie. `MOVEM` range toujours les registres dans un
+  ordre fixe en mémoire, D0 à l'adresse la plus basse jusqu'à A7, quel que soit l'ordre dans lequel
+  on écrit la liste.
+- `MOVEM` ne modifie pas les flags, ce qui permet de restaurer les registres juste avant un `RTS`
   sans perdre le résultat d'un test fait juste avant.
-- `MOVEM.W` vers des registres **étend le signe** de chaque mot sur 32 bits.
+- `MOVEM.W` vers des registres étend le signe de chaque mot sur 32 bits.
 
 ### Passer des paramètres
 
-Trois façons usuelles, du plus simple au plus général :
+Il y a trois façons usuelles, de la plus simple à la plus générale :
 
-1. **Par les registres** — le plus rapide. Exemple : « entrée D0 = valeur, A0 = adresse ; sortie D0 ».
-2. **Par une zone mémoire** dont on passe l'adresse dans un registre (structure de paramètres).
-3. **Par la pile** — empiler les valeurs avant le `BSR`, comme le font le TOS (GEMDOS/BIOS/XBIOS) et
+1. Par les registres, ce qui est le plus rapide : « entrée D0 = valeur, A0 = adresse ; sortie D0 ».
+2. Par une zone mémoire, une structure de paramètres dont on passe l'adresse dans un registre.
+3. Par la pile, en empilant les valeurs avant le `BSR`, comme le font le TOS (GEMDOS/BIOS/XBIOS) et
    les compilateurs C :
 
 ```asm
@@ -92,15 +91,16 @@ Trois façons usuelles, du plus simple au plus général :
         ADDQ.L  #6,SP           ; l'appelant rend la place : 2 + 4 = 6 octets
 ```
 
-> **Après l'appel, il faut remettre SP dans l'état où il était avant** en lui ajoutant la taille
-> totale des paramètres empilés — `ADDQ.L #n,SP` jusqu'à 8, `LEA n(SP),SP` ou `ADDA.L #n,SP`
-> au-delà. Sinon la pile reste décalée et un `RTS` plus loin repartira à une adresse fausse.
+Après l'appel, l'appelant remet SP dans l'état où il était en lui ajoutant la taille totale des
+paramètres empilés, avec `ADDQ.L #n,SP` jusqu'à 8, `LEA n(SP),SP` ou `ADDA.L #n,SP` au-delà. Sinon la
+pile reste décalée et un `RTS` plus loin repartira à une adresse fausse.
 
-À l'intérieur du sous-programme, on lit les paramètres **sans dépiler**, par un déplacement depuis
-SP. Il faut compter tout ce qui a été empilé **après** eux : l'adresse de retour (4 octets) et les
-registres sauvegardés.
+Dans le sous-programme, on lit les paramètres sans les dépiler, par un déplacement depuis SP, en
+comptant tout ce qui a été empilé après eux : l'adresse de retour (4 octets) et les registres
+sauvegardés.
 
-**Exemple complet** — additionner deux nombres passés par la pile, résultat rendu dans D0 :
+Dans cet exemple complet, deux nombres passés par la pile sont additionnés et la somme revient dans
+D0 :
 
 ```asm
         MOVE.L  #$12345678,-(SP)        ; nombre 1
@@ -127,9 +127,9 @@ SP + 12 : nombre 1
 
 ### Variables locales : LINK et UNLK
 
-Pour réserver de la place sur la pile pendant la durée d'une routine (variables locales), le 68000
-a deux instructions faites pour ça. `LINK A6,#-n` empile A6, met SP dans A6 (le **cadre**, *frame
-pointer*), puis réserve *n* octets ; `UNLK A6` défait tout.
+Pour réserver de la place sur la pile le temps d'une routine, le 68000 a deux instructions faites
+pour cela. `LINK A6,#-n` empile A6, copie SP dans A6, qui devient le **cadre** (*frame pointer*),
+puis réserve *n* octets ; `UNLK A6` défait le tout.
 
 ```asm
 CALCUL: LINK    A6,#-8                  ; 8 octets de variables locales : -8(A6) à -1(A6)
@@ -141,23 +141,23 @@ CALCUL: LINK    A6,#-8                  ; 8 octets de variables locales : -8(A6)
 ```
 
 Avec un cadre, les déplacements des paramètres (`8(A6)`, `12(A6)`…) ne changent plus quand la
-routine empile d'autres valeurs : c'est la convention des compilateurs C. (Sur l'Amiga, A6 sert de
-base aux bibliothèques : on y utilise plutôt `LINK A5`.)
+routine empile d'autres valeurs, et c'est la convention des compilateurs C. Sur l'Amiga, A6 sert de
+base aux bibliothèques, et on utilise donc plutôt `LINK A5`.
 
 ## Les exceptions : la pile utilisée par le processeur
 
-Une **exception** est un appel de sous-programme déclenché par le processeur lui-même : une
+Une exception est un appel de sous-programme que déclenche le processeur lui-même, sur une
 interruption matérielle, une erreur (adresse impaire, instruction illégale, division par zéro) ou
 une instruction `TRAP #0-15`. Le 68000 :
 
-1. passe en **mode superviseur** (pile `SSP`) ;
-2. empile le **PC** (4 octets) puis le **SR** (2 octets) : **6 octets** au total (plus pour les
-   erreurs de bus et d'adresse, et toujours 8 octets et plus sur les 68010 et suivants) ;
-3. lit l'adresse de la routine dans la **table des vecteurs**, en mémoire basse : vecteur *n* à
-   l'adresse *n* × 4.
+1. passe en mode superviseur, donc sur la pile `SSP` ;
+2. empile le PC (4 octets) puis le SR (2 octets), soit 6 octets au total, davantage pour les erreurs
+   de bus et d'adresse, et toujours 8 octets ou plus sur les 68010 et suivants ;
+3. lit l'adresse de la routine dans la table des vecteurs, en mémoire basse, où le vecteur *n* se
+   trouve à l'adresse *n* × 4.
 
-La routine se termine par **`RTE`** (*ReTurn from Exception*), qui dépile le SR **et** le PC — jamais
-par `RTS`, qui ne dépilerait que 4 octets et laisserait la pile (et le mode) faux.
+La routine se termine par `RTE` (*ReTurn from Exception*), qui dépile le SR et le PC, et jamais par
+`RTS`, qui ne dépilerait que 4 octets et laisserait la pile et le mode faux.
 
 | Vecteur | Adresse | Cause |
 |---|---|---|
@@ -174,10 +174,10 @@ par `RTS`, qui ne dépilerait que 4 octets et laisserait la pile (et le mode) fa
 | 25-31 | `$64`-`$7C` | interruptions de niveau 1 à 7 (auto-vecteurs) |
 | 32-47 | `$80`-`$BC` | `TRAP #0` à `TRAP #15` |
 
-L'usage de ces vecteurs dépend de la machine : sur l'Atari ST, `TRAP #1`, `#13` et `#14` sont le
+L'usage de ces vecteurs dépend de la machine. Sur l'Atari ST, `TRAP #1`, `#13` et `#14` sont le
 GEMDOS, le BIOS et le XBIOS (voir [la fiche TOS](../atari-st/trap-et-systeme.md)) ; sur l'Amiga, on
 appelle le système par `JSR` dans les bibliothèques et non par `TRAP`
 (voir [la fiche système Amiga](../amiga/systeme-et-hardware.md)).
 
 > Fiche complétée et corrigée le 21/10/2026 (Claude) : exemple de passage par la pile recalculé,
-> MOVEM, LINK/UNLK, exceptions et table des vecteurs — à relire.
+> MOVEM, LINK/UNLK, exceptions et table des vecteurs.

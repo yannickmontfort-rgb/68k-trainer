@@ -349,3 +349,24 @@ START:
 START:
     LEA     $DFF000,A5
     RTS
+
+;=== rappel
+START:
+    MOVEQ   #7,D0
+    ADD.W   #3,D0
+    SUB.W   #10,D0
+    RTS
+
+;=== sr-negatif-depart
+START:
+    MOVE.W  #5,D0
+    MOVE.W  #8,D1
+    SUB.W   D0,D1           ; doit calculer 5 - 8 dans D0
+    RTS
+
+;=== sr-negatif-solution
+START:
+    MOVE.W  #5,D0
+    MOVE.W  #8,D1
+    SUB.W   D1,D0
+    RTS

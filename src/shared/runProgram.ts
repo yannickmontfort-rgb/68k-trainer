@@ -25,7 +25,8 @@ export function platformFor(plateforme: Plateforme, machine?: MachineOptions, ch
       userMode: machine?.modeUtilisateur ?? false,
       keys: machine?.touches,
       clavierInteractif: machine?.interactif,
-      evenements: machine?.evenements
+      evenements: machine?.evenements,
+      boutonAlerte: machine?.boutonAlerte
     })
   }
   return undefined

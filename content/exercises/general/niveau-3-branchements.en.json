@@ -1,0 +1,60 @@
+{
+  "level": 3,
+  "title": "Branches",
+  "exercises": [
+    {
+      "id": "general-l3-e1",
+      "title": "Testing the sign of a value",
+      "statement": "D1 holds -10 (`$FFFFFFF6`, already loaded by the starting code). Test its sign with TST: if it is negative, put 1 in D0; otherwise, put 0 in D0.",
+      "hints": [
+        "TST.L Dn sets the N and Z flags without changing Dn.",
+        "BMI branches if N=1 (negative result)."
+      ],
+      "courseRef": "reference-meyne-hoppenot.md",
+      "starterCode": "    ORG $1000\nSTART:\n    MOVE.L  #$FFFFFFF6,D1\n\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 8,
+        "expected": {
+          "D0": "$00000001"
+        }
+      }
+    },
+    {
+      "id": "general-l3-e2",
+      "title": "The greater of two numbers",
+      "statement": "D1 = 21 and D2 = 30 (already loaded). Compare them with CMP and put the greater of the two values in D0 (signed comparison).",
+      "hints": [
+        "CMP.L D1,D2 computes D2 - D1 and sets the flags, without changing D1 or D2.",
+        "BGT branches if the result of the comparison is strictly positive (signed comparison)."
+      ],
+      "courseRef": "reference-meyne-hoppenot.md",
+      "starterCode": "    ORG $1000\nSTART:\n    MOVE.L  #21,D1\n    MOVE.L  #30,D2\n\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 8,
+        "expected": {
+          "D0": "$0000001E"
+        }
+      }
+    },
+    {
+      "id": "general-l3-e3",
+      "title": "Testing a specific bit",
+      "statement": "D3 = 5 (already loaded). Test bit 0 of D3 with BTST: if that bit is 1, put `$FF` in D0; otherwise, put `0`.",
+      "hints": [
+        "BTST #n,Dn only updates the Z flag: Z=1 if the tested bit is 0, Z=0 if it is 1.",
+        "5 in binary is 101: bit 0 (the rightmost one) is 1."
+      ],
+      "courseRef": "reference-meyne-hoppenot.md",
+      "starterCode": "    ORG $1000\nSTART:\n    MOVE.L  #5,D3\n\n",
+      "check": {
+        "type": "registers",
+        "maxSteps": 8,
+        "expected": {
+          "D0": "$000000FF"
+        }
+      }
+    }
+  ]
+}
