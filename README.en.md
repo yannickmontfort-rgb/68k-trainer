@@ -6,7 +6,7 @@ Learn **Motorola 68000** assembly by programming a simulated **Atari ST** or **A
 by step. To our knowledge, it is the first tool that brings the two machines together.
 
 - Two **guided courses**, organised chapter by chapter, with a **shared core** (chapters 1 to 3, the
-  68000): **Atari ST** in 9 chapters (TOS, screen, animation, keyboard, joystick, sound, Devpac, Line A and GEM) and
+  68000): **Atari ST** in 9 chapters (TOS, screen, animation, keyboard, joystick, sound, Devpac, Line-A and GEM) and
   **Amiga** in 10 chapters (Exec and libraries, custom chips, Copper, Blitter, sprites, Paula,
   AmigaDOS executable). The machine is chosen in the profile. Progress
   bar, "resume where I left off", progress report and certificate as a PDF.
@@ -29,7 +29,7 @@ by step. To our knowledge, it is the first tool that brings the two machines tog
   **WinUAE** with the free AROS Kickstart, no copyrighted ROM; a shared folder in
   Documents, and a **"Try in the emulator"** button.
 - A **sandbox** that is a real editor (open, save, `INCLUDE` next to the source), and
-  **reference sheets** (68000, TOS, MFP, Line A and GEM, Amiga libraries and chips).
+  **reference sheets** (68000, TOS, MFP, Line-A and GEM, Amiga libraries and chips).
 
 The teaching choices are based on research: worked examples, then help withdrawn step by step,
 one difficulty at a time, reading and predicting before writing, explicit teaching of
