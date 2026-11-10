@@ -1,22 +1,30 @@
 # Dossier de candidature SignPath Foundation
 
-Préparé le 19/10/2026, **mis à jour le 21/10/2026 pour la version 1.1.0**. **Pas encore envoyé.**
+Préparé le 19/10/2026, **mis à jour le 10/11/2026 pour la version 2.0.1** (« 68k Trainer 2 »).
+**Pas encore envoyé.**
 Objectif : faire signer gratuitement les exécutables Windows de 68k Trainer, pour que SmartScreen
 affiche « Yannick Montfort » (ou « SignPath Foundation ») au lieu de « Éditeur inconnu ».
 
 - Conditions : <https://signpath.org/terms>
-- Formulaire : <https://signpath.org/apply>
+- Formulaire : <https://signpath.org/apply> (formulaire HubSpot intégré à la page)
+- Politique publiée : [`CODE_SIGNING_POLICY.md`](../../CODE_SIGNING_POLICY.md), à la racine, liée
+  depuis les deux README (section Télécharger / Download).
 
-Les conditions ci-dessous ont été relevées le 19/10/2026 : **les relire avant d'envoyer**, elles
-peuvent avoir changé.
+Conditions relues le 10/11/2026 (page encore marquée « Draft » par SignPath) : rien de nouveau par
+rapport au 19/10, sauf une phrase sur la **réputation** : pour un programme exécutable, SignPath
+demande « a certain verifiable reputation », sans chiffre précis. Éléments à faire valoir : 15
+étoiles GitHub, 6 releases depuis le 19/10, 119 téléchargements au 10/11/2026 (dont 82 de
+fichiers Windows), version française et anglaise.
 
 ## 1. Ce qu'on fait signer : la version légère seulement
 
-Depuis la 1.1.0, 68k Trainer existe en deux versions Windows :
+Depuis la 1.1.0, 68k Trainer existe en deux versions Windows. Depuis la 2.0.0, le produit s'appelle
+**« 68k Trainer 2 »** (appId `com.yannick.trainer68k2`) ; sur GitHub, les espaces des noms de
+fichiers deviennent des points (`68k.Trainer.2.Setup.2.0.1.exe`).
 
 | Version | Contenu | Signable par SignPath ? |
 |---|---|---|
-| **Légère** (`68k Trainer Setup x.y.z.exe`, `68k Trainer x.y.z.exe`) | l'application seule (notre code GPL v3 + Electron, Monaco, marked : MIT) ; les émulateurs sont **téléchargés à la demande** depuis leurs sites officiels | ✅ oui |
+| **Légère** (`68k Trainer 2 Setup x.y.z.exe`, `68k Trainer 2 x.y.z.exe`) | l'application seule (notre code GPL v3 + Electron, Monaco, marked : MIT) ; les émulateurs sont **téléchargés à la demande** depuis leurs sites officiels | ✅ oui |
 | **Complète** (`… complet.exe`) | la même, **plus les paquets des émulateurs** : Hatari et WinUAE (GPL v2), EmuTOS (GPL v2), AROS (licence publique AROS), **`capsimg.dll`** (bibliothèque des images de disquettes protégées, licence propre à la Software Preservation Society) | ❌ non : `capsimg.dll` n'est pas sous licence libre (et la licence d'AROS n'est pas, à notre connaissance, approuvée par l'OSI) — or SignPath exige que **tout** le contenu signé soit sous licence OSI |
 
 `capsimg.dll` ne peut pas être retirée : `hatari.exe` refuse de démarrer sans elle (vérifié le
@@ -35,8 +43,9 @@ dedans) que l'application légère et signée saurait importer.
 | Pas de logiciel malveillant | ✅ | — |
 | **Licence OSI pour tous les composants**, sans double licence commerciale | ✅ GPL v3 pour notre code (assembleur maison `src/asm/` depuis la 1.0.0 : vasm ne sert plus qu'aux tests, il n'est ni dans le dépôt ni dans les paquets) ; dépendances MIT (Electron, Monaco, marked) | — |
 | Pas de code propriétaire dans le paquet signé | ✅ pour la version légère (voir § 1 pour la complète) | — |
-| Projet maintenu | ✅ commits réguliers, releases 0.2.1, 1.0.0, 1.1.0 | — |
-| Déjà publié sous la forme à signer | ✅ release v1.1.0 sur GitHub (installeur NSIS + portable) | — |
+| Projet maintenu | ✅ commits réguliers, releases 0.2.1, 1.1.0, 1.1.1, 2.0.0 (04/11), 2.0.1 (10/11/2026) | — |
+| Déjà publié sous la forme à signer | ✅ release v2.0.1 sur GitHub (installeur NSIS + portable) | — |
+| Réputation vérifiable (programmes exécutables) | ✅ 15 étoiles, 119 téléchargements au 10/11/2026 | — |
 | Fonctions décrites sur la page de téléchargement | ✅ README + notes de release + guide de l'utilisateur | — |
 | Projet et dépôt à nous, binaires construits depuis nos sources | ✅ | — |
 | Pas d'outil de piratage | ✅ (les tutos de cracking des sources ne sont pas dans le dépôt ; les émulateurs sont réglés pour l'étude, **aucune ROM sous droits** n'est fournie ni téléchargée) | — |
@@ -44,9 +53,9 @@ dedans) que l'application légère et signée saurait importer.
 | Désinstallation fournie | ✅ désinstalleur NSIS (retire aussi les émulateurs installés, garde les documents de l'utilisateur) | — |
 | **MFA** pour tous les membres (GitHub et SignPath) | ✅ double authentification activée sur GitHub (confirmé par Yannick le 21/10/2026) | L'activer aussi sur le compte SignPath, à sa création |
 | Rôles définis (auteurs, relecteurs, approbateurs) | ✅ prêt dans `CODE_SIGNING_POLICY.md` (Yannick dans les trois rôles ; des copains pourront être relecteurs) | — |
-| **Page « Code signing policy »** sur l'accueil et la page de téléchargement | ⬜ prête : `docs/signpath/CODE_SIGNING_POLICY.md` | La publier à la racine du dépôt et la lier depuis le README et les notes de release **une fois acceptés** |
-| Nom et version du produit identiques dans les métadonnées | ✅ electron-builder écrit « 68k Trainer » et la version de `package.json` | — |
-| **Builds vérifiables** (construits par une CI depuis les sources) | ✅ depuis la 1.1.1 : le tag `v1.1.1` a produit par GitHub Actions les paquets des trois systèmes (release en brouillon) | Ne publier que les binaires de la CI |
+| **Page « Code signing policy »** sur l'accueil et la page de téléchargement | ✅ `CODE_SIGNING_POLICY.md` à la racine, lié depuis les deux README (10/11/2026) | L'ajouter aussi aux notes des prochaines releases |
+| Nom et version du produit identiques dans les métadonnées | ✅ electron-builder écrit « 68k Trainer 2 » et la version de `package.json` | — |
+| **Builds vérifiables** (construits par une CI depuis les sources) | ✅ depuis la 1.1.1 : chaque tag `v*` fait construire par GitHub Actions les paquets des trois systèmes (release en brouillon) ; v2.0.0 construite ainsi | Ne publier que les binaires de la CI |
 | Approbation manuelle de chaque signature | ⬜ | Se fait dans l'interface SignPath ; Yannick approuve |
 | Coopérer en cas de plainte | ✅ engagement | — |
 | Dons | ✅ autorisés (bouton GitHub « Sponsor » vers PayPal, lien dans À propos) : la GPL et SignPath ne s'y opposent pas | — |
@@ -56,7 +65,7 @@ dedans) que l'application légère et signée saurait importer.
 1. ~~Remplacer vasm~~ (fait en 1.0.0).
 2. ~~Double authentification sur GitHub~~ (faite).
 3. ~~Release construite par la CI~~ (v1.1.1, 21/10/2026).
-4. Publier `CODE_SIGNING_POLICY.md` à la racine et le lier depuis le README et la page des releases.
+4. ~~Publier `CODE_SIGNING_POLICY.md` à la racine et le lier depuis les README~~ (10/11/2026).
 5. Remplir le formulaire <https://signpath.org/apply> avec les réponses du § 4, **en signalant
    d'emblée** que seule la version légère est concernée (§ 1).
 6. Une fois accepté : créer le compte SignPath (avec double authentification), la politique de
@@ -69,7 +78,8 @@ dedans) que l'application légère et signée saurait importer.
 Le formulaire est en ligne et ses questions peuvent changer : voici les informations qu'il demande
 habituellement.
 
-- **Project name:** 68k Trainer
+- **Project name:** 68k Trainer (product name in the binaries: "68k Trainer 2", current major version)
+- **Code signing policy:** https://github.com/yannickmontfort-rgb/68k-trainer/blob/main/CODE_SIGNING_POLICY.md
 - **Repository:** https://github.com/yannickmontfort-rgb/68k-trainer
 - **Homepage / download page:** https://github.com/yannickmontfort-rgb/68k-trainer/releases
 - **License:** GNU General Public License v3.0 or later
@@ -80,14 +90,15 @@ habituellement.
   > challenges. It contains its own 68000 assembler (Devpac compatible), emulator, debugger, a
   > simulated Atari TOS and a simulated Amiga Kickstart. On request, it can download and set up two
   > free (GPL) emulators, Hatari and WinUAE, with free system software (EmuTOS, AROS), to run the
-  > learner's programs; no copyrighted ROM is ever provided or downloaded. It is aimed at hobbyists,
-  > self-learners and vocational high-school students (French "Bac Pro CIEL").
+  > learner's programs; no copyrighted ROM is ever provided or downloaded. The interface and courses
+  > are available in French and English. It is aimed at hobbyists, self-learners and vocational
+  > high-school students (French "Bac Pro CIEL"). About 120 downloads and 15 GitHub stars so far.
 - **Why do you need code signing?**
   > Our users are hobbyists and students, many of them on school computers. Unsigned installers
   > trigger SmartScreen warnings ("Unknown publisher") that discourage beginners and are blocked by
   > some school IT policies.
-- **Artifacts to sign:** the Windows x64 NSIS installer (`68k Trainer Setup x.y.z.exe`, with its
-  uninstaller) and the portable executable (`68k Trainer x.y.z.exe`) of the standard ("light")
+- **Artifacts to sign:** the Windows x64 NSIS installer (`68k Trainer 2 Setup x.y.z.exe`, with its
+  uninstaller) and the portable executable (`68k Trainer 2 x.y.z.exe`) of the standard ("light")
   edition, built by electron-builder in GitHub Actions. We do **not** ask to sign our separate
   "offline" edition, which bundles third-party emulator packages including a non-OSI library
   (`capsimg.dll`, required by Hatari); it stays unsigned and is labelled as such.
