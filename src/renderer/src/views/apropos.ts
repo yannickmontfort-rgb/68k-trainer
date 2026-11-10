@@ -4,6 +4,7 @@ import { chargerProgression, choisirLangue, reinitialiserProgression } from '../
 import { echapper } from './parcours/markdown'
 import { confirmer } from '../components/dialogue'
 import { langueCourante, traducteur } from '../langue'
+import { renderPresentation } from './presentation'
 
 const t = traducteur({
   fr: {
@@ -16,6 +17,7 @@ const t = traducteur({
     locale: 'fr-FR',
     compile: 'Compilé le {date}',
     developpement: 'Version de développement',
+    presentation: 'Revoir la présentation du logiciel',
     capot: 'Sous le capot',
     capotTexte:
       'Assembleur et désassembleur 68000 écrits pour 68k Trainer, compatibles Devpac (vérifiés octet par octet contre vasm, de Volker Barthelmann et Frank Wille). ' +
@@ -66,6 +68,7 @@ const t = traducteur({
     locale: 'en-US',
     compile: 'Built on {date}',
     developpement: 'Development version',
+    presentation: 'See the introduction to the software again',
     capot: 'Under the hood',
     capotTexte:
       'The 68000 assembler and disassembler were written for 68k Trainer and are compatible with Devpac (checked byte for byte against vasm, by Volker Barthelmann and Frank Wille). ' +
@@ -129,6 +132,7 @@ export function renderApropos(container: HTMLElement): () => void {
         <p class="apropos-soutien">${t('soutien')}
         <a href="https://paypal.me/YMONTFORT" target="_blank" rel="noopener">${t('soutenir')}</a></p>
         ${info.builtAt ? `<p class="apropos-built">${t('compile', { date: new Date(info.builtAt).toLocaleString(t('locale')) })}</p>` : `<p class="apropos-built">${t('developpement')}</p>`}
+        <p class="apropos-presentation"><button id="btn-presentation">${t('presentation')}</button></p>
         <h3>${t('capot')}</h3>
         <p class="apropos-texte">${t('capotTexte')}</p>
         <h3>${t('sources')}</h3>
@@ -169,6 +173,8 @@ export function renderApropos(container: HTMLElement): () => void {
       el.textContent = texte
       el.classList.toggle('profils-erreur', erreur)
     }
+
+    root.querySelector('#btn-presentation')!.addEventListener('click', () => renderPresentation(container, () => renderApropos(container), false))
 
     // Langue du profil : la barre et cette page se redessinent dans la langue choisie
     root.querySelectorAll<HTMLButtonElement>('#profil-langue button').forEach((b) =>

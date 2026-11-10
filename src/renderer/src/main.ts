@@ -12,6 +12,7 @@ import { renderCours } from './views/cours'
 import { renderApropos } from './views/apropos'
 import { renderEmulateurs } from './views/emulateurs'
 import { renderChoixProfil } from './views/profils'
+import { presentationMasquee, renderPresentation } from './views/presentation'
 import { echapper } from './views/parcours/markdown'
 
 registerM68kLanguage()
@@ -170,4 +171,12 @@ window.addEventListener('profil-modifie', ((e: CustomEvent<ProfilPublic | null>)
   if (nav) nav.textContent = `👤 ${e.detail.nom}${e.detail.protege ? ' 🔒' : ''}`
 }) as EventListener)
 
-choisirProfil(true)
+/** Au lancement : la page de présentation (sauf si on l’a masquée), puis le choix du profil. */
+function lancer(): void {
+  if (presentationMasquee()) return choisirProfil(true)
+  const dessiner = (): void => renderPresentation(app, () => choisirProfil(true), true)
+  dessiner()
+  oublierLangue = surChangementLangue(dessiner)
+}
+
+lancer()
