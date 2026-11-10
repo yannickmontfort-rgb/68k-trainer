@@ -3,8 +3,8 @@
 Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by
 [SignPath Foundation](https://signpath.org).
 
-> Status: the application to SignPath Foundation is in progress. Until it is accepted, the Windows
-> releases are not signed yet.
+> Status: the Windows releases are not signed yet. A first application to SignPath Foundation
+> (November 2026) was declined because the project is still young; we will apply again later.
 
 ## What is signed
 

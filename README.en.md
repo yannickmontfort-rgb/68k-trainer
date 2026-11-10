@@ -105,9 +105,10 @@ All the files are on the [latest release](../../releases/latest) page.
 
 The [user guide](docs/guide_utilisateur.md) (in French) explains how to get started.
 
-**Code signing**: the Windows executables of the standard edition will be signed for free by
+**Code signing**: the Windows executables are not signed yet: Windows may show "Unknown
+publisher" the first time (click "More info", then "Run anyway"). Free code signing by
 [SignPath.io](https://about.signpath.io), with a certificate by
-[SignPath Foundation](https://signpath.org) (application in progress). See the
+[SignPath Foundation](https://signpath.org), will be requested again later. See the
 [Code signing policy](CODE_SIGNING_POLICY.md), which also contains the privacy policy: 68k Trainer
 never sends any data.
 

@@ -104,9 +104,10 @@ Tous les fichiers sont sur la page de la [dernière version](../../releases/late
 
 Le [guide de l'utilisateur](docs/guide_utilisateur.md) explique la prise en main.
 
-**Signature du code** : les exécutables Windows de la version standard seront signés gratuitement
-par [SignPath.io](https://about.signpath.io), avec un certificat de la
-[SignPath Foundation](https://signpath.org) (candidature en cours). Voir la
+**Signature du code** : les exécutables Windows ne sont pas signés pour l'instant : Windows peut
+afficher « Éditeur inconnu » au premier lancement (cliquer sur « Informations complémentaires »
+puis « Exécuter quand même »). Une signature gratuite par [SignPath.io](https://about.signpath.io),
+avec un certificat de la [SignPath Foundation](https://signpath.org), sera redemandée plus tard. Voir la
 [Code signing policy](CODE_SIGNING_POLICY.md) (en anglais), qui contient aussi la politique de
 confidentialité : 68k Trainer n'envoie aucune donnée.
 
