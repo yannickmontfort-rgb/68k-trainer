@@ -1,7 +1,7 @@
 # Dossier de candidature SignPath Foundation
 
 Préparé le 19/10/2026, **mis à jour le 10/11/2026 pour la version 2.0.1** (« 68k Trainer 2 »).
-**Pas encore envoyé.**
+**Formulaire envoyé le 10/11/2026** (réponses du tableau ci-dessous, adaptées au formulaire HubSpot : Description, Reputation, Tagline, Download URL = releases/latest). En attente de la réponse de SignPath.
 Objectif : faire signer gratuitement les exécutables Windows de 68k Trainer, pour que SmartScreen
 affiche « Yannick Montfort » (ou « SignPath Foundation ») au lieu de « Éditeur inconnu ».
 
@@ -66,7 +66,7 @@ dedans) que l'application légère et signée saurait importer.
 2. ~~Double authentification sur GitHub~~ (faite).
 3. ~~Release construite par la CI~~ (v1.1.1, 21/10/2026).
 4. ~~Publier `CODE_SIGNING_POLICY.md` à la racine et le lier depuis les README~~ (10/11/2026).
-5. Remplir le formulaire <https://signpath.org/apply> avec les réponses du § 4, **en signalant
+5. ~~Remplir le formulaire~~ (envoyé le 10/11/2026) Remplir le formulaire <https://signpath.org/apply> avec les réponses du § 4, **en signalant
    d'emblée** que seule la version légère est concernée (§ 1).
 6. Une fois accepté : créer le compte SignPath (avec double authentification), la politique de
    signature et la configuration d'artefact (installeur et portable de la version légère), ajouter
