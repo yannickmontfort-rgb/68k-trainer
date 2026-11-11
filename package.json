@@ -105,6 +105,10 @@
       "synopsis": "Apprendre l'assembleur 68000 sur un Atari ST simulé",
       "artifactName": "68k-Trainer-${version}-${arch}.${ext}"
     },
+    "deb": {
+      "afterInstall": "resources/linux/after-install.sh",
+      "afterRemove": "resources/linux/after-remove.sh"
+    },
     "mac": {
       "target": [
         {
