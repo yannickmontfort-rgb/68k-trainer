@@ -111,6 +111,18 @@ avec un certificat de la [SignPath Foundation](https://signpath.org), sera redem
 [Code signing policy](CODE_SIGNING_POLICY.md) (en anglais), qui contient aussi la politique de
 confidentialité : 68k Trainer n'envoie aucune donnée.
 
+## Sur Android et dans le navigateur
+
+Laurent ([Laurent-67370](https://github.com/Laurent-67370)) a porté le parcours Amiga de 68k
+Trainer sur Android et sur le web, avec un vrai Amiga 500 et 1200 émulé (PUAE compilé en
+WebAssembly). Un bouton lance ton programme soit sur l'Amiga simulé du trainer, soit sur l'Amiga
+émulé, depuis une disquette qui démarre seule. Sur le téléphone, tout fonctionne hors ligne. Merci
+à lui !
+
+- [Version web](https://laurent-67370.github.io/amiga1200/trainer/), à essayer directement dans le navigateur ;
+- [Application Android (APK)](https://github.com/Laurent-67370/amiga1200/releases/tag/trainer-dev) ;
+- [Code source](https://github.com/Laurent-67370/amiga1200) (dossier `trainer-src/`, sous GPL v3).
+
 ## Une erreur dans un cours ?
 
 Les cours et les exercices sont faits pour être améliorés. Une explication fausse, un exercice

@@ -112,6 +112,17 @@ publisher" the first time (click "More info", then "Run anyway"). Free code sign
 [Code signing policy](CODE_SIGNING_POLICY.md), which also contains the privacy policy: 68k Trainer
 never sends any data.
 
+## On Android and in the browser
+
+Laurent ([Laurent-67370](https://github.com/Laurent-67370)) ported the Amiga course of 68k Trainer
+to Android and the web, with a real emulated Amiga 500 and 1200 (PUAE compiled to WebAssembly). A
+switch runs your program either on the trainer's simulated Amiga or on the emulated one, from an
+auto-booting floppy. On the phone, everything works offline. Thanks to him!
+
+- [Web version](https://laurent-67370.github.io/amiga1200/trainer/), to try directly in the browser;
+- [Android app (APK)](https://github.com/Laurent-67370/amiga1200/releases/tag/trainer-dev);
+- [Source code](https://github.com/Laurent-67370/amiga1200) (`trainer-src/` folder, GPL v3).
+
 ## A mistake in a lesson?
 
 The lessons and exercises are made to be improved. A wrong explanation, an impossible exercise or a
