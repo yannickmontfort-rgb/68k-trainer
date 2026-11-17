@@ -32,7 +32,7 @@ L'application n'est pas encore signée : au premier lancement, Windows SmartScre
 - le fichier **`.AppImage`** : rends-le exécutable (`chmod +x`, ou Propriétés →
   Permissions), puis double-clique dessus ; rien à installer ;
 - le fichier **`.deb`** (Debian, Ubuntu, Lubuntu, Mint…) :
-  `sudo apt install ./68k-Trainer-x.y.z-x64.deb` (avec le nom exact du fichier). L'application apparaît dans le menu Éducation.
+  `sudo apt install ./68k-Trainer-x.y.z-amd64.deb` (avec le nom exact du fichier). L'application apparaît dans le menu Éducation.
   **C'est le choix conseillé sous Ubuntu 24.04 et ses dérivées** (Kubuntu, KDE neon, Mint 22…) :
   le paquet installe le réglage de sécurité (profil AppArmor) dont l'application a besoin.
 
@@ -40,7 +40,7 @@ L'application n'est pas encore signée : au premier lancement, Windows SmartScre
 > found, but is not configured correctly » ? Depuis Ubuntu 24.04, le système de sécurité AppArmor
 > bloque le « bac à sable » de toutes les applications Electron lancées en AppImage. Deux solutions :
 > installe plutôt le **`.deb`**, ou lance l'AppImage depuis un terminal avec l'option
-> `--no-sandbox` : `./68k-Trainer-x.y.z-x64.AppImage --no-sandbox` (l'application tourne alors
+> `--no-sandbox` : `./68k-Trainer-x.y.z-x86_64.AppImage --no-sandbox` (l'application tourne alors
 > sans bac à sable : solution de dépannage, le `.deb` reste préférable).
 
 **macOS** (11 Big Sur ou plus récent, Mac Intel ou Apple Silicon) : ouvre le **`.dmg`** et glisse
